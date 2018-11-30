@@ -124,18 +124,17 @@ The following example states that the results of flat races from Ireland in 2017
 ~$ ./rpscrape.py -r ire -y 2017 -f
 ```
 
-The next example shows a request for the last 2 years flat form in Argentina because its 7am and you've just spent the last 4 hours doing your brains in Australia and you've got a penchant for some Argentinian dirt action to get you out of jail before work at 9.
+The next example shows a request for the last 2 years flat form in Great Britain.
 
 ```
 ~$ cd rpscrape/scripts
-~$ ./rpscrape.py --region arg -y 2017-2018 --flat
+~$ ./rpscrape.py --region gb -y 2017-2018 --flat
 ```
 
-The next example shows a request for the last 20 years flat form at Ascot(code: 2). There will be no jump examples, unfortunately for some, but suffice to say its as easy as changing the last flag to either -j or --jumps.
-
+The next example shows a request for the last 20 years jump form at Ascot(code: 2).
 ```
 ~$ cd rpscrape/scripts
-~$ ./rpscrape.py --course 2 --year 1998-2018 --flat
+~$ ./rpscrape.py --course 2 --year 1998-2018 --jumps
 ```
 
 ### Known Issues
