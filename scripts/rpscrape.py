@@ -117,17 +117,17 @@ def validate_region(region):
 
 
 def validate_years(years):
-    for year in years:
-        if year.isdigit() and int(year) > 1995 and int(year) < 2019:
-            return True
-    return False
+    return all(year.isdigit() and int(year) > 1995 and int(year) < 2019 for year in years)
 
 
 def get_races(tracks, names, years, code,  xy):
     for track, name in zip(tracks, names):
         for year in years:
             r = requests.get('{}/{}/{}/{}/all-races'.format(xy[0], track, year, code), headers={"User-Agent": "Mozilla/5.0"})
-            results = r.json()
+            try:
+                results = r.json()
+            except json.decoder.JSONDecodeError:
+                pass
             try:
                 for result in results['data']['principleRaceResults']:
                     yield ('{}/{}/{}/{}/{}'.format(xy[1], track, name, result['raceDatetime'][:10], result['raceInstanceUid']))
