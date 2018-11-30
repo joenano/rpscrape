@@ -7,6 +7,7 @@ import sys
 import json
 import requests
 from lxml import html
+from re import search
 
 def print_usage():
     print('\n'.join([
@@ -124,15 +125,18 @@ def get_races(tracks, names, years, code,  xy):
     for track, name in zip(tracks, names):
         for year in years:
             r = requests.get('{}/{}/{}/{}/all-races'.format(xy[0], track, year, code), headers={"User-Agent": "Mozilla/5.0"})
-            try:
-                results = r.json()
-            except json.decoder.JSONDecodeError:
-                pass
-            try:
-                for result in results['data']['principleRaceResults']:
-                    yield ('{}/{}/{}/{}/{}'.format(xy[1], track, name, result['raceDatetime'][:10], result['raceInstanceUid']))
-            except TypeError:
-                pass
+            if r.status_code == 200:
+                try:
+                    results = r.json()
+                    if results['data']['principleRaceResults'] == None:
+                        print('No race data for {} in {}'.format(get_course_name(track), year))
+                        continue
+                    for result in results['data']['principleRaceResults']:
+                        yield ('{}/{}/{}/{}/{}'.format(xy[1], track, name, result['raceDatetime'][:10], result['raceInstanceUid']))
+                except:
+                    pass
+            else:
+                print('Unable too access races from {} in {}'.format(get_course_name(track), year))
 
 
 def main():
@@ -189,10 +193,12 @@ def main():
         tracks = [course[0] for course in get_courses(region)]
         names = [get_course_name(track) for track in tracks]
         scrape_target = region
+        print('Scraping {} results from {} in {}...\n'.format(code, scrape_target, sys.argv[4]))
     else:
         tracks = [course]
         names = [get_course_name(course)]
         scrape_target = course
+        print('Scraping {} results from {} in {}...\n'.format(code, get_course_name(scrape_target), sys.argv[4]))
 
     races = get_races(tracks, names, years, code, x_y())
 
@@ -200,13 +206,14 @@ def main():
         os.makedirs('../data')
 
     with open('../data/{}-{}.csv'.format(get_course_name(scrape_target).lower(), sys.argv[4]), 'w') as csv:
-        csv.write(('"date","time","race_name","class","band","distance","going","pos","draw","btn","name",'
+        csv.write(('"date","course","time","race_name","class","band","distance","going","pos","draw","btn","name",'
             '"sp","age","weight","gear","jockey","trainer","or","ts","rpr","prize","comment"\n'))
             
         for race in races:
             r = requests.get(race, headers={'User-Agent': 'Mozilla/5.0'})
             doc = html.fromstring(r.content)
 
+            course_name = race.split('/')[5]
             try:
                 date = doc.xpath("//span[@data-test-selector='text-raceDate']/text()")[0]
             except IndexError:
@@ -220,23 +227,18 @@ def main():
                 race = doc.xpath("//h2[@class='rp-raceTimeCourseName__title']/text()")[0].strip().strip('\n').replace(',', ' ')
             except IndexError:
                 race = 'not found'
-            if '(Group 1)' in race:
-                r_class = 'Group 1'
-                race = race.replace('(Group 1)', '')
-            elif '(Group 2)' in race:
-                r_class = 'Group 2'
-                race = race.replace('(Group 2)', '')
-            elif '(Group 3)' in race:
-                r_class = 'Group 3'
-                race = race.replace('(Group 3)', '')
+
+            if '(Group' in race:
+                race_class = search('(Grou..)\w+', race).group(0)
+                race = race.replace('({})'.format(race_class), '')
             elif '(Listed Race)' in race:
-                r_class = 'Listed'
+                race_class = 'Listed'
                 race = race.replace('(Listed Race)', '')
             else:
                 try:
-                    r_class = doc.xpath("//span[@class='rp-raceTimeCourseName_class']/text()")[0].strip().strip('()')
+                    race_class = doc.xpath("//span[@class='rp-raceTimeCourseName_class']/text()")[0].strip().strip('()')
                 except:
-                    r_class = 'not found'
+                    race_class = 'not found'
 
             try:
                 band = doc.xpath("//span[@class='rp-raceTimeCourseName_ratingBandAndAgesAllowed']/text()")[0].strip().strip('()')
@@ -244,13 +246,14 @@ def main():
                 band = 'not found'
             if ',' in band:
                 split_band = band.split(',')
+                race_class = split_band[0]
                 band = split_band[1]
-                r_class = split_band[0]
-            if '(Fillies)' in race:
+            if '(Fillies & Mares)' in race:
+                band = band + ' Fillies & Mares'
+                race = race.replace('(Fillies & Mares)', '')
+            elif '(Fillies)' in race or 'Fillies' in race:
                 band = band + ' Fillies'
                 race = race.replace('(Fillies)', '')
-            elif 'Fillies' in race:
-                band = band + ' Fillies'
             elif '(Colts & Geldings)' in race:
                 band = band + ' Colts & Geldings'
                 race = race.replace('(Colts & Geldings)', '')
@@ -308,11 +311,12 @@ def main():
 
             for p, pr, dr, bt, n, s, j, tr, a, o, t, rp, w, g, c in \
             zip(pos, prize, draw, btn, name, sp, jock, trainer, age, _or, ts, rpr, wgt, gear, com):
-                csv.write('''{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n'''
-                    .format(date, time, race, r_class, band, dist, going, p.strip(), 
+                csv.write('''{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n'''
+                    .format(date, course_name, time, race, race_class, band, dist, going, p.strip(), 
                             dr.strip().strip("()"),bt, n.strip(), s.strip(), a.strip(),
                             w,g.strip(), tr.strip(), j.strip(), o.strip(), t.strip(), rp.strip(), pr,c))
 
+    print('\nScraping complete. {}-{}.csv saved in rpscrape/data'.format(get_course_name(scrape_target).lower(), sys.argv[4]))
 
 if __name__ == '__main__':
         main()
