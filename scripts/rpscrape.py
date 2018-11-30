@@ -39,26 +39,22 @@ def print_usage():
 
 def get_courses(region='all'):
     with open('../courses/{}_course_ids'.format(region), 'r') as courses:
-        yield ((course.split('-')[0].strip(), course.split('-')[1].strip()) for course in courses)
+        for course in courses:
+            yield (course.split('-')[0].strip(), course.split('-')[1].strip())
          
 
 def get_course_name(code):
     if code.isalpha():
         return code
-    else:
-        courses = get_courses()
-        for course in courses:
-            for c in course:
-                if c[0] == code:
-                    return c[1].replace('()', '').replace(' ', '-')
+    for course in get_courses():
+        if course[0] == code:
+            return course[1].replace('()', '').replace(' ', '-')
 
 
 def course_search(term):
-    courses = get_courses()
-    for course in courses:
-        for c in course:
-            if term.lower() in c.lower():
-                print_course(c[0], c[1])
+    for course in get_courses():
+        if term.lower() in course[1].lower():
+            print_course(course[0], course[1])
     sys.exit()
 
 
@@ -76,16 +72,13 @@ def print_course(key, course):
 
 
 def print_courses(region='all'):
-    courses = get_courses(region)
-    for course in courses:
-        for c in course:
-            print_course(c[0], c[1])
+    for course in get_courses(region):
+        print_course(course[0], course[1])
     sys.exit()
 
 
-def validate_course(course):
-    courses = get_courses()
-    return course in [c[0] for course in courses for c in course]
+def validate_course(course_id):
+    return course_id in [course[0] for course in get_courses()]
 
 
 def x_y():
@@ -100,8 +93,7 @@ def get_regions():
 
 
 def region_search(term):
-    regions = get_regions()
-    for key, region in regions.items():
+    for key, region in get_regions().items():
         if term.lower() in region.lower():
             print_region(key, region)
     sys.exit()
@@ -115,15 +107,13 @@ def print_region(key, region):
 
 
 def print_regions():
-    regions = get_regions()
-    for key, region in regions.items():
+    for key, region in get_regions().items():
         print_region(key, region)
     sys.exit()
 
 
 def validate_region(region):
-    regions = get_regions()
-    return region in regions.keys()
+    return region in get_regions().keys()
 
 
 def validate_years(years):
@@ -196,8 +186,7 @@ def main():
         print_usage()
 
     if 'region' in locals():
-        courses = get_courses(region)
-        tracks = [c[0] for course in courses for c in course]
+        tracks = [course[0] for course in get_courses(region)]
         names = [get_course_name(track) for track in tracks]
         scrape_target = region
     else:
