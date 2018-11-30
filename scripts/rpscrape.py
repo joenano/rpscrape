@@ -39,8 +39,8 @@ def print_usage():
 
 def get_courses(region='all'):
     with open('../courses/{}_course_ids'.format(region), 'r') as courses:
-        return [course.strip('\n') for course in courses]
-
+        yield ((course.split('-')[0].strip(), course.split('-')[1].strip()) for course in courses)
+         
 
 def get_course_name(code):
     if code.isalpha():
@@ -48,15 +48,17 @@ def get_course_name(code):
     else:
         courses = get_courses()
         for course in courses:
-            if course.split('-')[0].strip() == code:
-                return course.split('-')[1].strip().replace('()', '').replace(' ', '-')
+            for c in course:
+                if c[0] == code:
+                    return c[1].replace('()', '').replace(' ', '-')
 
 
 def course_search(term):
     courses = get_courses()
     for course in courses:
-        if term.lower() in course.lower():
-            print_course(course.split('-')[0].strip(), ' '.join(course.split('-')[1::]).strip())
+        for c in course:
+            if term.lower() in c.lower():
+                print_course(c[0], c[1])
     sys.exit()
 
 
@@ -76,19 +78,20 @@ def print_course(key, course):
 def print_courses(region='all'):
     courses = get_courses(region)
     for course in courses:
-        print_course(course.split('-')[0].strip(), course.split('-')[1].strip())
+        for c in course:
+            print_course(c[0], c[1])
     sys.exit()
 
 
 def validate_course(course):
     courses = get_courses()
-    return course in [track.split('-')[0].strip() for track in courses]
+    return course in [c[0] for course in courses for c in course]
 
 
 def x_y():
     import base64
     return base64.b64decode('aHR0cHM6Ly93d3cucmFjaW5ncG9zdC5jb206NDQzL3Byb2ZpbGUvY291cnNlL2ZpbHRlci9yZXN1bHRz')\
-    .decode('utf-8'), base64.b64decode('d3d3LnJhY2luZ3Bvc3QuY29tL3Jlc3VsdHMv').decode('utf-8')
+    .decode('utf-8'), base64.b64decode('aHR0cHM6Ly93d3cucmFjaW5ncG9zdC5jb20vcmVzdWx0cw==').decode('utf-8')
 
 
 def get_regions():
@@ -98,9 +101,9 @@ def get_regions():
 
 def region_search(term):
     regions = get_regions()
-    for key, value in regions.items():
-        if term.lower() in value.lower():
-            print_region(key, value)
+    for key, region in regions.items():
+        if term.lower() in region.lower():
+            print_region(key, region)
     sys.exit()
 
 
@@ -113,8 +116,8 @@ def print_region(key, region):
 
 def print_regions():
     regions = get_regions()
-    for key, value in regions.items():
-        print_region(key, value)
+    for key, region in regions.items():
+        print_region(key, region)
     sys.exit()
 
 
@@ -125,9 +128,21 @@ def validate_region(region):
 
 def validate_years(years):
     for year in years:
-        if not year.isdigit() and int(year) > 1995 and int(year) < 2019:
-            return False
-    return True
+        if year.isdigit() and int(year) > 1995 and int(year) < 2019:
+            return True
+    return False
+
+
+def get_races(tracks, names, years, code,  xy):
+    for track, name in zip(tracks, names):
+        for year in years:
+            r = requests.get('{}/{}/{}/{}/all-races'.format(xy[0], track, year, code), headers={"User-Agent": "Mozilla/5.0"})
+            results = r.json()
+            try:
+                for result in results['data']['principleRaceResults']:
+                    yield ('{}/{}/{}/{}/{}'.format(xy[1], track, name, result['raceDatetime'][:10], result['raceInstanceUid']))
+            except TypeError:
+                pass
 
 
 def main():
@@ -182,7 +197,7 @@ def main():
 
     if 'region' in locals():
         courses = get_courses(region)
-        tracks = [course.split('-')[0].strip() for course in courses]
+        tracks = [c[0] for course in courses for c in course]
         names = [get_course_name(track) for track in tracks]
         scrape_target = region
     else:
@@ -190,24 +205,12 @@ def main():
         names = [get_course_name(course)]
         scrape_target = course
 
-    x, y = x_y()
-    races = []
-
-    for track, name in zip(tracks, names):
-        for year in years:
-            r = requests.get('https://{}/{}/{}/{}/all-races'.format(x, track, year, code), headers={"User-Agent": "Mozilla/5.0"})
-            results = r.json()
-            try:
-                for result in results['data']['principleRaceResults']:
-                    races.append('https://{}{}/{}/{}/{}'.format(y, track, name, result['raceDatetime'][:10], result['raceInstanceUid']))
-            except TypeError:
-                pass
+    races = get_races(tracks, names, years, code, x_y())
 
     if not os.path.exists('../data'):
         os.makedirs('../data')
 
-
-    with open('../data/{}-{}.csv'.format(get_course_name(scrape_target), sys.argv[4]), 'w') as csv:
+    with open('../data/{}-{}.csv'.format(get_course_name(scrape_target).lower(), sys.argv[4]), 'w') as csv:
         csv.write(('"date","time","race_name","class","band","distance","going","pos","draw","btn","name",'
             '"sp","age","weight","gear","jockey","trainer","or","ts","rpr","prize","comment"\n'))
             

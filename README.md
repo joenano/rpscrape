@@ -20,26 +20,26 @@ If you dont have git installed you can download the folder [here](https://github
 
 ## Usage
 ```
-        -$ rpscrape.py [-r|-c] [region|course] [-y] [year|range] [--flat|--jumps]
+-$ rpscrape.py [-r|-c] [region|course] [-y] [year|range] [--flat|--jumps]
 ```
 
 #### Flags
 
 ```
-        -r, --region           Scrape a specific region
-        -c, --course           Scrape a specific course
-        -y, --year             Specific year to scrape
-        -f, --flat             Flat races only
-        -j, --jumps            Jump races only
+-r, --region           Scrape a specific region
+-c, --course           Scrape a specific course
+-y, --year             Specific year to scrape
+-f, --flat             Flat races only
+-j, --jumps            Jump races only
 ```
 #### More Info
 
 ```
-        --regions              List all available region codes
-        --regions [search]     List regions matching search term
-        --courses              List all courses
-        --courses [search]     List courses matching search term
-        --courses-[region]     List courses in region - e.g --courses-ire
+--regions              List all available region codes
+--regions [search]     List regions matching search term
+--courses              List all courses
+--courses [search]     List courses matching search term
+--courses-[region]     List courses in region - e.g --courses-ire
 ```
 
 #### Options
@@ -81,20 +81,20 @@ The other possibility for the first option is that of a specific course. To view
 
 ```
 
-If you want to search for a specific region or courses, add a search term after the --regions or --courses flag as shown below.
+If you want to search for a specific region or course, add a search term after the --regions or --courses flag as shown below.
 
 ```
 ~$ ./rpscrape.py --regions france
 
-        CODE: fr  | France
+    CODE: fr  | France
 
 ```
 
 ```
 ~$ ./rpscrape.py --courses york
 
-        CODE: 107  | York
-        CODE: 1347 | York Aus
+    CODE: 107  | York
+    CODE: 1347 | York Aus
 
 ```
 
@@ -137,3 +137,7 @@ The next example shows a request for the last 20 years flat form at Ascot(code: 
 ~$ cd rpscrape/scripts
 ~$ ./rpscrape.py --course 2 --year 1998-2018 --flat
 ```
+
+### Known Issues
+
+* Horses who finish pulled up/unseated/fell etc are not being recorded.
