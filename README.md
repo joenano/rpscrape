@@ -1,8 +1,8 @@
 # rpscrape - (BETA)
 
-Big horse racing data has been hoarded by select companies enabling them to effectively extort the public by selling and renting it. Compared to other sports where data is in depth and freely available, racing data in most countries is not particularly in depth and is not available in large datasets.
+Horse racing data has been hoarded by a few companies, enabling them to effectively extort the public for access to any reasonable historical amount. Compared to other sports where historical data is freely available to use and query as you please, racing data in most countries is far harder to come by and is often only available with subscriptions to expensive software.
 
-The aim of this tool is to provide a way for gathering large amounts of results data free of charge.
+The aim of this tool is to provide a way of gathering large amounts of historical results data at no cost.
 
 
 #### Example data from Ascot 2018
@@ -49,7 +49,6 @@ The first option is that of a region(-r) or a course(-c).
 Each region has a 2 or 3 letter code like ire for Ireland or gb for Great Britain. You can show the list of region codes with the following command:
 ```
 ~$ ./rpscrape.py --regions
-
      CODE: mal | Malaysia
      CODE: mac | Macau
      CODE: gue | Guernsey
@@ -60,14 +59,12 @@ Each region has a 2 or 3 letter code like ire for Ireland or gb for Great Britai
      CODE: chi | Chile
      CODE: per | Peru
      CODE: uae | United Arab Emirates
-
 ```
 
 The other possibility for the first option is that of a specific course. To view the course codes, use the --courses options as shown in the following example.
 
 ```
 ~$ ./rpscrape.py --courses
-
      CODE: 32   | Aintree
      CODE: 2    | Ascot
      CODE: 3    | Ayr
@@ -76,32 +73,24 @@ The other possibility for the first option is that of a specific course. To view
      CODE: 6    | Beverley
      CODE: 7    | Brighton
      CODE: 8    | Carlisle
-     CODE: 9    | Cartmel
-     CODE: 10   | Catterick
-
 ```
 
 If you want to search for a specific region or course, add a search term after the --regions or --courses flag as shown below.
 
 ```
 ~$ ./rpscrape.py --regions france
-
     CODE: fr  | France
-
 ```
 
 ```
 ~$ ./rpscrape.py --courses york
-
     CODE: 107  | York
     CODE: 1347 | York Aus
-
 ```
 
 To list the courses from a specific region, add the region code to the --courses flag like so:
  ```
 ~$ ./rpscrape.py --courses-ire
-
      CODE: 175  | Ballinrobe
      CODE: 176  | Bellewstown
      CODE: 177  | Clonmel
@@ -110,7 +99,6 @@ To list the courses from a specific region, add the region code to the --courses
      CODE: 180  | Down Royal
      CODE: 179  | Downpatrick
      CODE: 181  | Dundalk
-
  ```
 
 You can also look directly at files found in the courses folder for this information
