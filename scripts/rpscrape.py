@@ -155,8 +155,7 @@ def get_races(tracks, names, years, code,  xy):
                 try:
                     results = r.json()
                     if results['data']['principleRaceResults'] == None:
-                        print(f'\nNo {code} race data for {get_course_name(track)} in {year}.')
-                        return False
+                        print(f'No {code} race data for {get_course_name(track)} in {year}.')
                     for result in results['data']['principleRaceResults']:
                         yield (f'{xy[1]}/{track}/{name}/{result["raceDatetime"][:10]}/{result["raceInstanceUid"]}')
                 except:
@@ -288,7 +287,7 @@ def scrape_races(races, target, years):
                 csv.write((f'{date},{course_name},{time},{race},{race_class},{band},{dist},{going},'
                             f'{p},{dr},{bt},{n},{s},{a},{w},{g},{tr},{j},{o},{t},{rp},{pr},{c}\n'))
 
-            print(f'\nFinished scraping. {target.lower()}-{years}.csv saved in rpscrape/data')
+        print(f'\nFinished scraping. {target.lower()}-{years}.csv saved in rpscrape/data')
 
 
 def parse_args(args=sys.argv):
@@ -303,7 +302,6 @@ def parse_args(args=sys.argv):
             print_regions()
         elif 'courses' in args:
             print_courses()
-
     elif len(args) == 2:
         if args[0] == 'regions':
             region_search(args[1])
@@ -312,7 +310,6 @@ def parse_args(args=sys.argv):
                 print_courses(args[1])
             else:
                 course_search(args[1])
-
     elif len(args) == 3:
         if validate_region(args[0]):
             region = args[0]
