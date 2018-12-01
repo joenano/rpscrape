@@ -101,11 +101,9 @@ To list the courses from a specific region, add the region code like so:
      CODE: 181  | Dundalk
  ```
 
-You can also look directly at files found in the courses folder for this information
-
 ### Examples
 
-The following example requests that the results of flat races from Ireland in 2017 should be scraped.
+The following example shows a request for flat races from Ireland in 2017.
 
 ```
 [rpscrape]> ire 2017 flat
