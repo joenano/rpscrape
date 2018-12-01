@@ -35,11 +35,12 @@ Make scrape requests as shown below:
 #### Options
 
 ```
-regions              List all available region codes',
-regions [search]     Search regions for a specific country code',
-courses              List all courses',
-courses [search]     Search courses for specific course',
-courses [region]     List courses in region - e.g courses ire'
+regions              List all available region codes
+regions [search]     Search regions for a specific country code
+
+courses              List all courses
+courses [search]     Search courses for specific course
+courses [region]     List courses in region - e.g courses ire
 ```
 
 Tab complete is available for all options.
@@ -57,7 +58,6 @@ Each region has a 2 or 3 letter code like ire for Ireland or gb for Great Britai
      CODE: tur | Turkey
      CODE: hk  | Hong Kong
      CODE: chi | Chile
-     CODE: per | Peru
      CODE: uae | United Arab Emirates
 ```
 

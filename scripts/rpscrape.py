@@ -32,6 +32,7 @@ def show_options(opt='help'):
     opts =  '\n'.join([
             '       regions              List all available region codes',
             '       regions [search]     Search regions for a specific country code',
+            '',
             '       courses              List all courses',
             '       courses [search]     Search for specific course',
             '       courses [region]     List courses in region - e.g courses ire'
