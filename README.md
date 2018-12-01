@@ -1,6 +1,6 @@
 # rpscrape - (BETA)
 
-Horse racing data has been hoarded by a few companies, enabling them to effectively extort the public for access to any reasonable historical amount. Compared to other sports where historical data is freely available to use and query as you please, racing data in most countries is far harder to come by and is often only available with subscriptions to expensive software.
+Horse racing data has been hoarded by a few companies, enabling them to effectively extort the public for access to any worthwhile historical amount. Compared to other sports where historical data is easily and freely available to use and query as you please, racing data in most countries is far harder to come by and is often only available with subscriptions to expensive software.
 
 The aim of this tool is to provide a way of gathering large amounts of historical results data at no cost.
 
@@ -16,7 +16,7 @@ The aim of this tool is to provide a way of gathering large amounts of historica
 ~$ git clone https://github.com/4A47/rpscrape.git
 ```
 
-If you dont have git installed you can download the folder [here](https://github.com/4A47/rpscrape/archive/master.zip).
+If you don't have git installed you can download the folder [here](https://github.com/4A47/rpscrape/archive/master.zip).
 
 ## Usage
 
