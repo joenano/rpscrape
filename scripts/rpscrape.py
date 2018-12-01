@@ -155,7 +155,7 @@ def get_races(tracks, names, years, code,  xy):
                 try:
                     results = r.json()
                     if results['data']['principleRaceResults'] == None:
-                        print(f'No race data for {get_course_name(track)} in {year}.')
+                        print(f'No {code} race data for {get_course_name(track)} in {year}.')
                         continue
                     for result in results['data']['principleRaceResults']:
                         yield (f'{xy[1]}/{track}/{name}/{result["raceDatetime"][:10]}/{result["raceInstanceUid"]}')
@@ -163,6 +163,10 @@ def get_races(tracks, names, years, code,  xy):
                     pass
             else:
                 print(f'Unable too access races from {get_course_name(track)} in {year}')
+
+
+def clean(data):
+    return [d.strip().replace('–', '') for d in data]
 
 
 def scrape_races(races, target, years):
@@ -195,6 +199,9 @@ def scrape_races(races, target, years):
             if '(Group' in race:
                 race_class = search('(Grou..)\w+', race).group(0)
                 race = race.replace(f'({race_class})', '')
+            elif '(Grade' in race:
+                race_class = search('(Grad..)\w+', race).group(0)
+                race = race.replace(f'({race_class})', '') 
             elif '(Listed Race)' in race:
                 race_class = 'Listed'
                 race = race.replace('(Listed Race)', '')
@@ -239,28 +246,31 @@ def scrape_races(races, target, years):
             del possy[1::2]
             pos = [x.strip() for x in possy]
             prizes = doc.xpath("//div[@data-test-selector='text-prizeMoney']/text()")
-            prize = [p.strip().replace(",", '') for p in prizes]
+            prize = [p.strip().replace(",", '').replace("£", '') for p in prizes]
             try:
                 del prize[0]
                 for i in range(len(pos) - len(prize)):
                     prize.append('')
             except IndexError:
                 prize = ['' for x in range(len(pos))]    
-            draw = doc.xpath("//sup[@class='rp-horseTable__pos__draw']/text()")
+            draw = clean(doc.xpath("//sup[@class='rp-horseTable__pos__draw']/text()"))
+            draw = [d.strip("()") for d in draw]
             beaten = doc.xpath("//span[@class='rp-horseTable__pos__length']/span/text()")
             del beaten[1::2]
             btn = [b.strip().strip("[]").replace('¼', '.25').replace('½', '.5').replace('¾', '.75') for b in beaten]
             btn.insert(0, '')
-            name = doc.xpath("//a[@data-test-selector='link-horseName']/text()")
-            sp = doc.xpath("//span[@class='rp-horseTable__horse__price']/text()")
-            jock = doc.xpath("//a[@data-test-selector='link-jockeyName']/text()")
+            if len(btn) < len(pos):
+                btn.extend(['' for x in range(len(pos) - len(btn))])
+            name = clean(doc.xpath("//a[@data-test-selector='link-horseName']/text()"))
+            sp = clean(doc.xpath("//span[@class='rp-horseTable__horse__price']/text()"))
+            jock = clean(doc.xpath("//a[@data-test-selector='link-jockeyName']/text()"))
             del jock[::2]
-            trainer = doc.xpath("//a[@data-test-selector='link-trainerName']/text()")
+            trainer = clean(doc.xpath("//a[@data-test-selector='link-trainerName']/text()"))
             del trainer[::2]
-            age = doc.xpath("//td[@data-test-selector='horse-age']/text()")
-            _or = doc.xpath("//td[@data-ending='OR']/text()")
-            ts = doc.xpath("//td[@data-ending='TS']/text()")
-            rpr = doc.xpath("//td[@data-ending='RPR']/text()")
+            age = clean(doc.xpath("//td[@data-test-selector='horse-age']/text()"))
+            _or = clean(doc.xpath("//td[@data-ending='OR']/text()"))
+            ts = clean(doc.xpath("//td[@data-ending='TS']/text()"))
+            rpr = clean(doc.xpath("//td[@data-ending='RPR']/text()"))
             st = doc.xpath("//span[@data-ending='st']/text()")
             lb = doc.xpath("//span[@data-ending='lb']/text()")
             wgt = [a.strip() +'-' + b.strip() for a, b in zip(st, lb)]
@@ -275,9 +285,8 @@ def scrape_races(races, target, years):
 
             for p, pr, dr, bt, n, s, j, tr, a, o, t, rp, w, g, c in \
             zip(pos, prize, draw, btn, name, sp, jock, trainer, age, _or, ts, rpr, wgt, gear, com):
-                csv.write((f'{date},{course_name},{time},{race},{race_class},{band},{dist},{going},{p.strip()},'
-                        f'{dr.strip().strip("()")},{bt},{n.strip()},{s.strip()},{a.strip()},{w},{g.strip()},'
-                        f'{tr.strip()},{j.strip()},{o.strip()},{t.strip()},{rp.strip()},{pr},{c}\n'))
+                csv.write((f'{date},{course_name},{time},{race},{race_class},{band},{dist},{going},'
+                            f'{p},{dr},{bt},{n},{s},{a},{w},{g},{tr},{j},{o},{t},{rp},{pr},{c}\n'))
 
     print(f'\nFinished scraping. {target.lower()}-{years}.csv saved in rpscrape/data')
 
@@ -294,6 +303,7 @@ def parse_args(args=sys.argv):
             print_regions()
         elif 'courses' in args:
             print_courses()
+
     elif len(args) == 2:
         if args[0] == 'regions':
             region_search(args[1])
@@ -302,6 +312,7 @@ def parse_args(args=sys.argv):
                 print_courses(args[1])
             else:
                 course_search(args[1])
+
     elif len(args) == 3:
         if validate_region(args[0]):
             region = args[0]
@@ -349,7 +360,7 @@ def main():
     if len(sys.argv) > 1:
         sys.exit(show_options())
 
-    completions = Completer(["courses", "regions", "options", "help", "quit", "clear"])
+    completions = Completer(["courses", "regions", "options", "help", "quit", "clear", "flat", "jumps"])
     readline.set_completer(completions.complete)
     readline.parse_and_bind('tab: complete')
 
