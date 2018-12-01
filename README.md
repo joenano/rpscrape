@@ -38,7 +38,7 @@ Make scrape requests as shown below:
 regions              List all available region codes',
 regions [search]     Search regions for a specific country code',
 courses              List all courses',
-courses [search]     Search courses for ',
+courses [search]     Search courses for specific course',
 courses [region]     List courses in region - e.g courses ire'
 ```
 
@@ -61,7 +61,7 @@ Each region has a 2 or 3 letter code like ire for Ireland or gb for Great Britai
      CODE: uae | United Arab Emirates
 ```
 
-The other possibility for the first option is that of a specific course. To view the course codes, use the --courses options as shown in the following example.
+The other possibility for the first option is that of a specific course. To view the course codes, use the courses option as shown in the following example.
 
 ```
 [rpscrape]> courses
@@ -105,7 +105,7 @@ You can also look directly at files found in the courses folder for this informa
 
 ### Examples
 
-The following example states that the results of flat races from Ireland in 2017 should be scraped(not scrapped for skulduggery as many have suggested).
+The following example requests that the results of flat races from Ireland in 2017 should be scraped.
 
 ```
 [rpscrape]> ire 2017 flat
