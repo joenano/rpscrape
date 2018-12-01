@@ -19,36 +19,36 @@ The aim of this tool is to provide a way of gathering large amounts of historica
 If you dont have git installed you can download the folder [here](https://github.com/4A47/rpscrape/archive/master.zip).
 
 ## Usage
-```
--$ rpscrape.py [-r|-c] [region|course] [-y] [year|range] [--flat|--jumps]
-```
 
-#### Flags
-
+Run the program from the scripts folder:
 ```
--r, --region           Scrape a specific region
--c, --course           Scrape a specific course
--y, --year             Specific year to scrape
--f, --flat             Flat races only
--j, --jumps            Jump races only
-```
-#### More Info
+~$ cd rpscrape/scripts
+~$ ./rpscrape.py
 
 ```
---regions              List all available region codes
---regions [search]     List regions matching search term
---courses              List all courses
---courses [search]     List courses matching search term
---courses-[region]     List courses in region - e.g --courses-ire
+
+Make scrape requests as shown below:
+```
+[rpscrape]> [region|course] [year|range] [flat|jumps]
 ```
 
 #### Options
 
-The first option is that of a region(-r) or a course(-c).
+```
+regions              List all available region codes',
+regions [search]     Search regions for a specific country code',
+courses              List all courses',
+courses [search]     Search courses for ',
+courses [region]     List courses in region - e.g courses ire'
+```
+
+Tab complete is available for all options.
+
+The first option is that of a region or a course
 
 Each region has a 2 or 3 letter code like ire for Ireland or gb for Great Britain. You can show the list of region codes with the following command:
 ```
-~$ ./rpscrape.py --regions
+[rpscrape]> regions
      CODE: mal | Malaysia
      CODE: mac | Macau
      CODE: gue | Guernsey
@@ -64,7 +64,7 @@ Each region has a 2 or 3 letter code like ire for Ireland or gb for Great Britai
 The other possibility for the first option is that of a specific course. To view the course codes, use the --courses options as shown in the following example.
 
 ```
-~$ ./rpscrape.py --courses
+[rpscrape]> courses
      CODE: 32   | Aintree
      CODE: 2    | Ascot
      CODE: 3    | Ayr
@@ -75,22 +75,22 @@ The other possibility for the first option is that of a specific course. To view
      CODE: 8    | Carlisle
 ```
 
-If you want to search for a specific region or course, add a search term after the --regions or --courses flag as shown below.
+If you want to search for a specific region or course, add a search term as shown below.
 
 ```
-~$ ./rpscrape.py --regions france
+[rpscrape]> regions france
     CODE: fr  | France
 ```
 
 ```
-~$ ./rpscrape.py --courses york
+[rpscrape]> courses york
     CODE: 107  | York
     CODE: 1347 | York Aus
 ```
 
-To list the courses from a specific region, add the region code to the --courses flag like so:
+To list the courses from a specific region, add the region code like so:
  ```
-~$ ./rpscrape.py --courses-ire
+[rpscrape]> courses ire
      CODE: 175  | Ballinrobe
      CODE: 176  | Bellewstown
      CODE: 177  | Clonmel
@@ -108,23 +108,21 @@ You can also look directly at files found in the courses folder for this informa
 The following example states that the results of flat races from Ireland in 2017 should be scraped(not scrapped for skulduggery as many have suggested).
 
 ```
-~$ cd rpscrape/scripts
-~$ ./rpscrape.py -r ire -y 2017 -f
+[rpscrape]> ire 2017 flat
 ```
 
 The next example shows a request for the last 2 years flat form in Great Britain.
 
 ```
-~$ cd rpscrape/scripts
-~$ ./rpscrape.py --region gb -y 2017-2018 --flat
+[rpscrape]> gb 2017-2018 flat
 ```
 
 The next example shows a request for the last 20 years jump form at Ascot(code: 2).
 ```
-~$ cd rpscrape/scripts
-~$ ./rpscrape.py --course 2 --year 1998-2018 --jumps
+[rpscrape]> 2 1999-2018 jumps
 ```
 
 ### Known Issues
 
 * Horses who finish pulled up/unseated/fell etc are not being recorded.
+* Region scrape: HTTP 403 Error when trying to scrape full regions causing all following requests to fail despite working when scraped individually.

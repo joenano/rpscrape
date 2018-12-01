@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.6
 #
 # Scrapes results and saves them in csv format
 
@@ -6,42 +6,69 @@ import os
 import sys
 import json
 import requests
+import readline
 from lxml import html
 from re import search
 
-def print_usage():
-    print('\n'.join([
-        'Usage:',
-        '   rpscrape.py [-r|-c] [region|course] [-y] [year|range] [flat|jumps]',
-        '',     
-        'Example:',
-        '   ./rpscrape.py -r ire -y 1999 -f',
-        '   ./rpscrape.py -c 2 -y 2015-2018 --jumps',
-        '   ./rpscrape.py -c all -r 1998-2018 --flat',
-        '',
-        'Flags:',
-        '    -r, --region           Scrape a specific region',
-        '    -c, --course           Scrape a specific course',
-        '    -y, --year             Year or range of years to scrape',
-        '    -f, --flat             Flat races only',
-        '    -j, --jumps            Jump races only',
 
-        '',
-        'More info:',
-        '    --regions              List all available region codes',
-        '    --regions [search]     List regions matching search term',
-        '    --courses              List all courses',
-        '    --courses [search]     List courses matching search term',
-        '    --courses-[region]     List courses in region - e.g --courses-ire',
-        ''
-    ]))
-    sys.exit()
+class Completer(object):
+
+    def __init__(self, options):
+        self.options = sorted(options)
+
+    def complete(self, text, state):
+        if state == 0:
+            if text:
+                self.matches = [s for s in self.options if s and s.startswith(text)]
+            else:
+                self.matches = self.options[:]
+        try: 
+            return self.matches[state]
+        except IndexError:
+            return None
+
+
+def show_options(opt='help'):
+    opts =  '\n'.join([
+            '       regions              List all available region codes',
+            '       regions [search]     Search regions for a specific country code',
+            '       courses              List all courses',
+            '       courses [search]     Search courses for ',
+            '       courses [region]     List courses in region - e.g courses ire'
+            ])
+
+    if opt == 'help':
+        print(
+            '\n'.join([
+            '  Usage:',
+            '       [rpscrape]> [region|course] [year|range] [flat|jumps]',
+            '',
+            '       Regions have alphabetic codes.',
+            '       Courses have numeric codes.'
+            '',
+            '  Examples:',
+            '       [rpscrape]> ire 1999 flat',
+            '       [rpscrape]> gb 2015-2018 jumps',
+            '       [rpscrape]> 533 1998-2018 flat',
+            '',
+            '  Options:',
+            '{}'.format(opts),
+            '',
+            '  More info:',
+            '       help           Show help',
+            '       options        Show options',
+            '       cls, clear     Clear screen',
+            '       q, quit        Quit',
+            ''
+        ]))
+    else:
+        print(opts)
 
 
 def get_courses(region='all'):
-    with open('../courses/{}_course_ids'.format(region), 'r') as courses:
+    with open(f'../courses/{region}_course_ids', 'r') as courses:
         for course in courses:
-            yield (course.split('-')[0].strip(), course.split('-')[1].strip())
+            yield (course.split('-')[0].strip(), ' '.join(course.split('-')[1::]).strip())
          
 
 def get_course_name(code):
@@ -56,26 +83,24 @@ def course_search(term):
     for course in get_courses():
         if term.lower() in course[1].lower():
             print_course(course[0], course[1])
-    sys.exit()
 
 
 def print_course(key, course):
     if len(key) == 5:
-        print('     CODE: {}| {}'.format(key, course))
+        print(f'     CODE: {key}| {course}')
     elif len(key) == 4:
-        print('     CODE: {} | {}'.format(key, course))
+        print(f'     CODE: {key} | {course}')
     elif len(key) == 3:
-        print('     CODE: {}  | {}'.format(key, course))
+        print(f'     CODE: {key}  | {course}')
     elif len(key) == 2:
-        print('     CODE: {}   | {}'.format(key, course))
+        print(f'     CODE: {key}   | {course}')
     else:
-        print('     CODE: {}    | {}'.format(key, course))
+        print(f'     CODE: {key}    | {course}')
 
 
 def print_courses(region='all'):
     for course in get_courses(region):
         print_course(course[0], course[1])
-    sys.exit()
 
 
 def validate_course(course_id):
@@ -97,20 +122,18 @@ def region_search(term):
     for key, region in get_regions().items():
         if term.lower() in region.lower():
             print_region(key, region)
-    sys.exit()
 
 
 def print_region(key, region):
     if len(key) == 3:
-        print('     CODE: {} | {}'.format(key, region))
+        print(f'     CODE: {key} | {region}')
     else:
-        print('     CODE: {}  | {}'.format(key, region))
+        print(f'     CODE: {key}  | {region}')
 
 
 def print_regions():
     for key, region in get_regions().items():
         print_region(key, region)
-    sys.exit()
 
 
 def validate_region(region):
@@ -118,94 +141,34 @@ def validate_region(region):
 
 
 def validate_years(years):
-    return all(year.isdigit() and int(year) > 1995 and int(year) < 2019 for year in years)
-
+    if years:
+        return all(year.isdigit() and int(year) > 1995 and int(year) < 2019 for year in years)
+    else:
+        return False
 
 def get_races(tracks, names, years, code,  xy):
     for track, name in zip(tracks, names):
         for year in years:
-            r = requests.get('{}/{}/{}/{}/all-races'.format(xy[0], track, year, code), headers={"User-Agent": "Mozilla/5.0"})
+            r = requests.get(f'{xy[0]}/{track}/{year}/{code}/all-races', headers={"User-Agent": "Mozilla/5.0"})
             if r.status_code == 200:
                 try:
                     results = r.json()
                     if results['data']['principleRaceResults'] == None:
-                        print('No race data for {} in {}'.format(get_course_name(track), year))
+                        print(f'No race data for {get_course_name(track)} in {year}.')
                         continue
                     for result in results['data']['principleRaceResults']:
-                        yield ('{}/{}/{}/{}/{}'.format(xy[1], track, name, result['raceDatetime'][:10], result['raceInstanceUid']))
+                        yield (f'{xy[1]}/{track}/{name}/{result["raceDatetime"][:10]}/{result["raceInstanceUid"]}')
                 except:
                     pass
             else:
-                print('Unable too access races from {} in {}'.format(get_course_name(track), year))
+                print(f'Unable too access races from {get_course_name(track)} in {year}')
 
 
-def main():
-    if len(sys.argv) == 6:
-        if sys.argv[1] == '-r' or sys.argv[1] == '--region':
-            region = sys.argv[2].lower()
-            if not validate_region(region):
-                sys.exit(print('Invalid region code. Use --regions [search term] to find a valid code.\n'))
-        elif sys.argv[1] == '-c' or sys.argv[1] == '--course':
-            course = sys.argv[2]
-            if not validate_course(course):
-                sys.exit(print('Invalid course code. Use --courses [search term] to find a valid code.\n'))
-        else:
-            print_usage()
-
-        if sys.argv[3] == '-y' or sys.argv[3] == '--year':
-            if '-' in sys.argv[4]:
-                years = [str(x) for x in range(int(sys.argv[4].split('-')[0]), int(sys.argv[4].split('-')[1]) + 1)]
-            else:
-                years = [sys.argv[4]]
-
-            if not validate_years(years):
-                sys.exit(print('Invalid year, must be in range 1996-2018.\n'))
-        else:
-            print_usage()
-
-        if '-f' in sys.argv[5]:
-            code = 'flat'
-        elif '-j' in sys.argv[5]:
-            code = 'jumps'
-        else:
-            sys.exit(print('Invalid racing code. For flat races use -f or --flat. For jump races use -j or --jumps.\n'))
-    elif len(sys.argv) == 2:
-        if sys.argv[1] == '--regions':
-            print_regions()
-        elif sys.argv[1] == '--courses':
-            print_courses()
-        elif '--courses-' in sys.argv[1]:
-            if validate_region(sys.argv[1].split('-')[-1]):
-                print_courses(sys.argv[1].split('-')[-1])
-            else:
-                sys.exit(print('Invalid region code. Use --regions [search term] to find a valid code.\n'))
-        else:
-            print_usage()
-    elif len(sys.argv) == 3:
-        if sys.argv[1] == '--regions':
-            region_search(sys.argv[2])
-        elif sys.argv[1] == '--courses':
-            course_search(sys.argv[2])
-    else:
-        print_usage()
-
-    if 'region' in locals():
-        tracks = [course[0] for course in get_courses(region)]
-        names = [get_course_name(track) for track in tracks]
-        scrape_target = region
-        print('Scraping {} results from {} in {}...\n'.format(code, scrape_target, sys.argv[4]))
-    else:
-        tracks = [course]
-        names = [get_course_name(course)]
-        scrape_target = course
-        print('Scraping {} results from {} in {}...\n'.format(code, get_course_name(scrape_target), sys.argv[4]))
-
-    races = get_races(tracks, names, years, code, x_y())
-
+def scrape_races(races, target, years):
     if not os.path.exists('../data'):
         os.makedirs('../data')
 
-    with open('../data/{}-{}.csv'.format(get_course_name(scrape_target).lower(), sys.argv[4]), 'w') as csv:
+    with open(f'../data/{target.lower()}-{years}.csv', 'w') as csv:
         csv.write(('"date","course","time","race_name","class","band","distance","going","pos","draw","btn","name",'
             '"sp","age","weight","gear","jockey","trainer","or","ts","rpr","prize","comment"\n'))
             
@@ -230,7 +193,7 @@ def main():
 
             if '(Group' in race:
                 race_class = search('(Grou..)\w+', race).group(0)
-                race = race.replace('({})'.format(race_class), '')
+                race = race.replace(f'({race_class})', '')
             elif '(Listed Race)' in race:
                 race_class = 'Listed'
                 race = race.replace('(Listed Race)', '')
@@ -311,12 +274,88 @@ def main():
 
             for p, pr, dr, bt, n, s, j, tr, a, o, t, rp, w, g, c in \
             zip(pos, prize, draw, btn, name, sp, jock, trainer, age, _or, ts, rpr, wgt, gear, com):
-                csv.write('''{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n'''
-                    .format(date, course_name, time, race, race_class, band, dist, going, p.strip(), 
-                            dr.strip().strip("()"),bt, n.strip(), s.strip(), a.strip(),
-                            w,g.strip(), tr.strip(), j.strip(), o.strip(), t.strip(), rp.strip(), pr,c))
+                csv.write((f'{date},{course_name},{time},{race},{race_class},{band},{dist},{going},{p.strip()},'
+                        f'{dr.strip().strip("()")},{bt},{n.strip()},{s.strip()},{a.strip()},{w},{g.strip()},'
+                        f'{tr.strip()},{j.strip()},{o.strip()},{t.strip()},{rp.strip()},{pr},{c}\n'))
 
-    print('\nScraping complete. {}-{}.csv saved in rpscrape/data'.format(get_course_name(scrape_target).lower(), sys.argv[4]))
+    print(f'\nFinished scraping. {target.lower()}-{years}.csv saved in rpscrape/data')
+
+
+def parse_args(args=sys.argv):
+    if len(args) == 1:
+        if 'help' in args or 'options' in args:
+            show_options(args[0])
+        elif 'clear' in args:
+            os.system('cls' if os.name == 'nt' else 'clear')
+        elif 'quit' in args or 'q' in args:
+            sys.exit()
+        elif 'regions' in args:
+            print_regions()
+        elif 'courses' in args:
+            print_courses()
+    elif len(args) == 2:
+        if args[0] == 'regions':
+            region_search(args[1])
+        elif args[0] == 'courses':
+            if validate_region(args[1]):
+                print_courses(args[1])
+            else:
+                course_search(args[1])
+    elif len(args) == 3:
+        if validate_region(args[0]):
+            region = args[0]
+        elif validate_course(args[0]):
+            course = args[0]
+        else:
+            return print('Invalid course or region.')
+
+        if '-' in args[1]:
+            try:
+                years = [str(x) for x in range(int(args[1].split('-')[0]), int(args[1].split('-')[1]) + 1)]
+            except ValueError:
+                return print('Invalid year, must be in range 1996-2018.')
+        else:
+            years = [args[1]]
+        if not validate_years(years):
+            return print('Invalid year, must be in range 1996-2018.')
+
+        if 'jumps' in args or 'jump' in args or '-j' in args:
+            code = 'jumps'
+        elif 'flat' in args or '-f' in args:
+            code = 'flat'
+        else:
+            return print('Invalid racing code. -f, flat or -j, jumps.')
+
+        if 'region' in locals():
+            tracks = [course[0] for course in get_courses(region)]
+            names = [get_course_name(track) for track in tracks]
+            scrape_target = region
+            print(f'Scraping {code} results from {scrape_target} in {args[1]}...')
+        else:
+            tracks = [course]
+            names = [get_course_name(course)]
+            scrape_target = course
+            print(f'Scraping {code} results from {get_course_name(scrape_target)} in {args[1]}...')
+
+        races = get_races(tracks, names, years, code, x_y())
+        scrape_races(races, get_course_name(scrape_target), args[1])
+
+    else:
+        show_options()
+
+
+def main():
+    if len(sys.argv) > 1:
+        sys.exit(show_options())
+
+    completions = Completer(["courses", "regions", "options", "help", "quit", "clear"])
+    readline.set_completer(completions.complete)
+    readline.parse_and_bind('tab: complete')
+
+    while True:
+        args =  input('[rpscrape]> ').lower().strip()
+        parse_args([arg.strip() for arg in args.split()])
+
 
 if __name__ == '__main__':
-        main()
+    main()
