@@ -177,7 +177,7 @@ def scrape_races(races, target, years):
 
     with open(f'../data/{target.lower()}-{years}.csv', 'w') as csv:
         csv.write(('"date","course","time","race_name","class","band","distance","going","pos","draw","btn","name",'
-            '"sp","age","weight","gear","jockey","trainer","or","ts","rpr","prize","comment"\n'))
+            '"sp","age","weight","gear","jockey","trainer","or","ts","rpr","prize","sire","dam","damsire","comment"\n'))
 
         for race in races:
             r = requests.get(race, headers={'User-Agent': 'Mozilla/5.0'})
@@ -246,6 +246,16 @@ def scrape_races(races, target, years):
             except IndexError:
                 going ='not found'
 
+            pedigree = doc.xpath("//a[@class='ui-profileLink ui-link ui-link_marked js-popupLink']/text()")
+            del pedigree[-3]
+
+            sires, dams, damsires = [], [], []
+
+            for i in range(0, len(pedigree) - 3, 3):
+                sires.append(pedigree[i].strip())
+                dams.append(pedigree[i + 1].strip())
+                damsires.append(pedigree[i + 2].strip().strip('()'))
+
             coms = doc.xpath("//tr[@class='rp-horseTable__commentRow ng-cloak']/td/text()")
             com = [x.strip().replace('  ', '').replace(',', ' -') for x in coms]
             possy = doc.xpath("//span[@data-test-selector='text-horsePosition']/text()")
@@ -289,10 +299,10 @@ def scrape_races(races, target, years):
                 else:
                     gear.append('')
 
-            for p, pr, dr, bt, n, s, j, tr, a, o, t, rp, w, g, c in \
-            zip(pos, prize, draw, btn, name, sp, jock, trainer, age, _or, ts, rpr, wgt, gear, com):
+            for p, pr, dr, bt, n, s, j, tr, a, o, t, rp, w, g, c, sire, dam, damsire in \
+            zip(pos, prize, draw, btn, name, sp, jock, trainer, age, _or, ts, rpr, wgt, gear, com, sires, dams, damsires):
                 csv.write((f'{date},{course_name},{r_time},{race},{race_class},{band},{dist},{going},'
-                            f'{p},{dr},{bt},{n},{s},{a},{w},{g},{tr},{j},{o},{t},{rp},{pr},{c}\n'))
+                            f'{p},{dr},{bt},{n},{s},{a},{w},{g},{tr},{j},{o},{t},{rp},{pr},{sire},{dam},{damsire},{c}\n'))
 
         print(f'\nFinished scraping. {target.lower()}-{years}.csv saved in rpscrape/data')
 

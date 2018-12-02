@@ -1,4 +1,4 @@
-# rpscrape - (BETA)
+# rpscrape
 
 Horse racing data has been hoarded by a few companies, enabling them to effectively extort the public for access to any worthwhile historical amount. Compared to other sports where historical data is easily and freely available to use and query as you please, racing data in most countries is far harder to come by and is often only available with subscriptions to expensive software.
 
@@ -20,7 +20,7 @@ If you don't have git installed you can download the folder [here](https://githu
 
 ## Usage
 
-You must have Python 3.6 or greater installed. You can download the latest Python release [here](https://www.python.org/downloads/)
+You must have Python 3.6 or greater installed. You can download the latest Python release [here](https://www.python.org/downloads/).
 
 Run the program from the scripts folder:
 ```
@@ -121,5 +121,3 @@ The next example shows a request for the last 20 years jump form at Ascot(code: 
 ```
 [rpscrape]> 2 1999-2018 jumps
 ```
-
-### Known Issues
