@@ -121,5 +121,3 @@ The next example shows a request for the last 20 years jump form at Ascot(code: 
 ```
 
 ### Known Issues
-
-* Region scrape: HTTP 403 Error when trying to scrape full regions causing all following requests to fail despite working when scraped individually.
