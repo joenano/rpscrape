@@ -178,11 +178,13 @@ def scrape_races(races, target, years):
     with open(f'../data/{target.lower()}-{years}.csv', 'w') as csv:
         csv.write(('"date","course","time","race_name","class","band","distance","going","pos","draw","btn","name",'
             '"sp","age","weight","gear","jockey","trainer","or","ts","rpr","prize","comment"\n'))
+
         for race in races:
             r = requests.get(race, headers={'User-Agent': 'Mozilla/5.0'})
             while r.status_code == 403:
                 time.sleep(5)
                 r = requests.get(race, headers={'User-Agent': 'Mozilla/5.0'})
+                
             doc = html.fromstring(r.content)
 
             course_name = race.split('/')[5]
@@ -352,7 +354,9 @@ def parse_args(args=sys.argv):
             print(f'Scraping {code} results from {get_course_name(scrape_target)} in {args[1]}...')
 
         races = get_races(tracks, names, years, code, x_y())
+        start = time.time()
         scrape_races(races, get_course_name(scrape_target), args[1])
+        print(time.time() - start)   
     else:
         show_options()
 

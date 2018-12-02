@@ -20,6 +20,8 @@ If you don't have git installed you can download the folder [here](https://githu
 
 ## Usage
 
+You must have Python 3.6 or greater installed. You can download the latest Python release [here](https://www.python.org/downloads/)
+
 Run the program from the scripts folder:
 ```
 ~$ cd rpscrape/scripts
