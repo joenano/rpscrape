@@ -36,10 +36,10 @@ Make scrape requests as shown below:
 
 ```
 regions              List all available region codes
-regions [search]     Search regions for a specific country code
+regions [search]     Search for specific country code
 
 courses              List all courses
-courses [search]     Search courses for specific course
+courses [search]     Search for specific course
 courses [region]     List courses in region - e.g courses ire
 ```
 

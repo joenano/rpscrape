@@ -5,6 +5,7 @@
 import os
 import sys
 import json
+import time
 import requests
 import readline
 from lxml import html
@@ -31,7 +32,7 @@ class Completer(object):
 def show_options(opt='help'):
     opts =  '\n'.join([
             '       regions              List all available region codes',
-            '       regions [search]     Search regions for a specific country code',
+            '       regions [search]     Search for specific country code',
             '',
             '       courses              List all courses',
             '       courses [search]     Search for specific course',
@@ -148,6 +149,7 @@ def validate_years(years):
         return False
 
 def get_races(tracks, names, years, code,  xy):
+    races = []
     for track, name in zip(tracks, names):
         for year in years:
             r = requests.get(f'{xy[0]}/{track}/{year}/{code}/all-races', headers={"User-Agent": "Mozilla/5.0"})
@@ -157,11 +159,12 @@ def get_races(tracks, names, years, code,  xy):
                     if results['data']['principleRaceResults'] == None:
                         print(f'No {code} race data for {get_course_name(track)} in {year}.')
                     for result in results['data']['principleRaceResults']:
-                        yield (f'{xy[1]}/{track}/{name}/{result["raceDatetime"][:10]}/{result["raceInstanceUid"]}')
+                        races.append(f'{xy[1]}/{track}/{name}/{result["raceDatetime"][:10]}/{result["raceInstanceUid"]}')
                 except:
                     pass
             else:
-                print(f'Unable too access races from {get_course_name(track)} in {year}')
+                print(f'Unable to access races from {get_course_name(track)} in {year}')
+    return races
                 
 
 def clean(data):
@@ -175,9 +178,11 @@ def scrape_races(races, target, years):
     with open(f'../data/{target.lower()}-{years}.csv', 'w') as csv:
         csv.write(('"date","course","time","race_name","class","band","distance","going","pos","draw","btn","name",'
             '"sp","age","weight","gear","jockey","trainer","or","ts","rpr","prize","comment"\n'))
-            
         for race in races:
             r = requests.get(race, headers={'User-Agent': 'Mozilla/5.0'})
+            while r.status_code == 403:
+                time.sleep(5)
+                r = requests.get(race, headers={'User-Agent': 'Mozilla/5.0'})
             doc = html.fromstring(r.content)
 
             course_name = race.split('/')[5]
@@ -186,9 +191,9 @@ def scrape_races(races, target, years):
             except IndexError:
                 date = 'not found'
             try:
-                time = doc.xpath("//span[@data-test-selector='text-raceTime']/text()")[0]
+                r_time = doc.xpath("//span[@data-test-selector='text-raceTime']/text()")[0]
             except IndexError:
-                time = 'not found'
+                r_time = 'not found'
 
             try:
                 race = doc.xpath("//h2[@class='rp-raceTimeCourseName__title']/text()")[0].strip().strip('\n').replace(',', ' ')
@@ -284,7 +289,7 @@ def scrape_races(races, target, years):
 
             for p, pr, dr, bt, n, s, j, tr, a, o, t, rp, w, g, c in \
             zip(pos, prize, draw, btn, name, sp, jock, trainer, age, _or, ts, rpr, wgt, gear, com):
-                csv.write((f'{date},{course_name},{time},{race},{race_class},{band},{dist},{going},'
+                csv.write((f'{date},{course_name},{r_time},{race},{race_class},{band},{dist},{going},'
                             f'{p},{dr},{bt},{n},{s},{a},{w},{g},{tr},{j},{o},{t},{rp},{pr},{c}\n'))
 
         print(f'\nFinished scraping. {target.lower()}-{years}.csv saved in rpscrape/data')
