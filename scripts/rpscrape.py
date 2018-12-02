@@ -5,11 +5,11 @@
 import os
 import sys
 import json
-import time
 import requests
 import readline
 from lxml import html
 from re import search
+from time import sleep
 
 
 class Completer(object):
@@ -182,9 +182,9 @@ def scrape_races(races, target, years):
         for race in races:
             r = requests.get(race, headers={'User-Agent': 'Mozilla/5.0'})
             while r.status_code == 403:
-                time.sleep(5)
+                sleep(5)
                 r = requests.get(race, headers={'User-Agent': 'Mozilla/5.0'})
-                
+
             doc = html.fromstring(r.content)
 
             course_name = race.split('/')[5]
@@ -354,9 +354,7 @@ def parse_args(args=sys.argv):
             print(f'Scraping {code} results from {get_course_name(scrape_target)} in {args[1]}...')
 
         races = get_races(tracks, names, years, code, x_y())
-        start = time.time()
         scrape_races(races, get_course_name(scrape_target), args[1])
-        print(time.time() - start)   
     else:
         show_options()
 
