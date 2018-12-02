@@ -6,7 +6,6 @@ import os
 import sys
 import json
 import requests
-import readline
 from lxml import html
 from re import search
 from time import sleep
@@ -373,9 +372,13 @@ def main():
     if len(sys.argv) > 1:
         sys.exit(show_options())
 
-    completions = Completer(["courses", "regions", "options", "help", "quit", "clear", "flat", "jumps"])
-    readline.set_completer(completions.complete)
-    readline.parse_and_bind('tab: complete')
+    try:
+        import readline
+        completions = Completer(["courses", "regions", "options", "help", "quit", "clear", "flat", "jumps"])
+        readline.set_completer(completions.complete)
+        readline.parse_and_bind('tab: complete')
+    except ModuleNotFoundError: # windows
+        pass
 
     while True:
         args =  input('[rpscrape]> ').lower().strip()

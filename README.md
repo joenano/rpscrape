@@ -45,7 +45,7 @@ courses [search]     Search for specific course
 courses [region]     List courses in region - e.g courses ire
 ```
 
-Tab complete is available for all options.
+Tab complete is available on Linux.
 
 The first option is that of a region or a course
 
