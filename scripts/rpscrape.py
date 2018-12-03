@@ -42,6 +42,7 @@ def show_options(opt='help'):
         print(
             '\n'.join([
             '  Usage:',
+            '       ~$ ./rpscrape.py'
             '       [rpscrape]> [region|course] [year|range] [flat|jumps]',
             '',
             '       Regions have alphabetic codes.',
