@@ -229,16 +229,16 @@ def scrape_races(races, target, years, code):
             try:
                 date = doc.xpath("//span[@data-test-selector='text-raceDate']/text()")[0]
             except IndexError:
-                date = 'not found'
+                date = ''
             try:
                 r_time = doc.xpath("//span[@data-test-selector='text-raceTime']/text()")[0]
             except IndexError:
-                r_time = 'not found'
+                r_time = ''
 
             try:
                 race = doc.xpath("//h2[@class='rp-raceTimeCourseName__title']/text()")[0].strip().strip('\n').replace(',', ' ').replace('"', '')
             except IndexError:
-                race = 'not found'
+                race = ''
 
             if '(Group' in race:
                 race_class = search('(Grou..)\w+', race).group(0)
@@ -253,12 +253,12 @@ def scrape_races(races, target, years, code):
                 try:
                     race_class = doc.xpath("//span[@class='rp-raceTimeCourseName_class']/text()")[0].strip().strip('()')
                 except:
-                    race_class = 'not found'
+                    race_class = ''
 
             try:
                 band = doc.xpath("//span[@class='rp-raceTimeCourseName_ratingBandAndAgesAllowed']/text()")[0].strip().strip('()')
             except:
-                band = 'not found'
+                band = ''
             if ',' in band:
                 split_band = band.split(',')
                 race_class = split_band[0]
@@ -276,13 +276,13 @@ def scrape_races(races, target, years, code):
             try:
                 distance = doc.xpath("//span[@class='rp-raceTimeCourseName_distance']/text()")[0].strip()
             except IndexError:
-                distance = 'not found'
+                distance = ''
             dist = ''.join([d.strip().replace('¼', '.25').replace('½', '.5').replace('¾', '.75') for d in distance])
 
             try:
                 going = doc.xpath("//span[@class='rp-raceTimeCourseName_condition']/text()")[0].strip()
             except IndexError:
-                going ='not found'
+                going =''
 
             pedigree = doc.xpath("//a[@class='ui-profileLink ui-link ui-link_marked js-popupLink']/text()")
             del pedigree[-3]
