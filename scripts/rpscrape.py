@@ -197,7 +197,7 @@ def scrape_races(races, target, years):
                 r_time = 'not found'
 
             try:
-                race = doc.xpath("//h2[@class='rp-raceTimeCourseName__title']/text()")[0].strip().strip('\n').replace(',', ' ')
+                race = doc.xpath("//h2[@class='rp-raceTimeCourseName__title']/text()")[0].strip().strip('\n').replace(',', ' ').replace('"', '')
             except IndexError:
                 race = 'not found'
 
@@ -277,7 +277,7 @@ def scrape_races(races, target, years):
             if len(btn) < len(pos):
                 btn.extend(['' for x in range(len(pos) - len(btn))])
             name = clean(doc.xpath("//a[@data-test-selector='link-horseName']/text()"))
-            sp = clean(doc.xpath("//span[@class='rp-horseTable__horse__price']/text()"))
+            sps = clean(doc.xpath("//span[@class='rp-horseTable__horse__price']/text()"))
             jock = clean(doc.xpath("//a[@data-test-selector='link-jockeyName']/text()"))
             del jock[::2]
             trainer = clean(doc.xpath("//a[@data-test-selector='link-trainerName']/text()"))
@@ -298,10 +298,10 @@ def scrape_races(races, target, years):
                 else:
                     gear.append('')
 
-            for p, pr, dr, bt, n, s, j, tr, a, o, t, rp, w, g, c, sire, dam, damsire in \
-            zip(pos, prize, draw, btn, name, sp, jock, trainer, age, _or, ts, rpr, wgt, gear, com, sires, dams, damsires):
+            for p, pr, dr, bt, n, sp, j, tr, a, o, t, rp, w, g, c, sire, dam, damsire in \
+            zip(pos, prize, draw, btn, name, sps, jock, trainer, age, _or, ts, rpr, wgt, gear, com, sires, dams, damsires):
                 csv.write((f'{date},{course_name},{r_time},{race},{race_class},{band},{dist},{going},'
-                            f'{p},{dr},{bt},{n},{s},{a},{w},{g},{tr},{j},{o},{t},{rp},{pr},{sire},{dam},{damsire},{c}\n'))
+                            f'{p},{dr},{bt},{n},{sp},{a},{w},{g},{tr},{j},{o},{t},{rp},{pr},{sire},{dam},{damsire},{c}\n'))
 
         print(f'\nFinished scraping. {target.lower()}-{years}.csv saved in rpscrape/data')
 

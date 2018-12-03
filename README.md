@@ -26,7 +26,6 @@ Run the program from the scripts folder:
 ```
 ~$ cd rpscrape/scripts
 ~$ ./rpscrape.py
-
 ```
 
 Make scrape requests as shown below:
