@@ -171,7 +171,7 @@ def calculate_times(win_time, dist_btn, going, code, course):
     times = []
     if code == 'flat':
         if 'Firm' in going or 'Standard' in going:
-            if 'southwell' in course:
+            if 'southwell' in course.lower():
                 lps_scale = 5
             else:
                 lps_scale = 6
@@ -184,7 +184,7 @@ def calculate_times(win_time, dist_btn, going, code, course):
             lps_scale = 5
     else:
         if 'Firm' in going or 'Standard' in going:
-            if 'southwell' in course:
+            if 'southwell' in course.lower():
                 lps_scale = 4
             else:
                 lps_scale = 5
@@ -195,6 +195,8 @@ def calculate_times(win_time, dist_btn, going, code, course):
                 lps_scale = 5
         elif 'Soft' in going or 'Heavy' in going:
             lps_scale = 4
+        elif 'Yielding' in going:
+            lps_scale 5.5
 
     for dist in dist_btn:
         try:
@@ -351,7 +353,7 @@ def scrape_races(races, target, years, code):
             for p, pr, dr, bt, n, sp, time, j, tr, a, o, t, rp, w, g, c, sire, dam, damsire in \
             zip(pos, prize, draw, btn, name, sps, times, jock, trainer, age, _or, ts, rpr, wgt, gear, com, sires, dams, damsires):
                 csv.write((f'{date},{course_name},{r_time},{race},{race_class},{band},{dist},{going},{p},{dr},{bt},{n},{sp},'
-                            f'{a},{w},{g},{time},{tr},{j},{o},{t},{rp},{pr},{sire},{dam},{damsire},{c}\n'))
+                            f'{a},{w},{g},{time},{j},{tr},{o},{t},{rp},{pr},{sire},{dam},{damsire},{c}\n'))
 
         print(f'\nFinished scraping. {target.lower()}-{years}_{code}.csv saved in rpscrape/data')
 
