@@ -176,11 +176,11 @@ def calculate_times(win_time, dist_btn, going, code, course):
             else:
                 lps_scale = 6
         elif 'Good' in going:
-            if 'Soft' in going:
+            if 'Soft' in going or 'Yielding'in going:
                 lps_scale = 5.5
             else:
                 lps_scale = 6
-        elif 'Soft' in going or 'Heavy' in going:
+        elif 'Soft' in going or 'Heavy' in going or 'Yielding' in going:
             lps_scale = 5
     else:
         if 'Firm' in going or 'Standard' in going:
@@ -189,15 +189,13 @@ def calculate_times(win_time, dist_btn, going, code, course):
             else:
                 lps_scale = 5
         elif 'Good' in going:
-            if 'Soft' in going:
+            if 'Soft' in going or 'Yielding'in going:
                 lps_scale = 4.5
             else:
                 lps_scale = 5
-        elif 'Soft' in going or 'Heavy' in going:
+        elif 'Soft' in going or 'Heavy' or 'Yielding' in going:
             lps_scale = 4
-        elif 'Yielding' in going:
-            lps_scale 5.5
-
+    
     for dist in dist_btn:
         try:
             time = (win_time + (float(dist) / lps_scale))
@@ -243,11 +241,13 @@ def scrape_races(races, target, years, code):
             except IndexError:
                 race = ''
 
-            if '(Group' in race:
-                race_class = search('(Grou..)\w+', race).group(0)
+            if '(Premier Handicap)' in race:
+                race_class = 'Class 2'
+            elif '(Group' in race:
+                race_class = search('(\(Grou..)\w+', race).group(0).strip('(')
                 race = race.replace(f'({race_class})', '')
             elif '(Grade' in race:
-                race_class = search('(Grad..)\w+', race).group(0)
+                race_class = search('(\(Grad..)\w+', race).group(0).strip('(')
                 race = race.replace(f'({race_class})', '') 
             elif '(Listed Race)' in race:
                 race_class = 'Listed'
@@ -258,6 +258,9 @@ def scrape_races(races, target, years, code):
                 except:
                     race_class = ''
 
+            if race_class == '' and 'Maiden' in race:
+                race_class = 'Class 4'
+
             try:
                 band = doc.xpath("//span[@class='rp-raceTimeCourseName_ratingBandAndAgesAllowed']/text()")[0].strip().strip('()')
             except:
@@ -266,15 +269,18 @@ def scrape_races(races, target, years, code):
                 split_band = band.split(',')
                 race_class = split_band[0]
                 band = split_band[1]
-            if '(Fillies & Mares)' in race:
+            if ('(Entire Colts & Fillies)') in race:
+                band = band + ' Colts & Fillies'
+                race = race.replace('(Entire Colts & Fillies)', '')
+            elif '(Fillies & Mares)' in race:
                 band = band + ' Fillies & Mares'
                 race = race.replace('(Fillies & Mares)', '')
             elif '(Fillies)' in race or 'Fillies' in race:
                 band = band + ' Fillies'
                 race = race.replace('(Fillies)', '')
-            elif '(Colts & Geldings)' in race:
+            elif '(Colts & Geldings)' in race or '(C & G)' in race:
                 band = band + ' Colts & Geldings'
-                race = race.replace('(Colts & Geldings)', '')
+                race = race.replace('(Colts & Geldings)', '').replace('(C & G)', '')
 
             try:
                 distance = doc.xpath("//span[@class='rp-raceTimeCourseName_distance']/text()")[0].strip()
@@ -303,7 +309,7 @@ def scrape_races(races, target, years, code):
             del possy[1::2]
             pos = [x.strip() for x in possy]
             prizes = doc.xpath("//div[@data-test-selector='text-prizeMoney']/text()")
-            prize = [p.strip().replace(",", '').replace("£", '') for p in prizes]
+            prize = [p.strip().replace(",", '') for p in prizes]
             try:
                 del prize[0]
                 for i in range(len(pos) - len(prize)):
