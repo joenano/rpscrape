@@ -110,9 +110,9 @@ def validate_course(course_id):
 
 
 def x_y():
-    import base64
-    return base64.b64decode('aHR0cHM6Ly93d3cucmFjaW5ncG9zdC5jb206NDQzL3Byb2ZpbGUvY291cnNlL2ZpbHRlci9yZXN1bHRz')\
-    .decode('utf-8'), base64.b64decode('aHR0cHM6Ly93d3cucmFjaW5ncG9zdC5jb20vcmVzdWx0cw==').decode('utf-8')
+    from base64 import b64decode
+    return b64decode('aHR0cHM6Ly93d3cucmFjaW5ncG9zdC5jb206NDQzL3Byb2ZpbGUvY291cnNlL2ZpbHRlci9yZXN1bHRz')\
+    .decode('utf-8'), b64decode('aHR0cHM6Ly93d3cucmFjaW5ncG9zdC5jb20vcmVzdWx0cw==').decode('utf-8')
 
 
 def get_regions():
@@ -158,8 +158,9 @@ def get_races(tracks, names, years, code,  xy):
                     results = r.json()
                     if results['data']['principleRaceResults'] == None:
                         print(f'No {code} race data for {get_course_name(track)} in {year}.')
-                    for result in results['data']['principleRaceResults']:
-                        races.append(f'{xy[1]}/{track}/{name}/{result["raceDatetime"][:10]}/{result["raceInstanceUid"]}')
+                    else:
+                        for result in results['data']['principleRaceResults']:
+                            races.append(f'{xy[1]}/{track}/{name}/{result["raceDatetime"][:10]}/{result["raceInstanceUid"]}')
                 except:
                     pass
             else:
