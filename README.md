@@ -120,3 +120,6 @@ The next example shows a request for the last 20 years jump form at Ascot(code: 
 ```
 [rpscrape]> 2 1999-2018 jumps
 ```
+
+### Feature Requests
+Feel free to post any ideas to improve or add more functionality in the issues and I will consider trying to implement them.
