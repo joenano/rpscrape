@@ -11,7 +11,7 @@ from re import search
 from time import sleep
 
 
-class Completer(object):
+class Completer:
 
     def __init__(self, options):
         self.options = sorted(options)
@@ -46,7 +46,7 @@ def show_options(opt='help'):
             '       [rpscrape]> [region|course] [year|range] [flat|jumps]',
             '',
             '       Regions have alphabetic codes.',
-            '       Courses have numeric codes.'
+            '       Courses have numeric codes.',
             '',
             '  Examples:',
             '       [rpscrape]> ire 1999 flat',
@@ -148,7 +148,7 @@ def validate_years(years):
     else:
         return False
 
-def get_races(tracks, names, years, code,  xy):
+def get_races(tracks, names, years, code, xy):
     races = []
     for track, name in zip(tracks, names):
         for year in years:
@@ -371,7 +371,7 @@ def parse_args(args=sys.argv):
             show_options(args[0])
         elif 'clear' in args:
             os.system('cls' if os.name == 'nt' else 'clear')
-        elif 'quit' in args or 'q' in args:
+        elif 'quit' in args or 'q' in args or 'exit' in args:
             sys.exit()
         elif 'regions' in args:
             print_regions()
@@ -433,7 +433,7 @@ def main():
 
     try:
         import readline
-        completions = Completer(["courses", "regions", "options", "help", "quit", "clear", "flat", "jumps"])
+        completions = Completer(["courses", "regions", "options", "help", "quit", "exit", "clear", "flat", "jumps"])
         readline.set_completer(completions.complete)
         readline.parse_and_bind('tab: complete')
     except ModuleNotFoundError: # windows
