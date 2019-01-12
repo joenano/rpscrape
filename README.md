@@ -16,7 +16,7 @@ The aim of this tool is to provide a way of gathering large amounts of historica
 ~$ git clone https://github.com/4A47/rpscrape.git
 ```
 
-If you don't have git installed you can download the folder [here](https://github.com/4A47/rpscrape/archive/master.zip).
+If you don't have git installed you can download the folder [here](https://github.com/4A47/rpscrape/releases/download/v1.0/rpscrape_v1.0.rar).
 
 ## Usage
 
@@ -120,3 +120,6 @@ The next example shows a request for the last 20 years jump form at Ascot(code: 
 ```
 [rpscrape]> 2 1999-2018 jumps
 ```
+
+### Feature Requests
+Feel free to post any ideas to improve or add more functionality in the issues and I will consider trying to implement them.
