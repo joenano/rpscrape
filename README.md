@@ -18,9 +18,17 @@ The aim of this tool is to provide a way of gathering large amounts of historica
 
 If you don't have git installed you can download the folder [here](https://github.com/4A47/rpscrape/releases/download/v1.0/rpscrape_v1.0.rar).
 
-## Usage
+## Requirements
 
 You must have Python 3.6 or greater installed. You can download the latest Python release [here](https://www.python.org/downloads/).
+
+In addition, the [Requests](http://docs.python-requests.org/en/master/) and [LXML](https://lxml.de/) python modules are needed, they can be installed using PIP(_included with Python_) using the following command.
+
+```
+~$ pip install requests lxml
+```
+
+## Usage
 
 Run the program from the scripts folder:
 ```
