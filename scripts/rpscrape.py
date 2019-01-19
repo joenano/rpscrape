@@ -148,6 +148,18 @@ def validate_years(years):
     else:
         return False
 
+
+def fraction_to_decimal(fractional_odds):
+	decimal_odds = []
+	for fraction in fractional_odds:
+		if(fraction.lower() == 'evens'):
+			decimal_odds.append('2.00')
+		else:
+			decimal_odds.append('{0:.2f}'.format(float(fraction.split('/')[0]) / float(fraction.split('/')[1]) + 1.00))
+
+	return decimal_odds
+
+
 def get_races(tracks, names, years, code, xy):
     races = []
     for track, name in zip(tracks, names):
@@ -216,7 +228,7 @@ def scrape_races(races, target, years, code):
         os.makedirs('../data')
 
     with open(f'../data/{target.lower()}-{years}_{code}.csv', 'w') as csv:
-        csv.write(('"date","course","time","race_name","class","band","distance","going","pos","draw","btn","name","sp",'
+        csv.write(('"date","course","time","race_name","class","band","distance","going","pos","draw","btn","name","sp","dec"'
             '"age","weight","gear","fin_time","jockey","trainer","or","ts","rpr","prize","sire","dam","damsire","comment"\n'))
 
         for race in races:
@@ -356,11 +368,12 @@ def scrape_races(races, target, years, code):
                 win_time = float(winning_time[0].strip('s'))
             
             times = calculate_times(win_time, btn, going, code, course_name)
+            dec = fraction_to_decimal([sp.strip('F').strip('J').strip('C') for sp in sps])
 
-            for p, pr, dr, bt, n, sp, time, j, tr, a, o, t, rp, w, g, c, sire, dam, damsire in \
-            zip(pos, prize, draw, btn, name, sps, times, jock, trainer, age, _or, ts, rpr, wgt, gear, com, sires, dams, damsires):
+            for p, pr, dr, bt, n, sp, dc, time, j, tr, a, o, t, rp, w, g, c, sire, dam, damsire in \
+            zip(pos, prize, draw, btn, name, sps, dec, times, jock, trainer, age, _or, ts, rpr, wgt, gear, com, sires, dams, damsires):
                 csv.write((f'{date},{course_name},{r_time},{race},{race_class},{band},{dist},{going},{p},{dr},{bt},{n},{sp},'
-                            f'{a},{w},{g},{time},{j},{tr},{o},{t},{rp},{pr},{sire},{dam},{damsire},{c}\n'))
+                            f'{dc},{a},{w},{g},{time},{j},{tr},{o},{t},{rp},{pr},{sire},{dam},{damsire},{c}\n'))
 
         print(f'\nFinished scraping. {target.lower()}-{years}_{code}.csv saved in rpscrape/data')
 
@@ -440,7 +453,7 @@ def main():
         pass
 
     while True:
-        args =  input('[rpscrape]> ').lower().strip()
+        args = input('[rpscrape]> ').lower().strip()
         parse_args([arg.strip() for arg in args.split()])
 
 
