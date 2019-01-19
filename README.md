@@ -36,9 +36,9 @@ Run the program from the scripts folder:
 ~$ ./rpscrape.py
 ```
 
-Make scrape requests as shown below:
+To scrape you must provide 3 options in the following format:
 ```
-[rpscrape]> [region|course] [year|range] [flat|jumps]
+[rpscrape]> [region|course] [year|range] [code]
 ```
 
 #### Options
@@ -52,11 +52,9 @@ courses [search]     Search for specific course
 courses [region]     List courses in region - e.g courses ire
 ```
 
-Tab complete is available on Linux.
+The first option can be either a region or a course.
 
-The first option is that of a region or a course
-
-Each region has a 2 or 3 letter code like ire for Ireland or gb for Great Britain. You can show the list of region codes with the following command:
+Each region has a 2 or 3 letter code like "ire" for Ireland or "gb" for Great Britain. You can show the list of region codes with the following command:
 ```
 [rpscrape]> regions
      CODE: mal | Malaysia
@@ -109,6 +107,8 @@ To list the courses from a specific region, add the region code like so:
      CODE: 179  | Downpatrick
      CODE: 181  | Dundalk
  ```
+
+Tab complete for options keywords is available on Linux.
 
 ### Examples
 
