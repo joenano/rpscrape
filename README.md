@@ -22,7 +22,7 @@ If you don't have git installed you can download the folder [here](https://githu
 
 You must have Python 3.6 or greater installed. You can download the latest Python release [here](https://www.python.org/downloads/).
 
-In addition, the [Requests](http://docs.python-requests.org/en/master/) and [LXML](https://lxml.de/) python modules are needed, they can be installed using PIP(_included with Python_) using the following command.
+In addition, the [Requests](http://docs.python-requests.org/en/master/) and [LXML](https://lxml.de/) python modules are needed, they can be installed using PIP(_included with Python_) with the following command.
 
 ```
 ~$ pip install requests lxml
