@@ -108,6 +108,11 @@ To list the courses from a specific region, add the region code like so:
      CODE: 181  | Dundalk
  ```
 
+The second option can be a year e.g "1999", or a range of years e.g "2005-2015".
+
+The final option is the racing code and can either be "flat" or "jumps".
+
+
 Tab complete for options keywords is available on Linux.
 
 ### Examples
