@@ -41,18 +41,7 @@ To scrape you must provide 3 options in the following format:
 [rpscrape]> [region|course] [year|range] [code]
 ```
 
-#### Options
-
-```
-regions              List all available region codes
-regions [search]     Search for specific country code
-
-courses              List all courses
-courses [search]     Search for specific course
-courses [region]     List courses in region - e.g courses ire
-```
-
-The first option can be either a region or a course.
+The first option can be either a region or a specific course.
 
 Each region has a 2 or 3 letter code like "ire" for Ireland or "gb" for Great Britain. You can show the list of region codes with the following command:
 ```
@@ -132,6 +121,21 @@ The next example shows a request for the last 2 years flat form in Great Britain
 The next example shows a request for the last 20 years jump form at Ascot(code: 2).
 ```
 [rpscrape]> 2 1999-2018 jumps
+```
+#### Options
+
+```
+regions              List all available region codes
+regions [search]     Search for specific region code
+
+courses              List all courses
+courses [search]     Search for specific course
+courses [region]     List courses in region - e.g courses ire
+
+help                Show help
+options             Show options
+cls, clear          Clear screen
+q, quit             Quit
 ```
 
 ### Feature Requests
