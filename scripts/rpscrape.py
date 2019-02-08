@@ -7,12 +7,11 @@ import sys
 import json
 import requests
 from lxml import html
-from re import search
 from time import sleep
+from re import search, sub
 
 
 class Completer:
-
     def __init__(self, options):
         self.options = sorted(options)
 
@@ -28,7 +27,7 @@ class Completer:
             return None
 
 
-def show_options(opt='help'):
+def options(opt='help'):
     opts =  '\n'.join([
             '       regions              List all available region codes',
             '       regions [search]     Search for specific country code',
@@ -67,46 +66,46 @@ def show_options(opt='help'):
         print(opts)
 
 
-def get_courses(region='all'):
-    with open(f'../courses/{region}_course_ids', 'r') as courses:
+def courses(code='all'):
+    with open(f'../courses/{code}_course_ids', 'r') as courses:
         for course in courses:
             yield (course.split('-')[0].strip(), ' '.join(course.split('-')[1::]).strip())
          
 
-def get_course_name(code):
+def course_name(code):
     if code.isalpha():
         return code
-    for course in get_courses():
+    for course in courses():
         if course[0] == code:
             return course[1].replace('()', '').replace(' ', '-')
 
 
 def course_search(term):
-    for course in get_courses():
+    for course in courses():
         if term.lower() in course[1].lower():
             print_course(course[0], course[1])
 
 
-def print_course(key, course):
-    if len(key) == 5:
-        print(f'     CODE: {key}| {course}')
-    elif len(key) == 4:
-        print(f'     CODE: {key} | {course}')
-    elif len(key) == 3:
-        print(f'     CODE: {key}  | {course}')
-    elif len(key) == 2:
-        print(f'     CODE: {key}   | {course}')
+def print_course(code, course):
+    if len(code) == 5:
+        print(f'     CODE: {code}| {course}')
+    elif len(code) == 4:
+        print(f'     CODE: {code} | {course}')
+    elif len(code) == 3:
+        print(f'     CODE: {code}  | {course}')
+    elif len(code) == 2:
+        print(f'     CODE: {code}   | {course}')
     else:
-        print(f'     CODE: {key}    | {course}')
+        print(f'     CODE: {code}    | {course}')
 
 
-def print_courses(region='all'):
-    for course in get_courses(region):
+def print_courses(code='all'):
+    for course in courses(code):
         print_course(course[0], course[1])
 
 
-def validate_course(course_id):
-    return course_id in [course[0] for course in get_courses()]
+def valid_course(code):
+    return code in [course[0] for course in courses()]
 
 
 def x_y():
@@ -115,49 +114,49 @@ def x_y():
     .decode('utf-8'), b64decode('aHR0cHM6Ly93d3cucmFjaW5ncG9zdC5jb20vcmVzdWx0cw==').decode('utf-8')
 
 
-def get_regions():
+def regions():
     with open('../courses/_countries', 'r') as regions:
         return json.load(regions)
 
 
 def region_search(term):
-    for key, region in get_regions().items():
+    for code, region in regions().items():
         if term.lower() in region.lower():
-            print_region(key, region)
+            print_region(code, region)
 
 
-def print_region(key, region):
-    if len(key) == 3:
-        print(f'     CODE: {key} | {region}')
+def print_region(code, region):
+    if len(code) == 3:
+        print(f'     CODE: {code} | {region}')
     else:
-        print(f'     CODE: {key}  | {region}')
+        print(f'     CODE: {code}  | {region}')
 
 
 def print_regions():
-    for key, region in get_regions().items():
-        print_region(key, region)
+    for code, region in regions().items():
+        print_region(code, region)
 
 
-def validate_region(region):
-    return region in get_regions().keys()
+def valid_region(code):
+    return code in regions().keys()
 
 
-def validate_years(years):
+def valid_years(years):
     if years:
         return all(year.isdigit() and int(year) > 1995 and int(year) < 2019 for year in years)
     else:
         return False
 
 
-def fraction_to_decimal(fractional_odds):
-	decimal_odds = []
-	for fraction in fractional_odds:
-		if(fraction.lower() == 'evens'):
-			decimal_odds.append('2.00')
-		else:
-			decimal_odds.append('{0:.2f}'.format(float(fraction.split('/')[0]) / float(fraction.split('/')[1]) + 1.00))
+def fraction_to_decimal(fractions):
+    decimal = []
+    for fraction in fractions:
+        if(fraction.lower() == 'evens'):
+            decimal.append('2.00')
+        else:
+            decimal.append('{0:.2f}'.format(float(fraction.split('/')[0]) / float(fraction.split('/')[1]) + 1.00))
 
-	return decimal_odds
+    return decimal
 
 
 def get_races(tracks, names, years, code, xy):
@@ -169,14 +168,14 @@ def get_races(tracks, names, years, code, xy):
                 try:
                     results = r.json()
                     if results['data']['principleRaceResults'] == None:
-                        print(f'No {code} race data for {get_course_name(track)} in {year}.')
+                        print(f'No {code} race data for {course_name(track)} in {year}.')
                     else:
                         for result in results['data']['principleRaceResults']:
                             races.append(f'{xy[1]}/{track}/{name}/{result["raceDatetime"][:10]}/{result["raceInstanceUid"]}')
                 except:
                     pass
             else:
-                print(f'Unable to access races from {get_course_name(track)} in {year}')
+                print(f'Unable to access races from {course_name(track)} in {year}')
     return races
 
 
@@ -227,7 +226,7 @@ def scrape_races(races, target, years, code):
     if not os.path.exists('../data'):
         os.makedirs('../data')
 
-    with open(f'../data/{target.lower()}-{years}_{code}.csv', 'w') as csv:
+    with open(f'../data/{target.lower()}-{years}_{code}.csv', 'w', encoding="utf-8") as csv:
         csv.write(('"date","course","time","race_name","class","band","distance","going","pos","draw","btn","name","sp","dec"'
             '"age","weight","gear","fin_time","jockey","trainer","or","ts","rpr","prize","sire","dam","damsire","comment"\n'))
 
@@ -250,7 +249,8 @@ def scrape_races(races, target, years, code):
                 r_time = ''
 
             try:
-                race = doc.xpath("//h2[@class='rp-raceTimeCourseName__title']/text()")[0].strip().strip('\n').replace(',', ' ').replace('"', '')
+                race = doc.xpath("//h2[@class='rp-raceTimeCourseName__title']/text()")[0].strip().strip('\n')\
+                    .replace(',', ' ').replace('"', '').replace('\x80', '')
             except IndexError:
                 race = ''
 
@@ -351,7 +351,7 @@ def scrape_races(races, target, years, code):
             rpr = clean(doc.xpath("//td[@data-ending='RPR']/text()"))
             st = doc.xpath("//span[@data-ending='st']/text()")
             lb = doc.xpath("//span[@data-ending='lb']/text()")
-            wgt = [a.strip() +'-' + b.strip() for a, b in zip(st, lb)]
+            wgt = [a.strip() + '-' + b.strip() for a, b in zip(st, lb)]
             headgear = doc.xpath("//td[contains(@class, 'rp-horseTable__wgt')]")
             gear = []
             for h in headgear:
@@ -381,7 +381,7 @@ def scrape_races(races, target, years, code):
 def parse_args(args=sys.argv):
     if len(args) == 1:
         if 'help' in args or 'options' in args:
-            show_options(args[0])
+            options(args[0])
         elif 'clear' in args:
             os.system('cls' if os.name == 'nt' else 'clear')
         elif 'quit' in args or 'q' in args or 'exit' in args:
@@ -394,14 +394,14 @@ def parse_args(args=sys.argv):
         if args[0] == 'regions':
             region_search(args[1])
         elif args[0] == 'courses':
-            if validate_region(args[1]):
+            if valid_region(args[1]):
                 print_courses(args[1])
             else:
                 course_search(args[1])
     elif len(args) == 3:
-        if validate_region(args[0]):
+        if valid_region(args[0]):
             region = args[0]
-        elif validate_course(args[0]):
+        elif valid_course(args[0]):
             course = args[0]
         else:
             return print('Invalid course or region.')
@@ -413,7 +413,7 @@ def parse_args(args=sys.argv):
                 return print('Invalid year, must be in range 1996-2018.')
         else:
             years = [args[1]]
-        if not validate_years(years):
+        if not valid_years(years):
             return print('Invalid year, must be in range 1996-2018.')
 
         if 'jumps' in args or 'jump' in args or '-j' in args:
@@ -424,32 +424,32 @@ def parse_args(args=sys.argv):
             return print('Invalid racing code. -f, flat or -j, jumps.')
 
         if 'region' in locals():
-            tracks = [course[0] for course in get_courses(region)]
-            names = [get_course_name(track) for track in tracks]
+            tracks = [course[0] for course in courses(region)]
+            names = [course_name(track) for track in tracks]
             scrape_target = region
             print(f'Scraping {code} results from {scrape_target} in {args[1]}...')
         else:
             tracks = [course]
-            names = [get_course_name(course)]
+            names = [course_name(course)]
             scrape_target = course
-            print(f'Scraping {code} results from {get_course_name(scrape_target)} in {args[1]}...')
+            print(f'Scraping {code} results from {course_name(scrape_target)} in {args[1]}...')
 
         races = get_races(tracks, names, years, code, x_y())
-        scrape_races(races, get_course_name(scrape_target), args[1], code)
+        scrape_races(races, course_name(scrape_target), args[1], code)
     else:
-        show_options()
+        options()
 
 
 def main():
     if len(sys.argv) > 1:
-        sys.exit(show_options())
+        sys.exit(options())
 
     try:
         import readline
         completions = Completer(["courses", "regions", "options", "help", "quit", "exit", "clear", "flat", "jumps"])
         readline.set_completer(completions.complete)
         readline.parse_and_bind('tab: complete')
-    except ModuleNotFoundError: # windows
+    except ModuleNotFoundError:  # windows
         pass
 
     while True:
