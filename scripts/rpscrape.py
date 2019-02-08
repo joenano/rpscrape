@@ -7,8 +7,8 @@ import sys
 import json
 import requests
 from lxml import html
+from re import search
 from time import sleep
-from re import search, sub
 
 
 class Completer:
@@ -228,7 +228,7 @@ def scrape_races(races, target, years, code):
 
     with open(f'../data/{target.lower()}-{years}_{code}.csv', 'w', encoding="utf-8") as csv:
         csv.write(('"date","course","time","race_name","class","band","distance","going","pos","draw","btn","name","sp","dec"'
-            '"age","weight","gear","fin_time","jockey","trainer","or","ts","rpr","prize","sire","dam","damsire","comment"\n'))
+            '"age","weight","lbs","gear","fin_time","jockey","trainer","or","ts","rpr","prize","sire","dam","damsire","comment"\n'))
 
         for race in races:
             r = requests.get(race, headers={'User-Agent': 'Mozilla/5.0'})
@@ -352,6 +352,7 @@ def scrape_races(races, target, years, code):
             st = doc.xpath("//span[@data-ending='st']/text()")
             lb = doc.xpath("//span[@data-ending='lb']/text()")
             wgt = [a.strip() + '-' + b.strip() for a, b in zip(st, lb)]
+            lbs = [int(a.strip()) * 14 + int(b.strip()) for a, b in zip(st, lb)]
             headgear = doc.xpath("//td[contains(@class, 'rp-horseTable__wgt')]")
             gear = []
             for h in headgear:
@@ -370,10 +371,10 @@ def scrape_races(races, target, years, code):
             times = calculate_times(win_time, btn, going, code, course_name)
             dec = fraction_to_decimal([sp.strip('F').strip('J').strip('C') for sp in sps])
 
-            for p, pr, dr, bt, n, sp, dc, time, j, tr, a, o, t, rp, w, g, c, sire, dam, damsire in \
-            zip(pos, prize, draw, btn, name, sps, dec, times, jock, trainer, age, _or, ts, rpr, wgt, gear, com, sires, dams, damsires):
+            for p, pr, dr, bt, n, sp, dc, time, j, tr, a, o, t, rp, w, l, g, c, sire, dam, damsire in \
+            zip(pos, prize, draw, btn, name, sps, dec, times, jock, trainer, age, _or, ts, rpr, wgt, lbs, gear, com, sires, dams, damsires):
                 csv.write((f'{date},{course_name},{r_time},{race},{race_class},{band},{dist},{going},{p},{dr},{bt},{n},{sp},'
-                            f'{dc},{a},{w},{g},{time},{j},{tr},{o},{t},{rp},{pr},{sire},{dam},{damsire},{c}\n'))
+                            f'{dc},{a},{w},{l},{g},{time},{j},{tr},{o},{t},{rp},{pr},{sire},{dam},{damsire},{c}\n'))
 
         print(f'\nFinished scraping. {target.lower()}-{years}_{code}.csv saved in rpscrape/data')
 
