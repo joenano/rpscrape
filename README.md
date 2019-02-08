@@ -36,6 +36,12 @@ Run the program from the scripts folder:
 ~$ ./rpscrape.py
 ```
 
+on Windows:
+```
+> cd rpscrape/scripts
+> python rpscrape.py
+```
+
 To scrape you must provide 3 options in the following format:
 ```
 [rpscrape]> [region|course] [year|range] [code]
