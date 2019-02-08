@@ -56,10 +56,10 @@ def options(opt='help'):
             '{}'.format(opts),
             '',
             '  More info:',
-            '       help           Show help',
-            '       options        Show options',
-            '       cls, clear     Clear screen',
-            '       q, quit        Quit',
+            '       help            Show help',
+            '       options         Show options',
+            '       cls, clear      Clear screen',
+            '       q, quit, exit   Quit',
             ''
         ]))
     else:

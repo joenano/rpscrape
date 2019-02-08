@@ -63,7 +63,7 @@ Each region has a 2 or 3 letter code like "ire" for Ireland or "gb" for Great Br
      CODE: uae | United Arab Emirates
 ```
 
-The other possibility for the first option is that of a specific course. To view the course codes, use the courses option as shown in the following example.
+The other possibility for the first option is that of a specific course. Courses codes are numeric and up to 4 digits long. To view the course codes, use the courses option as shown in the following example.
 
 ```
 [rpscrape]> courses
@@ -108,8 +108,6 @@ The second option can be a year e.g "1999", or a range of years e.g "2005-2015".
 The final option is the racing code and can either be "flat" or "jumps".
 
 
-Tab complete for options keywords is available on Linux.
-
 ### Examples
 
 The following example shows a request for flat races from Ireland in 2017.
@@ -141,8 +139,11 @@ courses [region]     List courses in region - e.g courses ire
 help                Show help
 options             Show options
 cls, clear          Clear screen
-q, quit             Quit
+q, quit, exit       Quit
 ```
+
+Tab complete for option keywords is available on Linux.
+
 
 ### Feature Requests
 Feel free to post any ideas to improve or add more functionality in the issues and I will consider trying to implement them.
