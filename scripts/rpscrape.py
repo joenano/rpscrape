@@ -182,7 +182,7 @@ def get_races(tracks, names, years, code, xy):
 def calculate_times(win_time, dist_btn, going, code, course):
     times = []
     if code == 'flat':
-        if 'Firm' in going or 'Standard' in going:
+        if 'Firm' in going or 'Standard' in going or 'Fast' in going:
             if 'southwell' in course.lower():
                 lps_scale = 5
             else:
@@ -227,7 +227,7 @@ def scrape_races(races, target, years, code):
         os.makedirs('../data')
 
     with open(f'../data/{target.lower()}-{years}_{code}.csv', 'w', encoding="utf-8") as csv:
-        csv.write(('"date","course","time","race_name","class","band","distance","going","pos","draw","btn","name","sp","dec",'
+        csv.write(('"date","course","time","race_name","class","band","dist(f)","dist(m)","going","pos","draw","btn","name","sp","dec",'
             '"age","weight","lbs","gear","fin_time","jockey","trainer","or","ts","rpr","prize","sire","dam","damsire","comment"\n'))
 
         for race in races:
@@ -301,6 +301,16 @@ def scrape_races(races, target, years, code):
                 distance = ''
             dist = ''.join([d.strip().replace('¼', '.25').replace('½', '.5').replace('¾', '.75') for d in distance])
 
+            if 'm' in dist:
+                if len(dist) > 2:
+                    dist = int(dist.split('m')[0]) * 8 + float(dist.split('m')[1].strip('f'))
+                else:
+                    dist = int(dist.split('m')[0]) * 8
+            else:
+                dist = dist.strip('f')
+
+            metres = round(float(dist) * 200)
+
             try:
                 going = doc.xpath("//span[@class='rp-raceTimeCourseName_condition']/text()")[0].strip()
             except IndexError:
@@ -373,7 +383,7 @@ def scrape_races(races, target, years, code):
 
             for p, pr, dr, bt, n, sp, dc, time, j, tr, a, o, t, rp, w, l, g, c, sire, dam, damsire in \
             zip(pos, prize, draw, btn, name, sps, dec, times, jock, trainer, age, _or, ts, rpr, wgt, lbs, gear, com, sires, dams, damsires):
-                csv.write((f'{date},{course_name},{r_time},{race},{race_class},{band},{dist},{going},{p},{dr},{bt},{n},{sp},'
+                csv.write((f'{date},{course_name},{r_time},{race},{race_class},{band},{dist},{metres},{going},{p},{dr},{bt},{n},{sp},'
                             f'{dc},{a},{w},{l},{g},{time},{j},{tr},{o},{t},{rp},{pr},{sire},{dam},{damsire},{c}\n'))
 
         print(f'\nFinished scraping. {target.lower()}-{years}_{code}.csv saved in rpscrape/data')
