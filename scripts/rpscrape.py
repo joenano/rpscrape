@@ -151,7 +151,7 @@ def valid_years(years):
 def fraction_to_decimal(fractions):
     decimal = []
     for fraction in fractions:
-        if(fraction.lower() == 'evens'):
+        if(fraction.lower() == 'evens' or fraction.lower() == 'evs'):
             decimal.append('2.00')
         else:
             decimal.append('{0:.2f}'.format(float(fraction.split('/')[0]) / float(fraction.split('/')[1]) + 1.00))
@@ -227,7 +227,7 @@ def scrape_races(races, target, years, code):
         os.makedirs('../data')
 
     with open(f'../data/{target.lower()}-{years}_{code}.csv', 'w', encoding="utf-8") as csv:
-        csv.write(('"date","course","time","race_name","class","band","distance","going","pos","draw","btn","name","sp","dec"'
+        csv.write(('"date","course","time","race_name","class","band","distance","going","pos","draw","btn","name","sp","dec",'
             '"age","weight","lbs","gear","fin_time","jockey","trainer","or","ts","rpr","prize","sire","dam","damsire","comment"\n'))
 
         for race in races:
@@ -369,7 +369,7 @@ def scrape_races(races, target, years, code):
                 win_time = float(winning_time[0].strip('s'))
             
             times = calculate_times(win_time, btn, going, code, course_name)
-            dec = fraction_to_decimal([sp.strip('F').strip('J').strip('C') for sp in sps])
+            dec = fraction_to_decimal([sp.strip('F').strip('J').strip('C').strip() for sp in sps])
 
             for p, pr, dr, bt, n, sp, dc, time, j, tr, a, o, t, rp, w, l, g, c, sire, dam, damsire in \
             zip(pos, prize, draw, btn, name, sps, dec, times, jock, trainer, age, _or, ts, rpr, wgt, lbs, gear, com, sires, dams, damsires):
