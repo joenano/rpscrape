@@ -143,7 +143,7 @@ def valid_region(code):
 
 def valid_years(years):
     if years:
-        return all(year.isdigit() and int(year) > 1995 and int(year) < 2019 for year in years)
+        return all(year.isdigit() and int(year) > 1995 and int(year) < 2020 for year in years)
     else:
         return False
 
