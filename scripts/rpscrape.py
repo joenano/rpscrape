@@ -8,7 +8,7 @@ import json
 import requests
 from lxml import html
 from re import search
-from time import sleep
+from time import sleep, strptime
 
 
 class Completer:
@@ -159,6 +159,18 @@ def fraction_to_decimal(fractions):
     return decimal
 
 
+def convert_date(date):
+    dmy = date.split()
+    mon = strptime(dmy[1],'%b').tm_mon
+    
+    if mon < 10:
+        mon = str(0) + str(mon)
+
+    new_date = dmy[2] + '-' + str(mon) + '-' + dmy[0]
+
+    return new_date
+
+
 def get_races(tracks, names, years, code, xy):
     races = []
     for track, name in zip(tracks, names):
@@ -240,7 +252,8 @@ def scrape_races(races, target, years, code):
 
             course_name = race.split('/')[5]
             try:
-                date = doc.xpath("//span[@data-test-selector='text-raceDate']/text()")[0]
+                _date = doc.xpath("//span[@data-test-selector='text-raceDate']/text()")[0]
+                date = convert_date(_date)
             except IndexError:
                 date = ''
             try:
@@ -258,13 +271,16 @@ def scrape_races(races, target, years, code):
                 race_class = 'Class 2'
             elif '(Group' in race:
                 race_class = search('(\(Grou..)\w+', race).group(0).strip('(')
-                race = race.replace(f'({race_class})', '')
+                race = race.replace(f' ({race_class})', '')
             elif '(Grade' in race:
                 race_class = search('(\(Grad..)\w+', race).group(0).strip('(')
-                race = race.replace(f'({race_class})', '') 
+                race = race.replace(f' ({race_class})', '')
+            elif 'Grade' in race:
+                race_class = search('Grad..\w+', race).group(0)
+                race = race.replace(f' {race_class}', '')  
             elif '(Listed Race)' in race:
                 race_class = 'Listed'
-                race = race.replace('(Listed Race)', '')
+                race = race.replace(' (Listed Race)', '')
             else:
                 try:
                     race_class = doc.xpath("//span[@class='rp-raceTimeCourseName_class']/text()")[0].strip().strip('()')
@@ -383,7 +399,7 @@ def scrape_races(races, target, years, code):
 
             for p, pr, dr, bt, n, sp, dc, time, j, tr, a, o, t, rp, w, l, g, c, sire, dam, damsire in \
             zip(pos, prize, draw, btn, name, sps, dec, times, jock, trainer, age, _or, ts, rpr, wgt, lbs, gear, com, sires, dams, damsires):
-                csv.write((f'{date},{course_name},{r_time},{race},{race_class},{band},{dist},{metres},{going},{p},{dr},{bt},{n},{sp},'
+                csv.write((f'{date},{course_name},{r_time},{race},{race_class},{band.strip()},{dist},{metres},{going},{p},{dr},{bt},{n},{sp},'
                             f'{dc},{a},{w},{l},{g},{time},{j},{tr},{o},{t},{rp},{pr},{sire},{dam},{damsire},{c}\n'))
 
         print(f'\nFinished scraping. {target.lower()}-{years}_{code}.csv saved in rpscrape/data')
