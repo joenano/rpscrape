@@ -151,7 +151,9 @@ def valid_years(years):
 def fraction_to_decimal(fractions):
     decimal = []
     for fraction in fractions:
-        if fraction.lower() == 'evens' or fraction.lower() == 'evs' or fraction.lower() == 'evensf':
+        if fraction == '':
+            decimal.append('')
+        elif 'evens' in fraction.lower() or fraction.lower() == 'evs':
             decimal.append('2.00')
         else:
             decimal.append('{0:.2f}'.format(float(fraction.split('/')[0]) / float(fraction.split('/')[1]) + 1.00))
@@ -483,6 +485,7 @@ def scrape_races(races, target, years, code):
                 win_time = float(winning_time[0].strip('s'))
             
             times = calculate_times(win_time, btn, going, code, course_name)
+            
             dec = fraction_to_decimal([sp.strip('F').strip('J').strip('C').strip() for sp in sps])
 
             for p, pr, dr, bt, n, sp, dc, time, j, tr, a, o, t, rp, w, l, g, c, sire, dam, damsire in \
