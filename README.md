@@ -16,7 +16,7 @@ The aim of this tool is to provide a way of gathering large amounts of historica
 ~$ git clone https://github.com/4A47/rpscrape.git
 ```
 
-If you don't have git installed you can download the folder [here](https://github.com/4A47/rpscrape/releases/download/v1.0/rpscrape_v1.0.rar).
+If you don't have git installed you can download the folder [here](https://github.com/4A47/rpscrape/archive/master.zip).
 
 ## Requirements
 
