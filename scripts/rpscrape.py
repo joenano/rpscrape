@@ -255,7 +255,7 @@ def race_info(race, race_class):
         r_class = 'Listed'
         r_name = r_name.replace(' (Listed Race)', '').replace('(Listed)', '')
         return r_name, r_class
-    elif 'Maiden' in race:
+    elif 'Maiden' in race and race_class == '':
         r_class = 'Class 5'
         return r_name, r_class
 
@@ -284,7 +284,7 @@ def band_info(band, race, race_class):
         info = info + ' C & G'
         r_name = r_name.replace('(Colts & Geldings)', '').replace('(C & G)', '')
     elif 'Mares' in race:
-        info = info + ' Mares'
+        info = info + ' M'
 
     return info, r_name, r_class
 
