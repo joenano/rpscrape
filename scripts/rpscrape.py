@@ -174,6 +174,37 @@ def convert_date(date):
     return new_date
 
 
+def pedigree_info(pedigrees):
+    sires, dams, damsires = [], [], []
+
+    for p in pedigrees:
+        ped_info = p.findall('a')
+
+        sire = ped_info[0].text.strip()
+        sire_nat = ped_info[0].tail.strip()
+        if sire_nat != '-':
+            sire = sire + sire_nat.replace('-', '').strip()
+        else:
+            sire = sire + '(GB)'
+        sires.append(sire)
+
+        dam = ped_info[1].text.strip()
+        dam_nat = p.find('span').text
+        if dam_nat is not None:
+            dam = dam + dam_nat.strip()
+        else:
+            dam = dam + '(GB)'
+        dams.append(dam)
+
+        if len(ped_info) > 2:
+            damsire = ped_info[2].text.strip().strip('()')
+            damsires.append(damsire)
+        else:
+            damsires.append('')
+
+    return sires, dams, damsires
+
+
 def get_races(tracks, names, years, code, xy):
     races = []
     for track, name in zip(tracks, names):
@@ -321,8 +352,6 @@ def scrape_races(races, target, years, code):
                 band = band + ' Colts & Geldings'
                 race = race.replace('(Colts & Geldings)', '').replace('(C & G)', '')
             
-
-
             try:
                 distance = doc.xpath("//span[@class='rp-raceTimeCourseName_distance']/text()")[0].strip()
             except IndexError:
@@ -345,17 +374,7 @@ def scrape_races(races, target, years, code):
                 going =''
 
             pedigrees = doc.xpath("//tr[@data-test-selector='block-pedigreeInfoFullResults']/td")
-
-            sires, dams, damsires = [], [], []
-
-            for p in pedigrees:
-                ped_info = p.findall('a')
-                sires.append(ped_info[0].text.strip())
-                dams.append(ped_info[1].text.strip())
-                if len(ped_info) > 2:
-                    damsires.append(ped_info[2].text.strip().strip('()'))
-                else:
-                    damsires.append('')
+            sires, dams, damsires = pedigree_info(pedigrees)
 
             coms = doc.xpath("//tr[@class='rp-horseTable__commentRow ng-cloak']/td/text()")
             com = [x.strip().replace('  ', '').replace(',', ' -') for x in coms]
