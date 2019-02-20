@@ -166,6 +166,9 @@ def convert_date(date):
     if mon < 10:
         mon = str(0) + str(mon)
 
+    if int(dmy[0]) < 10:
+        dmy[0] = str(0) + str(dmy[0])
+
     new_date = dmy[2] + '-' + str(mon) + '-' + dmy[0]
 
     return new_date
@@ -289,6 +292,13 @@ def scrape_races(races, target, years, code):
 
             if race_class == '' and 'Maiden' in race:
                 race_class = 'Class 4'
+                
+            if ' Class A' in race:
+                race = race.replace(' Class A', '')
+            elif ' Class B' in race:
+                race = race.replace(' Class B', '')
+            elif ' Class C' in race:
+                race = race.replace(' Class C', '')
 
             try:
                 band = doc.xpath("//span[@class='rp-raceTimeCourseName_ratingBandAndAgesAllowed']/text()")[0].strip().strip('()')
@@ -310,6 +320,8 @@ def scrape_races(races, target, years, code):
             elif '(Colts & Geldings)' in race or '(C & G)' in race:
                 band = band + ' Colts & Geldings'
                 race = race.replace('(Colts & Geldings)', '').replace('(C & G)', '')
+            
+
 
             try:
                 distance = doc.xpath("//span[@class='rp-raceTimeCourseName_distance']/text()")[0].strip()
@@ -332,15 +344,18 @@ def scrape_races(races, target, years, code):
             except IndexError:
                 going =''
 
-            pedigree = doc.xpath("//a[@class='ui-profileLink ui-link ui-link_marked js-popupLink']/text()")
-            del pedigree[-3]
+            pedigrees = doc.xpath("//tr[@data-test-selector='block-pedigreeInfoFullResults']/td")
 
             sires, dams, damsires = [], [], []
 
-            for i in range(0, len(pedigree) - 3, 3):
-                sires.append(pedigree[i].strip())
-                dams.append(pedigree[i + 1].strip())
-                damsires.append(pedigree[i + 2].strip().strip('()'))
+            for p in pedigrees:
+                ped_info = p.findall('a')
+                sires.append(ped_info[0].text.strip())
+                dams.append(ped_info[1].text.strip())
+                if len(ped_info) > 2:
+                    damsires.append(ped_info[2].text.strip().strip('()'))
+                else:
+                    damsires.append('')
 
             coms = doc.xpath("//tr[@class='rp-horseTable__commentRow ng-cloak']/td/text()")
             com = [x.strip().replace('  ', '').replace(',', ' -') for x in coms]
