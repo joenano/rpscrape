@@ -238,25 +238,28 @@ def race_info(race, race_class):
 
     if '(Premier Handicap)' in race:
         r_class = 'Class 2'
+        return r_name, r_class
     elif '(Group' in race:
         r_class = search('(\(Grou..)\w+', race).group(0).strip('(')
         r_name = r_name.replace(f' ({r_class})', '')
+        return r_name, r_class
     elif '(Grade' in race:
         r_class = search('(\(Grad..)\w+', race).group(0).strip('(')
         r_name = r_name.replace(f' ({r_class})', '')
+        return r_name, r_class
     elif 'Grade' in race:
         r_class = search('Grad..\w+', race).group(0)
-        r_name = r_name.replace(f' {r_class}', '')  
+        r_name = r_name.replace(f' {r_class}', '')
+        return r_name, r_class 
     elif '(Listed' in race:
         r_class = 'Listed'
         r_name = r_name.replace(' (Listed Race)', '').replace('(Listed)', '')
-    elif 'Maiden' in race:
-        race_class = 'Class 5'
-
-    if race_class == '':
         return r_name, r_class
-    else:
-        return r_name, race_class
+    elif 'Maiden' in race:
+        r_class = 'Class 5'
+        return r_name, r_class
+
+    return r_name, race_class
 
 
 def band_info(band, race, race_class):
