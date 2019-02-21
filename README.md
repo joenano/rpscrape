@@ -126,6 +126,13 @@ The next example shows a request for the last 20 years jump form at Ascot(code: 
 ```
 [rpscrape]> 2 1999-2018 jumps
 ```
+Note: When scraping jumps data the year you enter is when the season started, i.e to get 2019 Cheltenham Festival data, you would use the year 2018.
+```
+[rpscrape]> 11 2018 jumps
+```
+In the above example, Cheltenham races from the season 2018-2019 are scraped, the 2018 Greatwood and the 2019 festival will be included but not the 2018 festival.
+
+
 #### Options
 
 ```
