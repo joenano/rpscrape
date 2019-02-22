@@ -2,12 +2,12 @@
 #
 # Scrapes results and saves them in csv format
 
-import os
-import sys
 import json
-import requests
 from lxml import html
+import os
 from re import search
+import requests
+import sys
 from time import sleep, strptime
 
 
@@ -526,22 +526,26 @@ def parse_args(args=sys.argv):
         else:
             return print('Invalid course or region.')
 
-        if '-' in args[1]:
-            try:
-                years = [str(x) for x in range(int(args[1].split('-')[0]), int(args[1].split('-')[1]) + 1)]
-            except ValueError:
-                return print('Invalid year, must be in range 1996-2018.')
-        else:
-            years = [args[1]]
-        if not valid_years(years):
-            return print('Invalid year, must be in range 1996-2018.')
-
         if 'jumps' in args or 'jump' in args or '-j' in args:
             code = 'jumps'
         elif 'flat' in args or '-f' in args:
             code = 'flat'
         else:
             return print('Invalid racing code. -f, flat or -j, jumps.')
+
+        if '-' in args[1]:
+            try:
+                years = [str(x) for x in range(int(args[1].split('-')[0]), int(args[1].split('-')[1]) + 1)]
+            except ValueError:
+                return print('\nINVALID YEAR: must be in range 1996-2018.\n')
+        else:
+            years = [args[1]]
+        if not valid_years(years):
+            return print('\nINVALID YEAR: must be in range 1996-2019 for flat and 1996-2018 for jumps.\n')
+
+        if code == 'jumps':
+            if int(years[-1]) > 2018:
+                return print('\nINVALID YEAR: the latest jump season started in 2018.\n')
 
         if 'region' in locals():
             tracks = [course[0] for course in courses(region)]
