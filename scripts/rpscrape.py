@@ -151,7 +151,7 @@ def valid_years(years):
 def fraction_to_decimal(fractions):
     decimal = []
     for fraction in fractions:
-        if fraction == '':
+        if fraction == '' or fraction == 'No Odds':
             decimal.append('')
         elif 'evens' in fraction.lower() or fraction.lower() == 'evs':
             decimal.append('2.00')
