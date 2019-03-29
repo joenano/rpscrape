@@ -478,7 +478,8 @@ def scrape_races(races, target, years, code):
                 else:
                     gear.append('')
 
-            winning_time = clean(doc.xpath('//span[@class="rp-raceInfo__value"]/text()')[0].split('('))[0].split()
+            winning_time = clean(doc.xpath('//span[@class="rp-raceInfo__value"]/text()')[1].split('('))[0].split()
+            
             if len(winning_time) > 1:
                 win_time = float(winning_time[0].replace('m', '')) * 60 + float(winning_time[1].strip('s'))
             else:
