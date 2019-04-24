@@ -273,9 +273,9 @@ def band_info(band, race, race_class):
         r_class = band.split(',')[0]
         info = info.split(',')[1]
 
-    if ('(Entire Colts & Fillies)') in race:
+    if ('(Entire Colts & Fillies)') in race or '(Colts & Fillies)' in race:
         info = info + ' C & F'
-        r_name = r_name.replace('(Entire Colts & Fillies)', '')
+        r_name = r_name.replace('(Entire Colts & Fillies)', '').replace('(Colts & Fillies)', '')
     elif '(Fillies & Mares)' in race:
         info = info + ' F & M'
         r_name = r_name.replace('(Fillies & Mares)', '')
@@ -328,7 +328,7 @@ def get_races(tracks, names, years, code, xy):
 def calculate_times(win_time, dist_btn, going, code, course):
     times = []
     if code == 'flat':
-        if 'Firm' in going or 'Standard' in going or 'Fast' in going:
+        if 'Firm' in going or 'Standard' in going or 'Fast' in going or 'Hard' in going:
             if 'southwell' in course.lower():
                 lps_scale = 5
             else:
@@ -341,7 +341,7 @@ def calculate_times(win_time, dist_btn, going, code, course):
         elif 'Soft' in going or 'Heavy' in going or 'Yielding' in going:
             lps_scale = 5
     else:
-        if 'Firm' in going or 'Standard' in going:
+        if 'Firm' in going or 'Standard' in going or 'Hard' in going:
             if 'southwell' in course.lower():
                 lps_scale = 4
             else:
@@ -484,15 +484,16 @@ def scrape_races(races, target, years, code):
                 win_time = float(winning_time[0].replace('m', '')) * 60 + float(winning_time[1].strip('s'))
             else:
                 win_time = float(winning_time[0].strip('s'))
-            
+
             times = calculate_times(win_time, btn, going, code, course_name)
+
             
             dec = fraction_to_decimal([sp.strip('F').strip('J').strip('C').strip() for sp in sps])
 
             for p, pr, dr, bt, n, sp, dc, time, j, tr, a, o, t, rp, w, l, g, c, sire, dam, damsire in \
             zip(pos, prize, draw, btn, name, sps, dec, times, jock, trainer, age, _or, ts, rpr, wgt, lbs, gear, com, sires, dams, damsires):
                 csv.write((
-                    f'{date},{course_name},{r_time},{race},{race_class},{band},{dist},{metres},{going},{p},{dr},{bt},{n},'
+                    f'{date},{course_name},{r_time},{race},{race_class},{band.strip()},{dist},{metres},{going},{p},{dr},{bt},{n},'
                     f'{sp},{dc},{a},{w},{l},{g},{time},{j},{tr},{o},{t},{rp},{pr},{sire},{dam},{damsire},{c}\n'
                 ))
 
