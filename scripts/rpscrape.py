@@ -328,7 +328,7 @@ def get_races(tracks, names, years, code, xy):
 def calculate_times(win_time, dist_btn, going, code, course):
     times = []
     if code == 'flat':
-        if 'Firm' in going or 'Standard' in going or 'Fast' in going or 'Hard' in going:
+        if 'Firm' in going or 'Standard' in going or 'Fast' in going or 'Hard' in going or 'Slow' in going:
             if 'southwell' in course.lower():
                 lps_scale = 5
             else:
@@ -422,7 +422,11 @@ def scrape_races(races, target, years, code):
                 distance = ''
             dist = convert_distance(distance)
 
-            metres = round(float(dist) * 200)
+            try:
+            	metres = round(float(dist) * 200)
+            except ValueError:
+            	metres = ''
+            	print(f'ValueError: (dist to metres conversion) RACE: {r_time} {date}')
 
             try:
                 going = doc.xpath("//span[@class='rp-raceTimeCourseName_condition']/text()")[0].strip()
@@ -478,7 +482,11 @@ def scrape_races(races, target, years, code):
                 else:
                     gear.append('')
 
-            winning_time = clean(doc.xpath('//span[@class="rp-raceInfo__value"]/text()')[1].split('('))[0].split()
+            try:
+            	winning_time = clean(doc.xpath('//span[@class="rp-raceInfo__value"]/text()')[1].split('('))[0].split()
+            except IndexError:
+            	winning_time = ''
+            	print(f'IndexError: (winning time) RACE: {r_time} {date}')
             
             if len(winning_time) > 1:
                 win_time = float(winning_time[0].replace('m', '')) * 60 + float(winning_time[1].strip('s'))
