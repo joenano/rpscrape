@@ -150,7 +150,3 @@ q, quit, exit       Quit
 ```
 
 Tab complete for option keywords is available on Linux.
-
-
-### Feature Requests
-Feel free to post any ideas to improve or add more functionality in the issues and I will consider trying to implement them.
