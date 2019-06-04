@@ -570,19 +570,18 @@ def scrape_races(races, target, years, code):
                 else:
                     gear.append("")
 
-            try:
-                winning_time = clean(
-                    doc.xpath('//span[@class="rp-raceInfo__value"]/text()')[1].split(
-                        "("
-                    )
-                )[0].split()
-            except IndexError:
-                winning_time = ""
-                print(f"IndexError: (winning time) RACE: {r_time} {date}")
+            info = doc.xpath('//div[@class="rp-raceInfo"]')[0].find('.//li').findall('.//span[@class="rp-raceInfo__value"]')
+
+            if len(info) == 3:
+                winning_time = clean(info[1].text.split("("))[0].split()
+            elif len(info) == 2:
+                winning_time = info[0].text.split()
+            else:
+                print(f'ERROR: (winning time) {date} {course_name} {r_time}.')
 
             if len(winning_time) > 1:
-                win_time = float(winning_time[0].replace("m", "")) * 60 + float(
-                    winning_time[1].strip("s")
+                win_time = float(
+                    winning_time[0].replace("m", "")) * 60 + float(winning_time[1].strip("s")
                 )
             else:
                 win_time = float(winning_time[0].strip("s"))
