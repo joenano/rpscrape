@@ -532,6 +532,7 @@ def scrape_races(races, target, years, code):
                 .replace("¼", ".25")
                 .replace("½", ".5")
                 .replace("¾", ".75")
+                .replace("snk", "0.3")
                 .replace("nk", "0.33")
                 .replace("shd", "0.2")
                 .replace("hd", "0.25")
@@ -575,14 +576,17 @@ def scrape_races(races, target, years, code):
             if len(info) == 3:
                 winning_time = clean(info[1].text.split("("))[0].split()
             elif len(info) == 2:
-                winning_time = info[0].text.split()
+                winning_time = info[0].text.split("(")[0].split()
             else:
                 print(f'ERROR: (winning time) {date} {course_name} {r_time}.')
 
             if len(winning_time) > 1:
-                win_time = float(
-                    winning_time[0].replace("m", "")) * 60 + float(winning_time[1].strip("s")
-                )
+                try:
+                    win_time = float(
+                        winning_time[0].replace("m", "")) * 60 + float(winning_time[1].strip("s")
+                    )
+                except ValueError:
+                    print(f'ERROR: (winning time) {date} {course_name} {r_time}.')
             else:
                 win_time = float(winning_time[0].strip("s"))
 
