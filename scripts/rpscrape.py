@@ -119,12 +119,9 @@ def valid_course(code):
 def x_y():
     from base64 import b64decode
 
-    return (
-        b64decode(
-            "aHR0cHM6Ly93d3cucmFjaW5ncG9zdC5jb206NDQzL3Byb2ZpbGUvY291cnNlL2ZpbHRlci9yZXN1bHRz"
-        ).decode("utf-8"),
-        b64decode("aHR0cHM6Ly93d3cucmFjaW5ncG9zdC5jb20vcmVzdWx0cw==").decode("utf-8"),
-    )
+    return b64decode(
+        'aHR0cHM6Ly93d3cucmFjaW5ncG9zdC5jb206NDQzL3Byb2ZpbGUvY291cnNlL2ZpbHRlci9yZXN1bHRz'
+    ).decode('utf-8'), b64decode('aHR0cHM6Ly93d3cucmFjaW5ncG9zdC5jb20vcmVzdWx0cw==').decode('utf-8')
 
 
 def regions():
@@ -355,6 +352,7 @@ def get_races(tracks, names, years, code, xy):
                     pass
             else:
                 print(f"Unable to access races from {course_name(track)} in {year}")
+
     return races
 
 
@@ -416,8 +414,9 @@ def scrape_races(races, target, years, code):
     ) as csv:
         csv.write(
             (
-                '"date","course","time","race_name","class","band","dist(f)","dist(m)","going","pos","draw","btn","horse_name","sp",'
-                '"dec","age","weight","lbs","gear","fin_time","jockey","trainer","or","ts","rpr","prize(£)","sire","dam","damsire","comment"\n'
+                '"date","course","time","race_name","class","band","dist(f)","dist(m)","going",'
+                '"pos","draw","btn","horse_name","sp","dec","age","weight","lbs","gear","fin_time",'
+                '"jockey","trainer","or","ts","rpr","prize(£)","sire","dam","damsire","comment"\n'
             )
         )
 
@@ -426,6 +425,9 @@ def scrape_races(races, target, years, code):
             while r.status_code == 403:
                 sleep(5)
                 r = requests.get(race, headers={"User-Agent": "Mozilla/5.0"})
+
+            if r.status_code != 200:
+                continue
 
             doc = html.fromstring(r.content)
 
@@ -572,6 +574,7 @@ def scrape_races(races, target, years, code):
                     gear.append("")
 
             info = doc.xpath('//div[@class="rp-raceInfo"]')[0].find('.//li').findall('.//span[@class="rp-raceInfo__value"]')
+
 
             if len(info) == 3:
                 winning_time = clean(info[1].text.split("("))[0].split()
