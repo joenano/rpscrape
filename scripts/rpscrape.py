@@ -74,10 +74,7 @@ def options(opt="help"):
 def courses(code="all"):
     with open(f"../courses/{code}_course_ids", "r") as courses:
         for course in courses:
-            yield (
-                course.split("-")[0].strip(),
-                " ".join(course.split("-")[1::]).strip(),
-            )
+            yield (course.split('-')[0].strip(), ' '.join(course.split('-')[1::]).strip())
 
 
 def course_name(code):
@@ -340,9 +337,7 @@ def get_races(tracks, names, years, code, xy):
                 try:
                     results = r.json()
                     if results["data"]["principleRaceResults"] == None:
-                        print(
-                            f"No {code} race data for {course_name(track)} in {year}."
-                        )
+                        print(f"No {code} race data for {course_name(track)} in {year}.")
                     else:
                         for result in results["data"]["principleRaceResults"]:
                             races.append(
@@ -622,15 +617,15 @@ def parse_args(args=sys.argv):
             try:
                 years = [str(x) for x in range(int(args[1].split("-")[0]), int(args[1].split("-")[1]) + 1)]
             except ValueError:
-                return print("\nINVALID YEAR: must be in range 1996-2018.\n")
+                return print("\nINVALID YEAR: must be in range 1996-2019.\n")
         else:
             years = [args[1]]
         if not valid_years(years):
-            return print("\nINVALID YEAR: must be in range 1996-2019 for flat and 1996-2018 for jumps.\n")
+            return print("\nINVALID YEAR: must be in range 1996-2019 for flat and 1996-2019 for jumps.\n")
 
         if code == "jumps":
-            if int(years[-1]) > 2018:
-                return print("\nINVALID YEAR: the latest jump season started in 2018.\n")
+            if int(years[-1]) > 2019:
+                return print("\nINVALID YEAR: the latest jump season started in 2019.\n")
 
         if "region" in locals():
             tracks = [course[0] for course in courses(region)]
