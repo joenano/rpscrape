@@ -504,21 +504,9 @@ def scrape_races(races, target, years, code):
             draw = [d.strip("()") for d in draw]
             beaten = doc.xpath("//span[@class='rp-horseTable__pos__length']/span/text()")
             del beaten[1::2]
-            btn = [
-                b.strip()
-                .strip("[]")
-                .replace("¼", ".25")
-                .replace("½", ".5")
-                .replace("¾", ".75")
-                .replace("snk", "0.3")
-                .replace("nk", "0.33")
-                .replace("shd", "0.2")
-                .replace("hd", "0.25")
-                .replace("nse", "0.1")
-                .replace("dht", "0")
-                for b in beaten
-            ]
-            btn.insert(0, "0")
+            btn = [b.strip().strip("[]").replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('nk', '0.3')\
+                    .replace('snk', '0.25').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0') for b in beaten]
+            btn.insert(0, '0')
             if len(btn) < len(pos):
                 btn.extend(["" for x in range(len(pos) - len(btn))])
 
