@@ -154,12 +154,14 @@ The date format is YYYY/MM/DD, to specify a range of dates, separate them with a
 #### Options
 
 ```
-regions              List all available region codes
-regions [search]     Search for specific region code
+regions             List all available region codes
+regions [search]    Search for specific region code
 
-courses              List all courses
-courses [search]     Search for specific course
-courses [region]     List courses in region - e.g courses ire
+courses             List all courses
+courses [search]    Search for specific course
+courses [region]    List courses in region - e.g courses ire
+
+-d, date            Scrape race by date - e.g -d 2019/12/17 gb       
 
 help                Show help
 options             Show options
