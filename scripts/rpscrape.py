@@ -2,6 +2,7 @@
 
 """ Scrapes results and saves them in csv format """
 
+from datetime import date, timedelta
 import json
 from lxml import html
 import os
@@ -39,7 +40,7 @@ def options(opt="help"):
         ]
     )
 
-    if opt == "help":
+    if opt == "help" or opt == "?":
         print(
             "\n".join(
                 [
@@ -150,9 +151,28 @@ def valid_region(code):
 
 def valid_years(years):
     if years:
-        return all(year.isdigit() and int(year) > 1995 and int(year) < 2020 for year in years)
+        return all(year.isdigit() and int(year) > 1995 and int(year) <= 2020 for year in years)
     else:
         return False
+
+
+def valid_date(date):
+    if len(date.split('/')) == 3:
+        year, month, day = date.split('/')
+
+        if int(year) > 1995 and int(year) <= 2020:
+            if int(month) > 0 and int(month) <= 12:
+                if int(day) > 0 and int(day) <= 31:
+                    return True
+    else:
+        return False
+
+
+def check_date(date):
+    if '-' in date and len(date.split('-')) < 3:
+        return valid_date(date.split('-')[0]) and valid_date(date.split('-')[1])
+    else:
+        return valid_date(date)
 
 
 def fraction_to_decimal(fractions):
@@ -351,6 +371,39 @@ def get_races(tracks, names, years, code, xy):
     return races
 
 
+def get_race_links(date, region):
+    valid_courses = []
+
+    with open(f'../courses/{region}_course_ids') as courses:
+        for course in courses:
+            valid_courses.append(course.split('-')[0].strip())
+
+    r = requests.get(
+        f'https://www.racingpost.com/results/{date}',
+        headers={'User-Agent': 'Mozilla/5.0'}
+    )
+
+    while r.status_code == 403:
+        sleep(5)
+
+        r = requests.get(
+            f'https://www.racingpost.com/results/{date}',
+            headers={'User-Agent': 'Mozilla/5.0'}
+        )
+
+    doc = html.fromstring(r.content)
+    race_links = doc.xpath('//a[@data-test-selector="link-listCourseNameLink"]')
+
+    links = []
+
+    for race in race_links:
+        if 'https://www.racingpost.com' + race.attrib['href'] not in links:
+            if race.attrib['href'].split('/')[2] in valid_courses:
+                links.append('https://www.racingpost.com' + race.attrib['href'])
+
+    return links
+
+
 def calculate_times(win_time, dist_btn, going, code, course):
     times = []
     if code == "flat":
@@ -504,8 +557,10 @@ def scrape_races(races, target, years, code):
             draw = [d.strip("()") for d in draw]
             beaten = doc.xpath("//span[@class='rp-horseTable__pos__length']/span/text()")
             del beaten[1::2]
-            btn = [b.strip().strip("[]").replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('nk', '0.3')\
-                    .replace('snk', '0.25').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0') for b in beaten]
+            btn = [
+                b.strip().strip("[]").replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('nk', '0.3')\
+                .replace('snk', '0.25').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0') for b in beaten
+            ]
             btn.insert(0, '0')
             if len(btn) < len(pos):
                 btn.extend(["" for x in range(len(pos) - len(btn))])
@@ -568,7 +623,7 @@ def scrape_races(races, target, years, code):
 
 def parse_args(args=sys.argv):
     if len(args) == 1:
-        if "help" in args or "options" in args:
+        if "help" in args or "options" in args or "?" in args:
             options(args[0])
         elif "clear" in args:
             os.system("cls" if os.name == "nt" else "clear")
@@ -587,47 +642,76 @@ def parse_args(args=sys.argv):
             else:
                 course_search(args[1])
     elif len(args) == 3:
-        if valid_region(args[0]):
-            region = args[0]
-        elif valid_course(args[0]):
-            course = args[0]
+        if args[0] == '-d' or args[0] == 'date':
+            if not valid_region(args[2]):
+                return print("Invalid region.")
+
+            if check_date(args[1]):
+                if '-' in args[1]:
+                    start_year, start_month, start_day = args[1].split('-')[0].split('/')
+                    end_year, end_month, end_day = args[1].split('-')[1].split('/')
+
+                    start_date = date(int(start_year), int(start_month), int(start_day))
+                    end_date = date(int(end_year), int(end_month), int(end_day))
+
+                    dates = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
+                else:
+                    year, month, day = args[1].split('/')
+
+                    dates = [date(int(year), int(month), int(day))]
+
+                races = []
+
+                for d in dates:
+                    for link in get_race_links(d, args[2]):
+                        races.append(link)
+
+                scrape_races(races, args[2], args[1].replace('/', '_'), '')
+                
+            else:
+                return print('invalid date')
         else:
-            return print("Invalid course or region.")
+            if valid_region(args[0]):
+                region = args[0]
+            elif valid_course(args[0]):
+                course = args[0]
+            else:
+                return print("Invalid course or region.")
 
-        if "jumps" in args or "jump" in args or "-j" in args:
-            code = "jumps"
-        elif "flat" in args or "-f" in args:
-            code = "flat"
-        else:
-            return print("Invalid racing code. -f, flat or -j, jumps.")
+            if "jumps" in args or "jump" in args or "-j" in args:
+                code = "jumps"
+            elif "flat" in args or "-f" in args:
+                code = "flat"
+            else:
+                return print("Invalid racing code. -f, flat or -j, jumps.")
 
-        if "-" in args[1]:
-            try:
-                years = [str(x) for x in range(int(args[1].split("-")[0]), int(args[1].split("-")[1]) + 1)]
-            except ValueError:
-                return print("\nINVALID YEAR: must be in range 1996-2019.\n")
-        else:
-            years = [args[1]]
-        if not valid_years(years):
-            return print("\nINVALID YEAR: must be in range 1996-2019 for flat and 1996-2019 for jumps.\n")
+            if "-" in args[1]:
+                try:
+                    years = [str(x) for x in range(int(args[1].split("-")[0]), int(args[1].split("-")[1]) + 1)]
+                except ValueError:
+                    return print("\nINVALID YEAR: must be in range 1996-2020.\n")
+            else:
+                years = [args[1]]
+            if not valid_years(years):
+                return print("\nINVALID YEAR: must be in range 1996-2020 for flat and 1996-2019 for jumps.\n")
 
-        if code == "jumps":
-            if int(years[-1]) > 2019:
-                return print("\nINVALID YEAR: the latest jump season started in 2019.\n")
+            if code == "jumps":
+                if int(years[-1]) > 2019:
+                    return print("\nINVALID YEAR: the latest jump season started in 2019.\n")
 
-        if "region" in locals():
-            tracks = [course[0] for course in courses(region)]
-            names = [course_name(track) for track in tracks]
-            scrape_target = region
-            print(f"Scraping {code} results from {scrape_target} in {args[1]}...")
-        else:
-            tracks = [course]
-            names = [course_name(course)]
-            scrape_target = course
-            print(f"Scraping {code} results from {course_name(scrape_target)} in {args[1]}...")
+            if "region" in locals():
+                tracks = [course[0] for course in courses(region)]
+                names = [course_name(track) for track in tracks]
+                scrape_target = region
+                print(f"Scraping {code} results from {scrape_target} in {args[1]}...")
+            else:
+                tracks = [course]
+                names = [course_name(course)]
+                scrape_target = course
+                print(f"Scraping {code} results from {course_name(scrape_target)} in {args[1]}...")
 
-        races = get_races(tracks, names, years, code, x_y())
-        scrape_races(races, course_name(scrape_target), args[1], code)
+            races = get_races(tracks, names, years, code, x_y())
+            scrape_races(races, course_name(scrape_target), args[1], code)
     else:
         options()
 
@@ -650,6 +734,7 @@ def main():
                 "clear",
                 "flat",
                 "jumps",
+                "date"
             ]
         )
         readline.set_completer(completions.complete)
