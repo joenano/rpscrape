@@ -133,6 +133,24 @@ Note: When scraping jumps data the year you enter is when the season started, i.
 In the above example, Cheltenham races from the season 2018-2019 are scraped, the 2018 Greatwood and the 2019 festival will be included but not the 2018 festival.
 
 
+## Scrape by date
+
+To scrape by date or date range, use the -d flag or date option, followed by the date/date range and the region, scraping individual courses in this manner is not included:
+```
+[rpscrape]> -d [date|range] [region]
+```
+
+The date format is YYYY/MM/DD, to specify a range of dates, separate them with a dash '-', start date followed by end date.
+
+
+### Examples
+```
+[rpscrape]> -d 2019/12/18 gb
+```
+```
+[rpscrape]> -d 2019/12/15-2019/12/18 ire
+```
+
 #### Options
 
 ```
