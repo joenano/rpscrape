@@ -37,6 +37,8 @@ def options(opt="help"):
             "       courses              List all courses",
             "       courses [search]     Search for specific course",
             "       courses [region]     List courses in region - e.g courses ire",
+            "",
+            "       -d, date             Scrape race by date - e.g -d 2019/12/17 gb",
         ]
     )
 
@@ -158,12 +160,11 @@ def valid_years(years):
 
 def valid_date(date):
     if len(date.split('/')) == 3:
-        year, month, day = date.split('/')
-
-        if int(year) > 1995 and int(year) <= 2020:
-            if int(month) > 0 and int(month) <= 12:
-                if int(day) > 0 and int(day) <= 31:
-                    return True
+        try:
+            year, month, day = [int(x) for x in date.split('/')]
+            return year > 1995 and year <= 2020 and month > 0 and month <= 12 and day > 0 and day <= 31
+        except ValueError:
+            return False
     else:
         return False
 
@@ -350,8 +351,7 @@ def get_races(tracks, names, years, code, xy):
     for track, name in zip(tracks, names):
         for year in years:
             r = requests.get(
-                f"{xy[0]}/{track}/{year}/{code}/all-races",
-                headers={"User-Agent": "Mozilla/5.0"},
+                f"{xy[0]}/{track}/{year}/{code}/all-races", headers={"User-Agent": "Mozilla/5.0"},
             )
             if r.status_code == 200:
                 try:
@@ -372,23 +372,17 @@ def get_races(tracks, names, years, code, xy):
 
 
 def get_race_links(date, region):
-    valid_courses = []
-
-    with open(f'../courses/{region}_course_ids') as courses:
-        for course in courses:
-            valid_courses.append(course.split('-')[0].strip())
+    valid_courses = [x.split('-')[0].strip() for x in open(f'../courses/{region}_course_ids')]
 
     r = requests.get(
-        f'https://www.racingpost.com/results/{date}',
-        headers={'User-Agent': 'Mozilla/5.0'}
+        f'https://www.racingpost.com/results/{date}', headers={'User-Agent': 'Mozilla/5.0'}
     )
 
     while r.status_code == 403:
         sleep(5)
 
         r = requests.get(
-            f'https://www.racingpost.com/results/{date}',
-            headers={'User-Agent': 'Mozilla/5.0'}
+            f'https://www.racingpost.com/results/{date}', headers={'User-Agent': 'Mozilla/5.0'}
         )
 
     doc = html.fromstring(r.content)
@@ -493,29 +487,20 @@ def scrape_races(races, target, years, code):
             try:
                 race = (
                     doc.xpath("//h2[@class='rp-raceTimeCourseName__title']/text()")[0]
-                    .strip()
-                    .strip("\n")
-                    .replace(",", " ")
-                    .replace('"', "")
-                    .replace("\x80", "")
+                    .strip().strip("\n").replace(",", " ").replace('"', "").replace("\x80", "")
                 )
             except IndexError:
                 race = ""
 
             try:
-                race_class = (
-                    doc.xpath("//span[@class='rp-raceTimeCourseName_class']/text()")[0].strip().strip("()")
-                )
+                race_class = (doc.xpath("//span[@class='rp-raceTimeCourseName_class']/text()")[0].strip().strip("()"))
             except:
                 race_class = ""
 
             race, race_class = race_info(race, race_class)
 
             try:
-                band = (
-                    doc.xpath(
-                        "//span[@class='rp-raceTimeCourseName_ratingBandAndAgesAllowed']/text()")[0].strip().strip("()")
-                )
+                band = (doc.xpath("//span[@class='rp-raceTimeCourseName_ratingBandAndAgesAllowed']/text()")[0].strip().strip("()"))
             except:
                 band = ""
             band, race, race_class = band_info(band, race, race_class)
@@ -558,8 +543,9 @@ def scrape_races(races, target, years, code):
             beaten = doc.xpath("//span[@class='rp-horseTable__pos__length']/span/text()")
             del beaten[1::2]
             btn = [
-                b.strip().strip("[]").replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('nk', '0.3')\
-                .replace('snk', '0.25').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0') for b in beaten
+                b.strip().strip("[]").replace('¼', '.25').replace('½', '.5').replace('¾', '.75')\
+                .replace('nk', '0.3').replace('snk', '0.25').replace('shd', '0.1').replace('hd', '0.2')\
+                .replace('nse', '0.05').replace('dht', '0') for b in beaten
             ]
             btn.insert(0, '0')
             if len(btn) < len(pos):
@@ -669,7 +655,7 @@ def parse_args(args=sys.argv):
                 scrape_races(races, args[2], args[1].replace('/', '_'), '')
                 
             else:
-                return print('invalid date')
+                return print('Invalid date. Expected format: YYYY/MM/DD')
         else:
             if valid_region(args[0]):
                 region = args[0]
@@ -724,18 +710,7 @@ def main():
         import readline
 
         completions = Completer(
-            [
-                "courses",
-                "regions",
-                "options",
-                "help",
-                "quit",
-                "exit",
-                "clear",
-                "flat",
-                "jumps",
-                "date"
-            ]
+            ["courses", "regions", "options", "help", "quit", "exit", "clear", "flat", "jumps", "date"]
         )
         readline.set_completer(completions.complete)
         readline.parse_and_bind("tab: complete")
