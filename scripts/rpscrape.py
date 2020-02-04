@@ -214,9 +214,9 @@ def pedigree_info(pedigrees):
 
         if len(ped_info) > 0:
             sire = ped_info[0].text.strip()
-            sire_nat = ped_info[0].tail.strip()
-            if sire_nat != '-':
-                sire = sire + ' ' + sire_nat.replace('-', '').strip()
+
+            if '(' in sire:
+                sire = sire.split('(')[0].strip() + ' (' + sire.split('(')[1]
             else:
                 sire = sire + ' (GB)'
 
@@ -226,7 +226,8 @@ def pedigree_info(pedigrees):
 
         if len(ped_info) > 1:
             dam = ped_info[1].text.strip()
-            dam_nat = p.find('span').text
+            dam_nat = ped_info[1].find('span').text
+
             if dam_nat is not None:
                 dam = dam + ' ' + dam_nat.strip()
             else:
