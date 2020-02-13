@@ -475,6 +475,7 @@ def scrape_races(races, target, years, code):
             doc = html.fromstring(r.content)
 
             course_name = race.split("/")[5]
+
             try:
                 date = doc.xpath("//span[@data-test-selector='text-raceDate']/text()")[0]
                 date = convert_date(date)
@@ -557,7 +558,8 @@ def scrape_races(races, target, years, code):
             jock = clean(doc.xpath("//a[@data-test-selector='link-jockeyName']/text()"))
             del jock[::2]
             trainer = clean(doc.xpath("//a[@data-test-selector='link-trainerName']/text()"))
-            del trainer[::2]
+            del trainer[1::2]
+            del trainer[1::2]
             age = clean(doc.xpath("//td[@data-test-selector='horse-age']/text()"))
             _or = clean(doc.xpath("//td[@data-ending='OR']/text()"))
             ts = clean(doc.xpath("//td[@data-ending='TS']/text()"))
