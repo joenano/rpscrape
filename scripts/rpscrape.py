@@ -465,12 +465,18 @@ def scrape_races(races, target, years, code):
 
         for race in races:
             r = requests.get(race, headers={"User-Agent": "Mozilla/5.0"})
-            while r.status_code == 403:
-                sleep(5)
-                r = requests.get(race, headers={"User-Agent": "Mozilla/5.0"})
+            
+            while r.status_code == 403 or r.status_code == 404 or r.status_code == 503:
+                if r.status_code == 404:
+                    print(f'404: {race}')
+                    sleep(2)
+                elif r.status_code == 503:
+                    print(f'503: {race}')
+                    sleep(2)
+                else:
+                    sleep(5)
 
-            if r.status_code != 200:
-                continue
+                r = requests.get(race, headers={'User-Agent': 'Mozilla/5.0'})
 
             doc = html.fromstring(r.content)
 
@@ -528,7 +534,7 @@ def scrape_races(races, target, years, code):
             sires, dams, damsires = pedigree_info(pedigrees)
 
             coms = doc.xpath("//tr[@class='rp-horseTable__commentRow ng-cloak']/td/text()")
-            com = [x.strip().replace("  ", "").replace(",", " -") for x in coms]
+            com = [x.strip().replace("  ", "").replace(",", " -").replace('\n', '') for x in coms]
             possy = doc.xpath("//span[@data-test-selector='text-horsePosition']/text()")
             del possy[1::2]
             pos = [x.strip() for x in possy]
