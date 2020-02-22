@@ -9,7 +9,7 @@ import os
 from re import search
 import requests
 import sys
-from time import sleep, strptime
+from time import sleep
 
 
 class Completer:
@@ -74,18 +74,18 @@ def options(opt="help"):
         print(opts)
 
 
-def courses(code="all"):
-    with open(f"../courses/{code}_course_ids", "r") as courses:
+def courses(code='all'):
+    with open(f'../courses/{code}_course_ids', 'r') as courses:
         for course in courses:
             yield (course.split('-')[0].strip(), ' '.join(course.split('-')[1::]).strip())
-
+         
 
 def course_name(code):
     if code.isalpha():
         return code
     for course in courses():
         if course[0] == code:
-            return course[1].replace("()", "").replace(" ", "-")
+            return course[1].replace('()', '').replace(' ', '-')
 
 
 def course_search(term):
@@ -96,18 +96,18 @@ def course_search(term):
 
 def print_course(code, course):
     if len(code) == 5:
-        print(f"     CODE: {code}| {course}")
+        print(f'     CODE: {code}| {course}')
     elif len(code) == 4:
-        print(f"     CODE: {code} | {course}")
+        print(f'     CODE: {code} | {course}')
     elif len(code) == 3:
-        print(f"     CODE: {code}  | {course}")
+        print(f'     CODE: {code}  | {course}')
     elif len(code) == 2:
-        print(f"     CODE: {code}   | {course}")
+        print(f'     CODE: {code}   | {course}')
     else:
-        print(f"     CODE: {code}    | {course}")
+        print(f'     CODE: {code}    | {course}')
 
 
-def print_courses(code="all"):
+def print_courses(code='all'):
     for course in courses(code):
         print_course(course[0], course[1])
 
@@ -125,7 +125,7 @@ def x_y():
 
 
 def regions():
-    with open("../courses/_countries", "r") as regions:
+    with open('../courses/_countries', 'r') as regions:
         return json.load(regions)
 
 
@@ -137,9 +137,9 @@ def region_search(term):
 
 def print_region(code, region):
     if len(code) == 3:
-        print(f"     CODE: {code} | {region}")
+        print(f'     CODE: {code} | {region}')
     else:
-        print(f"     CODE: {code}  | {region}")
+        print(f'     CODE: {code}  | {region}')
 
 
 def print_regions():
@@ -153,9 +153,9 @@ def valid_region(code):
 
 def valid_years(years):
     if years:
-        return all(year.isdigit() and int(year) > 1995 and int(year) <= 2020 for year in years)
-    else:
-        return False
+        return all(year.isdigit() and int(year) >= 1988 and int(year) <= 2020 for year in years)
+
+    return False
 
 
 def valid_date(date):
@@ -165,15 +165,15 @@ def valid_date(date):
             return year > 1995 and year <= 2020 and month > 0 and month <= 12 and day > 0 and day <= 31
         except ValueError:
             return False
-    else:
-        return False
+    
+    return False
 
 
 def check_date(date):
     if '-' in date and len(date.split('-')) < 3:
         return valid_date(date.split('-')[0]) and valid_date(date.split('-')[1])
-    else:
-        return valid_date(date)
+
+    return valid_date(date)
 
 
 def fraction_to_decimal(fractions):
@@ -192,18 +192,9 @@ def fraction_to_decimal(fractions):
 
 
 def convert_date(date):
-    dmy = date.split()
-    mon = strptime(dmy[1], "%b").tm_mon
-
-    if mon < 10:
-        mon = str(0) + str(mon)
-
-    if int(dmy[0]) < 10:
-        dmy[0] = str(0) + str(dmy[0])
-
-    new_date = dmy[2] + "-" + str(mon) + "-" + dmy[0]
-
-    return new_date
+    dmy = date.split('-')
+    
+    return dmy[0] + '-' + dmy[1] + '-' + dmy[2]
 
 
 def pedigree_info(pedigrees):
@@ -468,10 +459,8 @@ def scrape_races(races, target, years, code):
             
             while r.status_code == 403 or r.status_code == 404 or r.status_code == 503:
                 if r.status_code == 404:
-                    print(f'404: {race}')
                     sleep(2)
                 elif r.status_code == 503:
-                    print(f'503: {race}')
                     sleep(2)
                 else:
                     sleep(5)
@@ -480,13 +469,9 @@ def scrape_races(races, target, years, code):
 
             doc = html.fromstring(r.content)
 
-            course_name = race.split("/")[5]
+            course = race.split('/')[5]
+            date = convert_date(race.split('/')[6])
 
-            try:
-                date = doc.xpath("//span[@data-test-selector='text-raceDate']/text()")[0]
-                date = convert_date(date)
-            except IndexError:
-                date = ""
             try:
                 r_time = doc.xpath("//span[@data-test-selector='text-raceTime']/text()")[0]
             except IndexError:
@@ -688,7 +673,7 @@ def parse_args(args=sys.argv):
             else:
                 years = [args[1]]
             if not valid_years(years):
-                return print("\nINVALID YEAR: must be in range 1996-2020 for flat and 1996-2019 for jumps.\n")
+                return print("\nINVALID YEAR: must be in range 1988-2020 for flat and 1987-2019 for jumps.\n")
 
             if code == "jumps":
                 if int(years[-1]) > 2019:
@@ -717,19 +702,16 @@ def main():
 
     try:
         import readline
-
-        completions = Completer(
-            ["courses", "regions", "options", "help", "quit", "exit", "clear", "flat", "jumps", "date"]
-        )
+        completions = Completer(["courses", "regions", "options", "help", "quit", "exit", "clear", "flat", "jumps", "date"])
         readline.set_completer(completions.complete)
-        readline.parse_and_bind("tab: complete")
+        readline.parse_and_bind('tab: complete')
     except ModuleNotFoundError:  # windows
         pass
 
     while True:
-        args = input("[rpscrape]> ").lower().strip()
+        args = input('[rpscrape]> ').lower().strip()
         parse_args([arg.strip() for arg in args.split()])
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
