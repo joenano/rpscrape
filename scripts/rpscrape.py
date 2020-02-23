@@ -119,7 +119,6 @@ def valid_course(code):
 
 def x_y():
     from base64 import b64decode
-
     return b64decode(
         'aHR0cHM6Ly93d3cucmFjaW5ncG9zdC5jb206NDQzL3Byb2ZpbGUvY291cnNlL2ZpbHRlci9yZXN1bHRz'
     ).decode('utf-8'), b64decode('aHR0cHM6Ly93d3cucmFjaW5ncG9zdC5jb20vcmVzdWx0cw==').decode('utf-8')
@@ -180,14 +179,12 @@ def check_date(date):
 def fraction_to_decimal(fractions):
     decimal = []
     for fraction in fractions:
-        if fraction == "" or fraction == "No Odds":
-            decimal.append("")
-        elif "evens" in fraction.lower() or fraction.lower() == "evs":
-            decimal.append("2.00")
+        if fraction == '' or fraction == 'No Odds':
+            decimal.append('')
+        elif 'evens' in fraction.lower() or fraction.lower() == 'evs':
+            decimal.append('2.00')
         else:
-            decimal.append(
-                "{0:.2f}".format(float(fraction.split("/")[0]) / float(fraction.split("/")[1]) + 1.00)
-            )
+            decimal.append('{0:.2f}'.format(float(fraction.split('/')[0]) / float(fraction.split('/')[1]) + 1.00))
 
     return decimal
 
@@ -239,128 +236,137 @@ def pedigree_info(pedigrees):
     return sires, dams, damsires
 
 
-def race_info(race, race_class):
-    r_class = ""
-    r_name = str(race)
+def try_get_class(race):
+    if ' Class A' in race or 'Class 1' in race:
+        return 'Class 1'
+    elif ' Class B' in race or 'Class 2' in race:
+        return 'Class 2'
+    elif ' Class C' in race or 'Class 3' in race:
+        return 'Class 3'
+    elif ' Class D' in race or 'Class 4' in race:
+        return 'Class 4'
+    elif ' Class E' in race or 'Class 5' in race:
+        return 'Class 5'
+    elif ' Class F' in race or 'Class 6' in race:
+        return 'Class 6'
+    elif ' Class G' in race:
+        return 'Class 6'
+    elif ' Class H' in race or 'Class 7' in race:
+        return 'Class 7'
 
-    if " Class A" in race:
-        r_name = r_name.replace(" Class A", "")
-        r_class = "Class 1"
-    elif " Class B" in race:
-        r_name = r_name.replace(" Class B", "")
-        r_class = "Class 2"
-    elif " Class C" in race:
-        r_name = r_name.replace(" Class C", "")
-        r_class = "Class 3"
-    elif " Class D" in race:
-        r_name = r_name.replace(" Class D", "")
-        r_class = "Class 4"
-    elif " Class E" in race:
-        r_name = r_name.replace(" Class E", "")
-        r_class = "Class 5"
-    elif " Class F" in race:
-        r_name = r_name.replace(" Class F", "")
-        r_class = "Class 6"
-    elif " Class G" in race:
-        r_name = r_name.replace(" Class G", "")
-        r_class = "Class 6"
-    elif " Class H" in race:
-        r_name = r_name.replace(" Class H", "")
-        r_class = "Class 7"
+    r_class = ''
 
-    if "(Premier Handicap)" in race:
-        r_class = "Class 2"
-        return r_name, r_class
-    elif "(Group" in race:
-        r_class = search("(\(Grou..)\w+", race).group(0).strip("(")
-        r_name = r_name.replace(f" ({r_class})", "")
-        return r_name, r_class
-    elif "(Grade" in race:
-        r_class = search("(\(Grad..)\w+", race).group(0).strip("(")
-        r_name = r_name.replace(f" ({r_class})", "")
-        return r_name, r_class
-    elif "Grade" in race:
-        r_class = search("Grad..\w+", race).group(0)
-        r_name = r_name.replace(f" {r_class}", "")
-        return r_name, r_class
-    elif "(Listed" in race:
-        r_class = "Listed"
-        r_name = r_name.replace(" (Listed Race)", "").replace("(Listed)", "")
-        return r_name, r_class
-    elif "Maiden" in race and race_class == "":
-        r_class = "Class 5"
-        return r_name, r_class
-
-    return r_name, race_class
-
-
-def band_info(band, race, race_class):
-    info = band
-    r_name = race
-    r_class = race_class
-
-    if "," in band:
-        r_class = band.split(",")[0]
-        info = info.split(",")[1]
-
-    if ("(Entire Colts & Fillies)") in race or "(Colts & Fillies)" in race:
-        info = info + " C & F"
-        r_name = r_name.replace("(Entire Colts & Fillies)", "").replace(
-            "(Colts & Fillies)", ""
-        )
-    elif "(Fillies & Mares)" in race:
-        info = info + " F & M"
-        r_name = r_name.replace("(Fillies & Mares)", "")
-    elif "(Fillies)" in race or "Fillies" in race:
-        info = info + " F"
-        r_name = r_name.replace("(Fillies)", "")
-    elif "(Colts & Geldings)" in race or "(C & G)" in race:
-        info = info + " C & G"
-        r_name = r_name.replace("(Colts & Geldings)", "").replace("(C & G)", "")
-    elif "Mares" in race:
-        info = info + " M"
-
-    return info, r_name, r_class
-
-
-def convert_distance(distance):
-    dist = "".join(
-        [d.strip().replace("¼", ".25").replace("½", ".5").replace("¾", ".75") for d in distance]
-    )
-
-    if "m" in dist:
-        if len(dist) > 2:
-            dist = int(dist.split("m")[0]) * 8 + float(dist.split("m")[1].strip("f"))
-        else:
-            dist = int(dist.split("m")[0]) * 8
+    if '(Premier Handicap)' in race:
+        return 'Class 2'
+    elif '(Group' in race:
+        try:
+            r_class = search('(\(Grou..)\w+', race).group(0).strip('(')
+        except AttributeError:
+            r_class = search('(\(Grou.)\w+', race).group(0).strip('(')
+        return r_class
+    elif '(Grade' in race:
+        try:
+            r_class = search('(\(Grad..)\w+', race).group(0).strip('(')
+        except AttributeError:
+            r_class = search('(\(Grad.)\w+', race).group(0).strip('(')
+        return r_class
+    elif 'Grade' in race:
+        return search('Grad..\w+', race).group(0)
+    elif '(Local Group 1)' in race:
+        return 'Group 1'
+    elif '(Local Group 2)' in race:
+        return 'Group 2'
+    elif '(Local Group 3)' in race:
+        return 'Group 3'
+    elif '(Listed' in race:
+        return 'Listed'
     else:
-        dist = dist.strip("f")
+        return r_class
+
+
+def try_get_race_type(race, race_dist):
+    if race_dist >= 12:
+        if 'national hunt flat' in race or 'nh flat race' in race or 'mares flat race' in race:
+            return 'NH Flat'
+        if 'inh bumper' in race or ' sales bumper' in race or 'kepak flat race' in race:
+            return 'NH Flat'
+
+    if race_dist >= 15:
+        if ' hurdle' in race:
+            return 'Hurdle'
+        if ' chase' in race:
+            return 'Chase'
+
+    return ''
+
+
+def sex_restricted(race):
+    if ('(Entire Colts & Fillies)') in race or '(Colts & Fillies)' in race:
+        return 'C & F'
+    elif '(Fillies & Mares)' in race or '(Filles & Mares)' in race:
+        return 'F & M'
+    elif '(Fillies)' in race or 'Fillies' in race:
+        return 'F'
+    elif '(Colts & Geldings)' in race or '(C & G)' in race or ' Colts & Geldings)' in race:
+        return 'C & G'
+    elif '(Mares & Geldings)' in race:
+        return 'M & G'
+    elif 'Mares' in race:
+        return 'M'
+    else:
+        return ''
+
+
+def distance_to_furlongs(distance):
+    dist = ''.join([d.strip().replace('¼', '.25').replace('½', '.5').replace('¾', '.75') for d in distance])
+
+    if 'm' in dist:
+        if len(dist) > 2:
+            dist = int(dist.split('m')[0]) * 8 + float(dist.split('m')[1].strip('f'))
+        else:
+            dist = int(dist.split('m')[0]) * 8
+    else:
+        dist = dist.strip('f')
 
     return dist
+
+
+def distance_to_metres(distance):
+    dist = distance.lower()
+    metres = 0
+
+    if 'm' in dist:
+        metres += int(dist.split('m')[0]) * 1609.34
+
+    if 'f' in dist:
+        metres += int(dist.split('f')[0][-1]) * 201.168
+
+    if 'yds' in dist:
+        if 'f' in dist:
+            metres += int(dist.split('f')[1].strip('yds')) * .914
+        elif 'm' in dist:
+            metres += int(dist.split('m')[1].strip('yds')) * .914
+
+    return round(metres)
 
 
 def get_races(tracks, names, years, code, xy):
     races = []
     for track, name in zip(tracks, names):
         for year in years:
-            r = requests.get(
-                f"{xy[0]}/{track}/{year}/{code}/all-races", headers={"User-Agent": "Mozilla/5.0"},
-            )
+            r = requests.get(f'{xy[0]}/{track}/{year}/{code}/all-races', headers={'User-Agent': 'Mozilla/5.0'})
             if r.status_code == 200:
                 try:
                     results = r.json()
-                    if results["data"]["principleRaceResults"] == None:
-                        print(f"No {code} race data for {course_name(track)} in {year}.")
+                    if results['data']['principleRaceResults'] == None:
+                        print(f'No {code} race data for {course_name(track)} in {year}.')
                     else:
-                        for result in results["data"]["principleRaceResults"]:
-                            races.append(
-                                f'{xy[1]}/{track}/{name}/{result["raceDatetime"][:10]}/{result["raceInstanceUid"]}'
-                            )
+                        for result in results['data']['principleRaceResults']:
+                            races.append(f'{xy[1]}/{track}/{name}/{result["raceDatetime"][:10]}/{result["raceInstanceUid"]}')
                 except:
                     pass
             else:
-                print(f"Unable to access races from {course_name(track)} in {year}")
-
+                print(f'Unable to access races from {course_name(track)} in {year}')
     return races
 
 
@@ -393,71 +399,62 @@ def get_race_links(date, region):
 
 def calculate_times(win_time, dist_btn, going, code, course):
     times = []
-    if code == "flat":
-        if (
-            "Firm" in going
-            or "Standard" in going
-            or "Fast" in going
-            or "Hard" in going
-            or "Slow" in going
-        ):
-            if "southwell" in course.lower():
+    if code == 'flat':
+        if 'Firm' in going or 'Standard' in going or 'Fast' in going or 'Hard' in going or 'Slow' in going or 'Sloppy':
+            if 'southwell' in course.lower():
                 lps_scale = 5
             else:
                 lps_scale = 6
-        elif "Good" in going:
-            if "Soft" in going or "Yielding" in going:
+        elif 'Good' in going:
+            if 'Soft' in going or 'Yielding'in going:
                 lps_scale = 5.5
             else:
                 lps_scale = 6
-        elif "Soft" in going or "Heavy" in going or "Yielding" in going:
+        elif 'Soft' in going or 'Heavy' in going or 'Yielding' in going:
             lps_scale = 5
     else:
-        if "Firm" in going or "Standard" in going or "Hard" in going:
-            if "southwell" in course.lower():
+        if 'Firm' in going or 'Standard' in going:
+            if 'southwell' in course.lower():
                 lps_scale = 4
             else:
                 lps_scale = 5
-        elif "Good" in going:
-            if "Soft" in going or "Yielding" in going:
+        elif 'Good' in going:
+            if 'Soft' in going or 'Yielding'in going:
                 lps_scale = 4.5
             else:
                 lps_scale = 5
-        elif "Soft" in going or "Heavy" or "Yielding" in going:
+        elif 'Soft' in going or 'Heavy' in going or 'Yielding' in going or 'Slow' in going:
             lps_scale = 4
 
     for dist in dist_btn:
         try:
-            time = win_time + (float(dist) / lps_scale)
-            times.append("{}:{:2.2f}".format(int(time // 60), time % 60))
+            time = (win_time + (float(dist) / lps_scale))
+            times.append('{}:{:2.2f}'.format(int(time // 60), time % 60))
         except ValueError:
-            times.append("")
+            times.append('')
 
     return times
 
 
 def clean(data):
-    return [d.strip().replace("–", "") for d in data]
+    return [d.strip().replace('–', '') for d in data]
 
 
 def scrape_races(races, target, years, code):
-    if not os.path.exists("../data"):
-        os.makedirs("../data")
+    if not os.path.exists(f'../data/{code}/{target.lower()}/'):
+        os.makedirs(f'../data/{code}/{target.lower()}/')
 
-    with open(
-        f"../data/{target.lower()}-{years}_{code}.csv", "w", encoding="utf-8"
-    ) as csv:
+    with open(f'../data/{code}/{target.lower()}/{years}.csv', 'a', encoding="utf-8") as csv:
+
         csv.write(
-            (
-                '"date","course","time","race_name","class","band","dist(f)","dist(m)","going",'
-                '"pos","draw","btn","horse_name","sp","dec","age","weight","lbs","gear","fin_time",'
-                '"jockey","trainer","or","ts","rpr","prize(£)","sire","dam","damsire","comment"\n'
-            )
+            'Date,Course,Off,Name,Type,Class,Rating_Band,Age_Band,Sex_Rest,Dist,Dist_Y,Dist_M,Dist_F,Going,'
+            'Num,Pos,Ran,Draw,Btn,Ovr_Btn,Horse,SP,Dec,Age,Sex,Wgt,Lbs,HG,Time,Jockey,Trainer,OR,RPR,TS,Prize,'
+            'Sire,Dam,Damsire,Comment\n'
         )
 
         for race in races:
-            r = requests.get(race, headers={"User-Agent": "Mozilla/5.0"})
-            
+            r = requests.get(race, headers={'User-Agent': 'Mozilla/5.0'})
+
             while r.status_code == 403 or r.status_code == 404 or r.status_code == 503:
                 if r.status_code == 404:
                     sleep(2)
@@ -476,74 +473,185 @@ def scrape_races(races, target, years, code):
             try:
                 r_time = doc.xpath("//span[@data-test-selector='text-raceTime']/text()")[0]
             except IndexError:
-                r_time = ""
+                r_time = ''
 
             try:
-                race = (
-                    doc.xpath("//h2[@class='rp-raceTimeCourseName__title']/text()")[0]
-                    .strip().strip("\n").replace(",", " ").replace('"', "").replace("\x80", "")
-                )
+                race_name = doc.xpath("//h2[@class='rp-raceTimeCourseName__title']/text()")[0].strip().strip('\n')\
+                    .replace(',', ' ').replace('"', '').replace('\x80', '').replace('\\x80', '')
             except IndexError:
-                race = ""
+                race_name = ''
 
             try:
-                race_class = (doc.xpath("//span[@class='rp-raceTimeCourseName_class']/text()")[0].strip().strip("()"))
+                race_class = doc.xpath("//span[@class='rp-raceTimeCourseName_class']/text()")[0].strip().strip('()')
             except:
-                race_class = ""
+                race_class = ''
 
-            race, race_class = race_info(race, race_class)
+            if race_class == '':
+                race_class = try_get_class(race_name)
 
             try:
-                band = (doc.xpath("//span[@class='rp-raceTimeCourseName_ratingBandAndAgesAllowed']/text()")[0].strip().strip("()"))
+                band = doc.xpath("//span[@class='rp-raceTimeCourseName_ratingBandAndAgesAllowed']/text()")[0].strip().strip('()')
             except:
-                band = ""
-            band, race, race_class = band_info(band, race, race_class)
+                band = ''
+
+            rating_band = ''
+            age_band = ''
+
+            if len(band.split(',')) > 1:
+                for x in band.split(','):
+                    if 'yo' in x:
+                        age_band = x.strip()
+                    elif '-' in x:
+                        rating_band = x.strip()
+            else:
+                if 'yo' in band:
+                    age_band = band.strip()
+                elif '-' in band:
+                    rating_band = band.strip()
+
+            sex_rest = sex_restricted(race_name)
 
             try:
-                distance = doc.xpath("//span[@class='rp-raceTimeCourseName_distance']/text()")[0].strip()
+                distance = doc.xpath("//span[@data-test-selector='block-distanceInd']/text()")[0].strip()
             except IndexError:
-                distance = ""
-            dist = convert_distance(distance)
+                distance = ''
 
             try:
-                metres = round(float(dist) * 200)
-            except ValueError:
-                metres = ""
-                print(f"ValueError: (dist to metres conversion) RACE: {r_time} {date}")
+                dist_y = doc.xpath("//span[@data-test-selector='block-fullDistanceInd']/text()")[0].strip().strip('()')
+            except IndexError:
+                dist_y = ''
+
+            dist_f = distance_to_furlongs(distance)
+            dist_m = distance_to_metres(dist_y)
 
             try:
                 going = doc.xpath("//span[@class='rp-raceTimeCourseName_condition']/text()")[0].strip()
             except IndexError:
-                going = ""
+                going =''
+
+            race_type = ''
+
+            if code == 'flat' and 'national hunt flat' not in race_name.lower():
+                race_type = 'Flat'
+            else:
+                try:
+                    if 'hurdle' in doc.xpath("//span[@class='rp-raceTimeCourseName_hurdles']/text()")[0]:
+                        race_type = 'Hurdle'
+                    elif 'fence' in doc.xpath("//span[@class='rp-raceTimeCourseName_hurdles']/text()")[0]:
+                        race_type = 'Chase'
+                except IndexError:
+                    race_type = try_get_race_type(race_name.lower(), float(dist_f))
 
             pedigrees = doc.xpath("//tr[@data-test-selector='block-pedigreeInfoFullResults']/td")
             sires, dams, damsires = pedigree_info(pedigrees)
 
+            sex = []
+
+            for x in pedigrees:
+                try:
+                    sex.append(x.text.strip().split()[1].upper())
+                except IndexError:
+                    sex.append(x.text.strip().upper())
+
             coms = doc.xpath("//tr[@class='rp-horseTable__commentRow ng-cloak']/td/text()")
-            com = [x.strip().replace("  ", "").replace(",", " -").replace('\n', '') for x in coms]
+            com = [x.strip().replace('  ', '').replace(',', ' -').replace('\n', '') for x in coms]
             possy = doc.xpath("//span[@data-test-selector='text-horsePosition']/text()")
             del possy[1::2]
             pos = [x.strip() for x in possy]
             prizes = doc.xpath("//div[@data-test-selector='text-prizeMoney']/text()")
-            prize = [p.strip().replace(",", "").replace("£", "") for p in prizes]
+            prize = [p.strip().replace(",", '').replace('£', '') for p in prizes]
             try:
                 del prize[0]
                 for i in range(len(pos) - len(prize)):
-                    prize.append("")
+                    prize.append('')
             except IndexError:
-                prize = ["" for x in range(len(pos))]
+                prize = ['' for x in range(len(pos))]    
             draw = clean(doc.xpath("//sup[@class='rp-horseTable__pos__draw']/text()"))
             draw = [d.strip("()") for d in draw]
-            beaten = doc.xpath("//span[@class='rp-horseTable__pos__length']/span/text()")
-            del beaten[1::2]
-            btn = [
-                b.strip().strip("[]").replace('¼', '.25').replace('½', '.5').replace('¾', '.75')\
-                .replace('nk', '0.3').replace('snk', '0.25').replace('shd', '0.1').replace('hd', '0.2')\
-                .replace('nse', '0.05').replace('dht', '0') for b in beaten
+
+            btn = []
+            ovr_btn = []
+
+            for x in doc.xpath("//span[@class='rp-horseTable__pos__length']"):
+
+                distances = x.findall('span')
+
+                if len(distances) == 2:
+                    if distances[0].text == None:
+                        btn.append('0')
+                    else:
+                        btn.append(distances[0].text)
+                    if distances[1].text == None:
+                        ovr_btn.append('0')
+                    else:
+                        ovr_btn.append(distances[1].text.strip('[]'))
+                else:
+                    if distances[0].text == None:
+                        btn.append('0')
+                        ovr_btn.append('0')
+                    else:
+                        if distances[0].text == 'dht':
+                            btn.append(distances[0].text)
+                            ovr_btn.append(ovr_btn[-1])
+                        else:
+                            btn.append(distances[0].text)
+                            ovr_btn.append(distances[0].text)
+
+            try:
+                btn = [
+                    b.strip().replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('nk', '0.3')\
+                    .replace('snk', '0.25').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0')\
+                     for b in btn
+                ]
+            except AttributeError:
+                print(race)
+                print(btn)
+
+                sys.exit()
+
+            ovr_btn = [
+                b.strip().strip("[]").replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('nk', '0.3')\
+                .replace('snk', '0.25').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0') for b in ovr_btn
             ]
-            btn.insert(0, '0')
+
+            if len(ovr_btn) < len(pos):
+                ovr_btn.extend(['' for x in range(len(pos) - len(ovr_btn))])
+
             if len(btn) < len(pos):
-                btn.extend(["" for x in range(len(pos) - len(btn))])
+                btn.extend(['' for x in range(len(pos) - len(btn))])
+
+            time_btn = []
+
+            for x, y in zip(btn, ovr_btn):
+                try:
+                    if float(x) < .25:
+                        time_btn.append(str(float(x) + float(y)))
+                    else:
+                        time_btn.append(y)
+                except ValueError:
+                    time_btn.append(y)
+
+            numbers = [x.strip('.') for x in doc.xpath("//span[@class='rp-horseTable__saddleClothNo']/text()")]
+
+            try:
+                ran = doc.xpath("//span[@class='rp-raceInfo__value rp-raceInfo__value_black']/text()")[0].replace('ran', '').strip('\n').strip()
+            except IndexError:
+                print(r.status_code)
+                print(race)
+                print('Failed to find number of runners.')
+
+                with open('ran_error.html', 'w') as ran_error:
+                    ran_error.write(str(r.content))
+
+                sys.exit()
+
+            horse_nat = doc.xpath("//span[@class='rp-horseTable__horse__country']/text()")
+            nats = []
+            for nat in horse_nat:
+                if nat.strip() == '':
+                    nats.append('(GB)')
+                else:
+                    nats.append(nat.strip())
 
             name = clean(doc.xpath("//a[@data-test-selector='link-horseName']/text()"))
             sps = clean(doc.xpath("//span[@class='rp-horseTable__horse__price']/text()"))
@@ -553,21 +661,25 @@ def scrape_races(races, target, years, code):
             del trainer[1::2]
             del trainer[1::2]
             age = clean(doc.xpath("//td[@data-test-selector='horse-age']/text()"))
+            age = [a.replace('-', '.') for a in age]
             _or = clean(doc.xpath("//td[@data-ending='OR']/text()"))
             ts = clean(doc.xpath("//td[@data-ending='TS']/text()"))
             rpr = clean(doc.xpath("//td[@data-ending='RPR']/text()"))
             st = doc.xpath("//span[@data-ending='st']/text()")
             lb = doc.xpath("//span[@data-ending='lb']/text()")
-            wgt = [a.strip() + "-" + b.strip() for a, b in zip(st, lb)]
+            wgt = [a.strip() + '-' + b.strip() for a, b in zip(st, lb)]
             lbs = [int(a.strip()) * 14 + int(b.strip()) for a, b in zip(st, lb)]
             headgear = doc.xpath("//td[contains(@class, 'rp-horseTable__wgt')]")
             gear = []
             for h in headgear:
                 span = h.find('span[@class="rp-horseTable__headGear"]')
                 if span is not None:
-                    gear.append(span.text)
+                    try:
+                        gear.append(span.text + span[1].text.strip())
+                    except:
+                        gear.append(span.text)
                 else:
-                    gear.append("")
+                    gear.append('')
 
             info = doc.xpath('//div[@class="rp-raceInfo"]')[0].find('.//li').findall('.//span[@class="rp-raceInfo__value"]')
 
@@ -580,26 +692,42 @@ def scrape_races(races, target, years, code):
 
             if len(winning_time) > 1:
                 try:
-                    win_time = float(winning_time[0].replace("m", "")) * 60 + float(winning_time[1].strip("s"))
+                    win_time = float(winning_time[0].replace("m", '')) * 60 + float(winning_time[1].strip("s"))
                 except ValueError:
-                    print(f'ERROR: (winning time) {date} {course_name} {r_time}.')
+                    print(f'ERROR: (winning time) {date} {course} {r_time}.')
             else:
-                win_time = float(winning_time[0].strip("s"))
+                try:
+                    win_time = float(winning_time[0].strip("s"))
+                except ValueError:
+                    print(f'ERROR: (winning time) {date} {course} {r_time} {winning_time[0]}.')
 
-            times = calculate_times(win_time, btn, going, code, course_name)
+            try:
+                times = calculate_times(win_time, time_btn, going, code, course)
+            except:
+                print(race)
+                sys.exit()
+            
+            dec = fraction_to_decimal([sp.strip('F').strip('J').strip('C').strip() for sp in sps])
 
-            dec = fraction_to_decimal([sp.strip("F").strip("J").strip("C").strip() for sp in sps])
+            race_name = race_name.replace("'", "")
 
-            for p, pr, dr, bt, n, sp, dc, time, j, tr, a, o, t, rp, w, l, g, c, sire, dam, damsire in zip \
-            (pos, prize, draw, btn, name, sps, dec, times, jock, trainer, age, _or, ts, rpr, wgt, lbs, gear, com, sires, dams, damsires):
-                csv.write(
-                    (
-                        f"{date},{course_name},{r_time},{race},{race_class},{band.strip()},{dist},{metres},{going},{p},{dr},{bt},{n},"
-                        f"{sp},{dc},{a},{w},{l},{g},{time},{j},{tr},{o},{t},{rp},{pr},{sire},{dam},{damsire},{c}\n"
-                    )
-                )
+            for num, p, pr, dr, bt, ovr_bt, n, nat, sp, dc, time, j, tr, a, s, o, rp, t, w, l, g, c, sire, dam, damsire in \
+            zip(numbers, pos, prize, draw, btn, ovr_btn, name, nats, sps, dec, times, jock, trainer, age, sex, _or, rpr, ts, wgt, lbs, gear, com, sires, dams, damsires):
+                sire = sire.replace("'", '')
+                dam = dam.replace("'", '')
+                damsire = damsire.replace("'", '')
+                j = j.replace("'", '')
+                tr = tr.replace("'", '')
+                c = c.replace('\n', '').strip()
+                
+                csv.write((
+                    f'{date},{course},{r_time},{race_name},{race_type},{race_class},{rating_band},{age_band},{sex_rest},{distance},{dist_y},{dist_m},{dist_f},{going},'
+                    f'{num},{p},{ran},{dr},{bt},{ovr_bt},{n} {nat},{sp},{dc},{a},{s},{w},{l},{g},{time},{j},{tr},{o},{rp},{t},{pr},{sire},{dam},{damsire},{c}\n'
+                ))
 
-        print(f"\nFinished scraping. {target.lower()}-{years}_{code}.csv saved in rpscrape/data")
+                
+
+        print(f'\nFinished scraping. {years}.csv saved in rpscrape/data/{code}/{target.lower()}')
 
 
 def parse_args(args=sys.argv):
@@ -698,6 +826,8 @@ def parse_args(args=sys.argv):
 
 
 def main():
+    if len(sys.argv) > 1:
+        sys.exit(options())
 
     if 'local out of date' in cmd.Git('..').execute('git remote show origin').lower():
         x = input('Update available. Do you want to update? Y/N ')
@@ -708,10 +838,7 @@ def main():
             if 'up to date' in cmd.Git('..').execute('git remote show origin').lower():
                 sys.exit(print('Version up to date.'))
             else:
-                sys.exit(print('Failed to update'))
-
-    if len(sys.argv) > 1:
-        sys.exit(options())
+                sys.exit(print('Failed to update.'))
 
     try:
         import readline
