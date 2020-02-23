@@ -332,7 +332,7 @@ def distance_to_furlongs(distance):
     else:
         dist = dist.strip('f')
 
-    return dist
+    return float(dist)
 
 
 def distance_to_metres(distance):
@@ -362,7 +362,6 @@ def distance_to_yards(distance):
         return str(miles) + 'm' + str(furlongs) + 'f' + '0yds'
 
     return str(furlongs) + 'f' + '0yds'
-
 
 
 def get_races(tracks, names, years, code, xy):
@@ -542,13 +541,10 @@ def scrape_races(races, target, years, code):
             dist_m = distance_to_metres(dist_y)
 
             if dist_m == 0:
-                dist_m = str(round(dist_f * 201.168))
+                dist_m = round(dist_f * 201.168)
                 dist_y = distance_to_yards(dist_f)
 
-            if float(dist_f) % 2 == 0:
-                dist_f = str(int(dist_f)) + 'f'
-            else:
-                dist_f = str(dist_f) + 'f'
+            dist_f = str(dist_f).strip('.0') + 'f'
 
             try:
                 going = doc.xpath("//span[@class='rp-raceTimeCourseName_condition']/text()")[0].strip()
