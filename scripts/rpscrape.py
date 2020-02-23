@@ -3,6 +3,7 @@
 """ Scrapes results and saves them in csv format """
 
 from datetime import date, timedelta
+from git import Repo, cmd
 import json
 from lxml import html
 import os
@@ -697,6 +698,18 @@ def parse_args(args=sys.argv):
 
 
 def main():
+
+    if 'local out of date' in cmd.Git('..').execute('git remote show origin').lower():
+        x = input('Update available. Do you want to update? Y/N ')
+
+        if x.lower() == 'y':
+            Repo('..').remote(name='origin').pull()
+
+            if 'up to date' in cmd.Git('..').execute('git remote show origin').lower():
+                sys.exit(print('Version up to date.'))
+            else:
+                sys.exit(print('Failed to update'))
+
     if len(sys.argv) > 1:
         sys.exit(options())
 
