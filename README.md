@@ -31,12 +31,6 @@ In addition, the [Requests](http://docs.python-requests.org/en/master/), [GitPyt
 
 Run the program from the scripts folder:
 ```
-~$ cd rpscrape/scripts
-~$ ./rpscrape.py
-```
-
-on Windows:
-```
 > cd rpscrape/scripts
 > python rpscrape.py
 ```
