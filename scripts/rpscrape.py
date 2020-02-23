@@ -162,7 +162,7 @@ def valid_date(date):
     if len(date.split('/')) == 3:
         try:
             year, month, day = [int(x) for x in date.split('/')]
-            return year > 1995 and year <= 2020 and month > 0 and month <= 12 and day > 0 and day <= 31
+            return year >= 1988 and year <= 2020 and month > 0 and month <= 12 and day > 0 and day <= 31
         except ValueError:
             return False
     
@@ -239,49 +239,53 @@ def pedigree_info(pedigrees):
 def try_get_class(race):
     if ' Class A' in race or 'Class 1' in race:
         return 'Class 1'
-    elif ' Class B' in race or 'Class 2' in race:
+    if ' Class B' in race or 'Class 2' in race:
         return 'Class 2'
-    elif ' Class C' in race or 'Class 3' in race:
+    if ' Class C' in race or 'Class 3' in race:
         return 'Class 3'
-    elif ' Class D' in race or 'Class 4' in race:
+    if ' Class D' in race or 'Class 4' in race:
         return 'Class 4'
-    elif ' Class E' in race or 'Class 5' in race:
+    if ' Class E' in race or 'Class 5' in race:
         return 'Class 5'
-    elif ' Class F' in race or 'Class 6' in race:
+    if ' Class F' in race or 'Class 6' in race:
         return 'Class 6'
-    elif ' Class G' in race:
+    if ' Class G' in race:
         return 'Class 6'
-    elif ' Class H' in race or 'Class 7' in race:
+    if ' Class H' in race or 'Class 7' in race:
         return 'Class 7'
-
-    r_class = ''
-
-    if '(Premier Handicap)' in race:
+    if '(premier handicap)' in race:
         return 'Class 2'
-    elif '(Group' in race:
+
+
+def try_get_pattern(race, race_class):
+    pattern = ''
+    r_class = 'Class 1'
+
+    if '(Group' in race:
         try:
-            r_class = search('(\(Grou..)\w+', race).group(0).strip('(')
+            pattern = search('(\(Grou..)\w+', race).group(0).strip('(')
         except AttributeError:
-            r_class = search('(\(Grou.)\w+', race).group(0).strip('(')
-        return r_class
-    elif '(Grade' in race:
+            pattern = search('(\(Grou.)\w+', race).group(0).strip('(')
+        return r_class, pattern
+    if '(Grade' in race:
         try:
-            r_class = search('(\(Grad..)\w+', race).group(0).strip('(')
+            pattern = search('(\(Grad..)\w+', race).group(0).strip('(')
         except AttributeError:
-            r_class = search('(\(Grad.)\w+', race).group(0).strip('(')
-        return r_class
-    elif 'Grade' in race:
-        return search('Grad..\w+', race).group(0)
-    elif '(Local Group 1)' in race:
-        return 'Group 1'
-    elif '(Local Group 2)' in race:
-        return 'Group 2'
-    elif '(Local Group 3)' in race:
-        return 'Group 3'
-    elif '(Listed' in race:
-        return 'Listed'
-    else:
-        return r_class
+            pattern = search('(\(Grad.)\w+', race).group(0).strip('(')
+        return r_class, pattern
+
+    if 'Grade' in race:
+        return r_class, search('Grad..\w+', race).group(0)
+    if '(Local Group 1)' in race:
+        return r_class, 'Group 1'
+    if '(Local Group 2)' in race:
+        return r_class, 'Group 2'
+    if '(Local Group 3)' in race:
+        return r_class, 'Group 3'
+    if '(Listed' in race:
+        return r_class, 'Listed'
+
+    return race_class, pattern
 
 
 def try_get_race_type(race, race_dist):
@@ -348,6 +352,17 @@ def distance_to_metres(distance):
             metres += int(dist.split('m')[1].strip('yds')) * .914
 
     return round(metres)
+
+
+def distance_to_yards(distance):
+    miles = int(distance // 8)
+    furlongs = int(distance % 8)
+
+    if miles > 0:
+        return str(miles) + 'm' + str(furlongs) + 'f' + '0yds'
+
+    return str(furlongs) + 'f' + '0yds'
+
 
 
 def get_races(tracks, names, years, code, xy):
@@ -444,12 +459,12 @@ def scrape_races(races, target, years, code):
     if not os.path.exists(f'../data/{code}/{target.lower()}/'):
         os.makedirs(f'../data/{code}/{target.lower()}/')
 
-    with open(f'../data/{code}/{target.lower()}/{years}.csv', 'a', encoding="utf-8") as csv:
+    with open(f'../data/{code}/{target.lower()}/{years}.csv', 'w', encoding="utf-8") as csv:
 
         csv.write(
-            'Date,Course,Off,Name,Type,Class,Rating_Band,Age_Band,Sex_Rest,Dist,Dist_Y,Dist_M,Dist_F,Going,'
-            'Num,Pos,Ran,Draw,Btn,Ovr_Btn,Horse,SP,Dec,Age,Sex,Wgt,Lbs,HG,Time,Jockey,Trainer,OR,RPR,TS,Prize,'
-            'Sire,Dam,Damsire,Comment\n'
+            'Date,Course,Off,Name,Type,Class,Pattern,Rating_Band,Age_Band,Sex_Rest,Dist,Dist_Y,Dist_M,Dist_F,'
+            'Going,Num,Pos,Ran,Draw,Btn,Ovr_Btn,Horse,SP,Dec,Age,Sex,Wgt,Lbs,HG,Time,Jockey,Trainer,OR,RPR,TS,'
+            'Prize,Sire,Dam,Damsire,Comment\n'
         )
 
         for race in races:
@@ -489,6 +504,8 @@ def scrape_races(races, target, years, code):
             if race_class == '':
                 race_class = try_get_class(race_name)
 
+            race_class, pattern = try_get_pattern(race_name, race_class)
+
             try:
                 band = doc.xpath("//span[@class='rp-raceTimeCourseName_ratingBandAndAgesAllowed']/text()")[0].strip().strip('()')
             except:
@@ -523,6 +540,15 @@ def scrape_races(races, target, years, code):
 
             dist_f = distance_to_furlongs(distance)
             dist_m = distance_to_metres(dist_y)
+
+            if dist_m == 0:
+                dist_m = str(round(dist_f * 201.168))
+                dist_y = distance_to_yards(dist_f)
+
+            if float(dist_f) % 2 == 0:
+                dist_f = str(int(dist_f)) + 'f'
+            else:
+                dist_f = str(dist_f) + 'f'
 
             try:
                 going = doc.xpath("//span[@class='rp-raceTimeCourseName_condition']/text()")[0].strip()
@@ -601,7 +627,7 @@ def scrape_races(races, target, years, code):
                 btn = [
                     b.strip().replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('nk', '0.3')\
                     .replace('snk', '0.25').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0')\
-                     for b in btn
+                    for b in btn
                 ]
             except AttributeError:
                 print(race)
@@ -611,7 +637,8 @@ def scrape_races(races, target, years, code):
 
             ovr_btn = [
                 b.strip().strip("[]").replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('nk', '0.3')\
-                .replace('snk', '0.25').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0') for b in ovr_btn
+                .replace('snk', '0.25').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0')\
+                for b in ovr_btn
             ]
 
             if len(ovr_btn) < len(pos):
@@ -634,7 +661,9 @@ def scrape_races(races, target, years, code):
             numbers = [x.strip('.') for x in doc.xpath("//span[@class='rp-horseTable__saddleClothNo']/text()")]
 
             try:
-                ran = doc.xpath("//span[@class='rp-raceInfo__value rp-raceInfo__value_black']/text()")[0].replace('ran', '').strip('\n').strip()
+                ran = doc.xpath(
+                    "//span[@class='rp-raceInfo__value rp-raceInfo__value_black']/text()"
+                )[0].replace('ran', '').strip('\n').strip()
             except IndexError:
                 print(r.status_code)
                 print(race)
@@ -712,7 +741,8 @@ def scrape_races(races, target, years, code):
             race_name = race_name.replace("'", "")
 
             for num, p, pr, dr, bt, ovr_bt, n, nat, sp, dc, time, j, tr, a, s, o, rp, t, w, l, g, c, sire, dam, damsire in \
-            zip(numbers, pos, prize, draw, btn, ovr_btn, name, nats, sps, dec, times, jock, trainer, age, sex, _or, rpr, ts, wgt, lbs, gear, com, sires, dams, damsires):
+            zip(numbers, pos, prize, draw, btn, ovr_btn, name, nats, sps, dec, times, jock, trainer, age, sex, _or, rpr, ts,\
+                wgt, lbs, gear, com, sires, dams, damsires):
                 sire = sire.replace("'", '')
                 dam = dam.replace("'", '')
                 damsire = damsire.replace("'", '')
@@ -721,8 +751,10 @@ def scrape_races(races, target, years, code):
                 c = c.replace('\n', '').strip()
                 
                 csv.write((
-                    f'{date},{course},{r_time},{race_name},{race_type},{race_class},{rating_band},{age_band},{sex_rest},{distance},{dist_y},{dist_m},{dist_f},{going},'
-                    f'{num},{p},{ran},{dr},{bt},{ovr_bt},{n} {nat},{sp},{dc},{a},{s},{w},{l},{g},{time},{j},{tr},{o},{rp},{t},{pr},{sire},{dam},{damsire},{c}\n'
+                    f'{date},{course},{r_time},{race_name},{race_type},{race_class},{pattern},'
+                    f'{rating_band},{age_band},{sex_rest},{distance},{dist_y},{dist_m},{dist_f},'
+                    f'{going},{num},{p},{ran},{dr},{bt},{ovr_bt},{n} {nat},{sp},{dc},{a},{s},{w},'
+                    f'{l},{g},{time},{j},{tr},{o},{rp},{t},{pr},{sire},{dam},{damsire},{c}\n'
                 ))
 
                 
