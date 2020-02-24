@@ -236,25 +236,70 @@ def pedigree_info(pedigrees):
     return sires, dams, damsires
 
 
+def class_from_rating_band(rating_band, code):
+    
+    try:
+        upper = int(rating_band.split('-')[1])
+    except:
+        return ''
+
+    if code == 'flat':
+        if upper >= 100:
+            return 'Class 2'
+        if upper >= 90:
+            return 'Class 3'
+        if upper >= 80:
+            return 'Class 4'
+        if upper >= 70:
+            return 'Class 5'
+        if upper >= 60:
+            return 'Class 6'
+        if upper >= 40:
+            return 'Class 7'
+    else:
+        if upper >= 140:
+            return 'Class 2'
+        if upper >= 120:
+            return 'Class 3'
+        if upper >= 100:
+            return 'Class 4'
+        if upper >= 85:
+            return 'Class 5'
+
+    return ''
+
+
 def try_get_class(race):
+    race_name = race
+
     if ' Class A' in race or 'Class 1' in race:
-        return 'Class 1'
+        race_name = race.replace(' Class A', '').replace('Class 1', '').replace('()', '')
+        return race_name, 'Class 1'
     if ' Class B' in race or 'Class 2' in race:
-        return 'Class 2'
+        race_name = race.replace(' Class B', '').replace('Class 2', '').replace('()', '')
+        return race_name, 'Class 2'
     if ' Class C' in race or 'Class 3' in race:
-        return 'Class 3'
+        race_name = race.replace(' Class C', '').replace('Class 3', '').replace('()', '')
+        return race_name, 'Class 3'
     if ' Class D' in race or 'Class 4' in race:
-        return 'Class 4'
+        race_name = race.replace(' Class D', '').replace('Class 4', '').replace('()', '')
+        return race_name, 'Class 4'
     if ' Class E' in race or 'Class 5' in race:
-        return 'Class 5'
+        race_name = race.replace(' Class E', '').replace('Class 5', '').replace('()', '')
+        return race_name, 'Class 5'
     if ' Class F' in race or 'Class 6' in race:
-        return 'Class 6'
-    if ' Class G' in race:
-        return 'Class 6'
+        race_name = race.replace(' Class F', '').replace('Class 6', '').replace('()', '')
+        return race_name, 'Class 6'
     if ' Class H' in race or 'Class 7' in race:
-        return 'Class 7'
+        race_name = race.replace(' Class H', '').replace('Class 7', '').replace('()', '')
+        return race_name, 'Class 7'
+    if ' Class G' in race:
+        race_name = race.replace(' Class G', '').replace('()', '')
+        return race_name, 'Class 6'
     if '(premier handicap)' in race:
-        return 'Class 2'
+        return race_name, 'Class 2'
+
+    return race, ''
 
 
 def try_get_pattern(race, race_class):
@@ -352,16 +397,6 @@ def distance_to_metres(distance):
             metres += int(dist.split('m')[1].strip('yds')) * .914
 
     return round(metres)
-
-
-def distance_to_yards(distance):
-    miles = int(distance // 8)
-    furlongs = int(distance % 8)
-
-    if miles > 0:
-        return str(miles) + 'm' + str(furlongs) + 'f' + '0yds'
-
-    return str(furlongs) + 'f' + '0yds'
 
 
 def get_races(tracks, names, years, code, xy):
@@ -501,7 +536,7 @@ def scrape_races(races, target, years, code):
                 race_class = ''
 
             if race_class == '':
-                race_class = try_get_class(race_name)
+                race_name, race_class = try_get_class(race_name)
 
             race_class, pattern = try_get_pattern(race_name, race_class)
 
@@ -525,6 +560,9 @@ def scrape_races(races, target, years, code):
                 elif '-' in band:
                     rating_band = band.strip()
 
+            if race_class == '' and rating_band != '':
+                race_class = class_from_rating_band(rating_band, code)
+
             sex_rest = sex_restricted(race_name)
 
             try:
@@ -539,11 +577,11 @@ def scrape_races(races, target, years, code):
 
             dist_f = distance_to_furlongs(distance)
             dist_m = distance_to_metres(dist_y)
-
+            
             if dist_m == 0:
                 dist_m = round(dist_f * 201.168)
-                dist_y = distance_to_yards(dist_f)
-
+            
+            dist_y = round(dist_m * 1.09361)
             dist_f = str(dist_f).strip('.0') + 'f'
 
             try:
