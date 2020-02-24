@@ -153,7 +153,7 @@ def valid_region(code):
 
 def valid_years(years):
     if years:
-        return all(year.isdigit() and int(year) >= 1988 and int(year) <= 2020 for year in years)
+        return all(year.isdigit() and int(year) >= 1987 and int(year) <= 2020 for year in years)
 
     return False
 
@@ -162,7 +162,7 @@ def valid_date(date):
     if len(date.split('/')) == 3:
         try:
             year, month, day = [int(x) for x in date.split('/')]
-            return year >= 1988 and year <= 2020 and month > 0 and month <= 12 and day > 0 and day <= 31
+            return year >= 1987 and year <= 2020 and month > 0 and month <= 12 and day > 0 and day <= 31
         except ValueError:
             return False
     
@@ -269,6 +269,27 @@ def class_from_rating_band(rating_band, code):
     return ''
 
 
+def clean_race_name(race):
+    if ' Class A' in race or 'Class 1' in race:
+        return race.replace(' Class A', '').replace('Class 1', '').replace('()', '')
+    if ' Class B' in race or 'Class 2' in race:
+        return race.replace(' Class B', '').replace('Class 2', '').replace('()', '')
+    if ' Class C' in race or 'Class 3' in race:
+        return race.replace(' Class C', '').replace('Class 3', '').replace('()', '')
+    if ' Class D' in race or 'Class 4' in race:
+        return race.replace(' Class D', '').replace('Class 4', '').replace('()', '')
+    if ' Class E' in race or 'Class 5' in race:
+        return race.replace(' Class E', '').replace('Class 5', '').replace('()', '')
+    if ' Class F' in race or 'Class 6' in race:
+        return race.replace(' Class F', '').replace('Class 6', '').replace('()', '')
+    if ' Class H' in race or 'Class 7' in race:
+        return race.replace(' Class H', '').replace('Class 7', '').replace('()', '')
+    if ' Class G' in race:
+        return race.replace(' Class G', '').replace('()', '')
+
+    return race
+
+
 def try_get_class(race):
     race_name = race
 
@@ -318,7 +339,6 @@ def try_get_pattern(race, race_class):
         except AttributeError:
             pattern = search('(\(Grad.)\w+', race).group(0).strip('(')
         return r_class, pattern
-
     if 'Grade' in race:
         return r_class, search('Grad..\w+', race).group(0)
     if '(Local Group 1)' in race:
@@ -538,6 +558,8 @@ def scrape_races(races, target, years, code):
             if race_class == '':
                 race_name, race_class = try_get_class(race_name)
 
+            race_name = clean_race_name(race_name)
+
             race_class, pattern = try_get_pattern(race_name, race_class)
 
             try:
@@ -614,7 +636,7 @@ def scrape_races(races, target, years, code):
                     sex.append(x.text.strip().upper())
 
             coms = doc.xpath("//tr[@class='rp-horseTable__commentRow ng-cloak']/td/text()")
-            com = [x.strip().replace('  ', '').replace(',', ' -').replace('\n', '') for x in coms]
+            com = [x.strip().replace('  ', '').replace(',', ' -').replace('\n', ' ').replace('\r', '') for x in coms]
             possy = doc.xpath("//span[@data-test-selector='text-horsePosition']/text()")
             del possy[1::2]
             pos = [x.strip() for x in possy]
@@ -652,14 +674,17 @@ def scrape_races(races, target, years, code):
                     else:
                         if distances[0].text == 'dht':
                             btn.append(distances[0].text)
-                            ovr_btn.append(ovr_btn[-1])
+                            try:
+                                ovr_btn.append(ovr_btn[-1])
+                            except IndexError:
+                                ovr_btn.append(btn[-1])
                         else:
                             btn.append(distances[0].text)
                             ovr_btn.append(distances[0].text)
 
             try:
                 btn = [
-                    b.strip().replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('nk', '0.3')\
+                    b.strip().replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('nk', '0.3').replace('sht-hd', '0.1')\
                     .replace('snk', '0.25').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0')\
                     for b in btn
                 ]
@@ -670,7 +695,7 @@ def scrape_races(races, target, years, code):
                 sys.exit()
 
             ovr_btn = [
-                b.strip().strip("[]").replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('nk', '0.3')\
+                b.strip().strip("[]").replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('nk', '0.3').replace('sht-hd', '0.1')\
                 .replace('snk', '0.25').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0')\
                 for b in ovr_btn
             ]
@@ -718,6 +743,7 @@ def scrape_races(races, target, years, code):
 
             name = clean(doc.xpath("//a[@data-test-selector='link-horseName']/text()"))
             sps = clean(doc.xpath("//span[@class='rp-horseTable__horse__price']/text()"))
+            sps = [x.replace('No Odds', '') for x in sps]
             jock = clean(doc.xpath("//a[@data-test-selector='link-jockeyName']/text()"))
             del jock[::2]
             trainer = clean(doc.xpath("//a[@data-test-selector='link-trainerName']/text()"))
