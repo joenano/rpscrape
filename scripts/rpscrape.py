@@ -237,7 +237,6 @@ def pedigree_info(pedigrees):
 
 
 def class_from_rating_band(rating_band, code):
-    
     try:
         upper = int(rating_band.split('-')[1])
     except:
@@ -270,57 +269,47 @@ def class_from_rating_band(rating_band, code):
 
 
 def clean_race_name(race):
-    if ' Class A' in race or 'Class 1' in race:
-        return race.replace(' Class A', '').replace('Class 1', '').replace('()', '')
-    if ' Class B' in race or 'Class 2' in race:
-        return race.replace(' Class B', '').replace('Class 2', '').replace('()', '')
-    if ' Class C' in race or 'Class 3' in race:
-        return race.replace(' Class C', '').replace('Class 3', '').replace('()', '')
-    if ' Class D' in race or 'Class 4' in race:
-        return race.replace(' Class D', '').replace('Class 4', '').replace('()', '')
-    if ' Class E' in race or 'Class 5' in race:
-        return race.replace(' Class E', '').replace('Class 5', '').replace('()', '')
-    if ' Class F' in race or 'Class 6' in race:
-        return race.replace(' Class F', '').replace('Class 6', '').replace('()', '')
-    if ' Class H' in race or 'Class 7' in race:
-        return race.replace(' Class H', '').replace('Class 7', '').replace('()', '')
-    if ' Class G' in race:
-        return race.replace(' Class G', '').replace('()', '')
+    if 'Class A' in race or 'Class 1' in race:
+        return race.replace('Class A', '').replace('Class 1', '').replace('()', '')
+    if 'Class B' in race or 'Class 2' in race:
+        return race.replace('Class B', '').replace('Class 2', '').replace('()', '')
+    if 'Class C' in race or 'Class 3' in race:
+        return race.replace('Class C', '').replace('Class 3', '').replace('()', '')
+    if 'Class D' in race or 'Class 4' in race:
+        return race.replace('Class D', '').replace('Class 4', '').replace('()', '')
+    if 'Class E' in race or 'Class 5' in race:
+        return race.replace('Class E', '').replace('Class 5', '').replace('()', '')
+    if 'Class F' in race or 'Class 6' in race:
+        return race.replace('Class F', '').replace('Class 6', '').replace('()', '')
+    if 'Class H' in race or 'Class 7' in race:
+        return race.replace('Class H', '').replace('Class 7', '').replace('()', '')
+    if 'Class G' in race:
+        return race.replace('Class G', '').replace('()', '')
 
     return race
 
 
 def try_get_class(race):
-    race_name = race
-
-    if ' Class A' in race or 'Class 1' in race:
-        race_name = race.replace(' Class A', '').replace('Class 1', '').replace('()', '')
-        return race_name, 'Class 1'
-    if ' Class B' in race or 'Class 2' in race:
-        race_name = race.replace(' Class B', '').replace('Class 2', '').replace('()', '')
-        return race_name, 'Class 2'
-    if ' Class C' in race or 'Class 3' in race:
-        race_name = race.replace(' Class C', '').replace('Class 3', '').replace('()', '')
-        return race_name, 'Class 3'
-    if ' Class D' in race or 'Class 4' in race:
-        race_name = race.replace(' Class D', '').replace('Class 4', '').replace('()', '')
-        return race_name, 'Class 4'
-    if ' Class E' in race or 'Class 5' in race:
-        race_name = race.replace(' Class E', '').replace('Class 5', '').replace('()', '')
-        return race_name, 'Class 5'
-    if ' Class F' in race or 'Class 6' in race:
-        race_name = race.replace(' Class F', '').replace('Class 6', '').replace('()', '')
-        return race_name, 'Class 6'
-    if ' Class H' in race or 'Class 7' in race:
-        race_name = race.replace(' Class H', '').replace('Class 7', '').replace('()', '')
-        return race_name, 'Class 7'
-    if ' Class G' in race:
-        race_name = race.replace(' Class G', '').replace('()', '')
-        return race_name, 'Class 6'
+    if 'Class A' in race or 'Class 1' in race:
+        return 'Class 1'
+    if 'Class B' in race or 'Class 2' in race:
+        return 'Class 2'
+    if 'Class C' in race or 'Class 3' in race:
+        return 'Class 3'
+    if 'Class D' in race or 'Class 4' in race:
+        return 'Class 4'
+    if 'Class E' in race or 'Class 5' in race:
+        return 'Class 5'
+    if 'Class F' in race or 'Class 6' in race:
+        return 'Class 6'
+    if 'Class H' in race or 'Class 7' in race:
+        return 'Class 7'
+    if 'Class G' in race:
+        return 'Class 6'
     if '(premier handicap)' in race:
-        return race_name, 'Class 2'
+        return 'Class 2'
 
-    return race, ''
+    return ''
 
 
 def try_get_pattern(race, race_class):
@@ -556,7 +545,7 @@ def scrape_races(races, target, years, code):
                 race_class = ''
 
             if race_class == '':
-                race_name, race_class = try_get_class(race_name)
+                race_class = try_get_class(race_name)
 
             race_name = clean_race_name(race_name)
 
@@ -609,7 +598,7 @@ def scrape_races(races, target, years, code):
             try:
                 going = doc.xpath("//span[@class='rp-raceTimeCourseName_condition']/text()")[0].strip()
             except IndexError:
-                going =''
+                going = ''
 
             race_type = ''
 
@@ -622,7 +611,7 @@ def scrape_races(races, target, years, code):
                     elif 'fence' in doc.xpath("//span[@class='rp-raceTimeCourseName_hurdles']/text()")[0]:
                         race_type = 'Chase'
                 except IndexError:
-                    race_type = try_get_race_type(race_name.lower(), float(dist_f))
+                    race_type = try_get_race_type(race_name.lower(), float(dist_f.strip('f')))
 
             pedigrees = doc.xpath("//tr[@data-test-selector='block-pedigreeInfoFullResults']/td")
             sires, dams, damsires = pedigree_info(pedigrees)
@@ -684,19 +673,17 @@ def scrape_races(races, target, years, code):
 
             try:
                 btn = [
-                    b.strip().replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('nk', '0.3').replace('sht-hd', '0.1')\
-                    .replace('snk', '0.25').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0')\
+                    b.strip().replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('snk', '0.2').replace('nk', '0.3')\
+                    .replace('sht-hd', '0.1').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0').replace('dist', '30')\
                     for b in btn
                 ]
             except AttributeError:
-                print(race)
-                print(btn)
-
+                print("btn error: ", race)
                 sys.exit()
 
             ovr_btn = [
-                b.strip().strip("[]").replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('nk', '0.3').replace('sht-hd', '0.1')\
-                .replace('snk', '0.25').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0')\
+                b.strip().strip("[]").replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('snk', '0.2').replace('nk', '0.3')\
+                .replace('sht-hd', '0.1').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0').replace('dist', '30')\
                 for b in ovr_btn
             ]
 
@@ -772,29 +759,45 @@ def scrape_races(races, target, years, code):
 
             info = doc.xpath('//div[@class="rp-raceInfo"]')[0].find('.//li').findall('.//span[@class="rp-raceInfo__value"]')
 
+            times = []
+
             if len(info) == 3:
                 winning_time = clean(info[1].text.split("("))[0].split()
+
+                if winning_time[0] == '0.0.00s' or winning_time[0] == '0.00s':
+                    try:
+                        winning_time = info[1].text.split("(")[1].lower().replace('fast by', '').strip().strip(')').split()
+                    except IndexError:
+                        times = ['-' for x in range(len(pos))]
+
             elif len(info) == 2:
                 winning_time = info[0].text.split("(")[0].split()
+
+                if winning_time[0] == '0.0.00s' or winning_time[0] == '0.00s':
+                    try:
+                        winning_time = info[0].text.split("(")[1].lower().replace('fast by', '').strip().strip(')').split()
+                    except IndexError:
+                        times = ['-' for x in range(len(pos))]
             else:
                 print(f'ERROR: (winning time) {date} {course_name} {r_time}.')
 
-            if len(winning_time) > 1:
-                try:
-                    win_time = float(winning_time[0].replace("m", '')) * 60 + float(winning_time[1].strip("s"))
-                except ValueError:
-                    print(f'ERROR: (winning time) {date} {course} {r_time}.')
-            else:
-                try:
-                    win_time = float(winning_time[0].strip("s"))
-                except ValueError:
-                    print(f'ERROR: (winning time) {date} {course} {r_time} {winning_time[0]}.')
+            if '-' not in times:
+                if len(winning_time) > 1:
+                    try:
+                        win_time = float(winning_time[0].replace("m", '')) * 60 + float(winning_time[1].strip("s"))
+                    except ValueError:
+                        print(f'ERROR: (winning time) {date} {course} {r_time}.')
+                else:
+                    try:
+                        win_time = float(winning_time[0].strip("s"))
+                    except ValueError:
+                        print(f'ERROR: (winning time) {date} {course} {r_time} {winning_time[0]}.')
 
-            try:
-                times = calculate_times(win_time, time_btn, going, code, course)
-            except:
-                print(race)
-                sys.exit()
+                try:
+                    times = calculate_times(win_time, time_btn, going, code, course)
+                except:
+                    print("times error:", race)
+                    sys.exit()
             
             dec = fraction_to_decimal([sp.strip('F').strip('J').strip('C').strip() for sp in sps])
 
