@@ -457,6 +457,7 @@ def get_race_links(date, region):
 
 def calculate_times(win_time, dist_btn, going, code, course):
     times = []
+
     if code == 'flat':
         if 'Firm' in going or 'Standard' in going or 'Fast' in going or 'Hard' in going or 'Slow' in going or 'Sloppy':
             if 'southwell' in course.lower():
@@ -507,7 +508,7 @@ def scrape_races(races, target, years, code):
         csv.write(
             'Date,Course,Off,Name,Type,Class,Pattern,Rating_Band,Age_Band,Sex_Rest,Dist,Dist_Y,Dist_M,Dist_F,'
             'Going,Num,Pos,Ran,Draw,Btn,Ovr_Btn,Horse,SP,Dec,Age,Sex,Wgt,Lbs,HG,Time,Jockey,Trainer,OR,RPR,TS,'
-            'Prize,Sire,Dam,Damsire,Comment\n'
+            'Prize,Sire,Dam,Damsire,Owner,Comment\n'
         )
 
         for race in races:
@@ -535,7 +536,7 @@ def scrape_races(races, target, years, code):
 
             try:
                 race_name = doc.xpath("//h2[@class='rp-raceTimeCourseName__title']/text()")[0].strip().strip('\n')\
-                    .replace(',', ' ').replace('"', '').replace('\x80', '').replace('\\x80', '')
+                    .replace(',', ' ').replace('"', '').replace('\x80', '').replace('\\x80', '').replace('  ', ' ')
             except IndexError:
                 race_name = ''
 
@@ -625,10 +626,12 @@ def scrape_races(races, target, years, code):
                     sex.append(x.text.strip().upper())
 
             coms = doc.xpath("//tr[@class='rp-horseTable__commentRow ng-cloak']/td/text()")
-            com = [x.strip().replace('  ', '').replace(',', ' -').replace('\n', ' ').replace('\r', '') for x in coms]
+            coms = [x.strip().replace('  ', '').replace(',', ' -').replace('\n', ' ').replace('\r', '') for x in coms]
+            
             possy = doc.xpath("//span[@data-test-selector='text-horsePosition']/text()")
             del possy[1::2]
             pos = [x.strip() for x in possy]
+            
             prizes = doc.xpath("//div[@data-test-selector='text-prizeMoney']/text()")
             prize = [p.strip().replace(",", '').replace('£', '') for p in prizes]
             try:
@@ -636,7 +639,8 @@ def scrape_races(races, target, years, code):
                 for i in range(len(pos) - len(prize)):
                     prize.append('')
             except IndexError:
-                prize = ['' for x in range(len(pos))]    
+                prize = ['' for x in range(len(pos))]
+
             draw = clean(doc.xpath("//sup[@class='rp-horseTable__pos__draw']/text()"))
             draw = [d.strip("()") for d in draw]
 
@@ -729,22 +733,34 @@ def scrape_races(races, target, years, code):
                     nats.append(nat.strip())
 
             name = clean(doc.xpath("//a[@data-test-selector='link-horseName']/text()"))
+
             sps = clean(doc.xpath("//span[@class='rp-horseTable__horse__price']/text()"))
             sps = [x.replace('No Odds', '') for x in sps]
+
             jock = clean(doc.xpath("//a[@data-test-selector='link-jockeyName']/text()"))
             del jock[::2]
+
             trainer = clean(doc.xpath("//a[@data-test-selector='link-trainerName']/text()"))
             del trainer[1::2]
             del trainer[1::2]
+
+            owners = doc.xpath("//a[@data-test-selector='link-silk']")
+            owners = [x.attrib['href'].split('/')[-1].replace('-', ' ').title() for x in owners]
+
             age = clean(doc.xpath("//td[@data-test-selector='horse-age']/text()"))
             age = [a.replace('-', '.') for a in age]
+
             _or = clean(doc.xpath("//td[@data-ending='OR']/text()"))
+
             ts = clean(doc.xpath("//td[@data-ending='TS']/text()"))
+
             rpr = clean(doc.xpath("//td[@data-ending='RPR']/text()"))
+
             st = doc.xpath("//span[@data-ending='st']/text()")
             lb = doc.xpath("//span[@data-ending='lb']/text()")
             wgt = [a.strip() + '-' + b.strip() for a, b in zip(st, lb)]
             lbs = [int(a.strip()) * 14 + int(b.strip()) for a, b in zip(st, lb)]
+
             headgear = doc.xpath("//td[contains(@class, 'rp-horseTable__wgt')]")
             gear = []
             for h in headgear:
@@ -803,21 +819,22 @@ def scrape_races(races, target, years, code):
 
             race_name = race_name.replace("'", "")
 
-            for num, p, pr, dr, bt, ovr_bt, n, nat, sp, dc, time, j, tr, a, s, o, rp, t, w, l, g, c, sire, dam, damsire in \
+            for num, p, pr, dr, bt, ovr_bt, n, nat, sp, dc, time, j, tr, a, s, o, rp, t, w, l, g, com, sire, dam, damsire, owner in \
             zip(numbers, pos, prize, draw, btn, ovr_btn, name, nats, sps, dec, times, jock, trainer, age, sex, _or, rpr, ts,\
-                wgt, lbs, gear, com, sires, dams, damsires):
+                wgt, lbs, gear, coms, sires, dams, damsires, owners):
+
                 sire = sire.replace("'", '')
                 dam = dam.replace("'", '')
                 damsire = damsire.replace("'", '')
                 j = j.replace("'", '')
                 tr = tr.replace("'", '')
-                c = c.replace('\n', '').strip()
+                com = com.replace('\n', '').strip()
                 
                 csv.write((
                     f'{date},{course},{r_time},{race_name},{race_type},{race_class},{pattern},'
                     f'{rating_band},{age_band},{sex_rest},{distance},{dist_y},{dist_m},{dist_f},'
                     f'{going},{num},{p},{ran},{dr},{bt},{ovr_bt},{n} {nat},{sp},{dc},{a},{s},{w},'
-                    f'{l},{g},{time},{j},{tr},{o},{rp},{t},{pr},{sire},{dam},{damsire},{c}\n'
+                    f'{l},{g},{time},{j},{tr},{o},{rp},{t},{pr},{sire},{dam},{damsire},{owner},{com}\n'
                 ))
 
                 
