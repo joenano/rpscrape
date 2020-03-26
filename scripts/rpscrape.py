@@ -221,6 +221,7 @@ def pedigree_info(pedigrees):
                 dam = dam + ' ' + dam_nat.strip()
             else:
                 dam = dam + ' (GB)'
+        
             dams.append(dam)
         else:
             dams.append('')
@@ -269,22 +270,32 @@ def class_from_rating_band(rating_band, code):
 
 
 def clean_race_name(race):
-    if 'Class A' in race or 'Class 1' in race:
-        return race.replace('Class A', '').replace('Class 1', '').replace('()', '')
-    if 'Class B' in race or 'Class 2' in race:
-        return race.replace('Class B', '').replace('Class 2', '').replace('()', '')
-    if 'Class C' in race or 'Class 3' in race:
-        return race.replace('Class C', '').replace('Class 3', '').replace('()', '')
-    if 'Class D' in race or 'Class 4' in race:
-        return race.replace('Class D', '').replace('Class 4', '').replace('()', '')
-    if 'Class E' in race or 'Class 5' in race:
-        return race.replace('Class E', '').replace('Class 5', '').replace('()', '')
-    if 'Class F' in race or 'Class 6' in race:
-        return race.replace('Class F', '').replace('Class 6', '').replace('()', '')
-    if 'Class H' in race or 'Class 7' in race:
-        return race.replace('Class H', '').replace('Class 7', '').replace('()', '')
-    if 'Class G' in race:
-        return race.replace('Class G', '').replace('()', '')
+    if 'Class' in race:
+        if 'Class A' in race or 'Class 1' in race:
+            return race.replace('Class A', '').replace('Class 1', '').replace('()', '')
+        if 'Class B' in race or 'Class 2' in race:
+            return race.replace('Class B', '').replace('Class 2', '').replace('()', '')
+        if 'Class C' in race or 'Class 3' in race:
+            return race.replace('Class C', '').replace('Class 3', '').replace('()', '')
+        if 'Class D' in race or 'Class 4' in race:
+            return race.replace('Class D', '').replace('Class 4', '').replace('()', '')
+        if 'Class E' in race or 'Class 5' in race:
+            return race.replace('Class E', '').replace('Class 5', '').replace('()', '')
+        if 'Class F' in race or 'Class 6' in race:
+            return race.replace('Class F', '').replace('Class 6', '').replace('()', '')
+        if 'Class H' in race or 'Class 7' in race:
+            return race.replace('Class H', '').replace('Class 7', '').replace('()', '')
+        if 'Class G' in race:
+            return race.replace('Class G', '').replace('()', '')
+        if 'Trusthouse Forte Mile Guaranteed Minimum Value £60000 (Group' in race:
+            return race.replace('(Group', '')
+    if 'Group' in race:
+        if 'Group 1' in race or 'Grade 1' in race:
+            return race.replace('Group 1', '').replace('Grade 1', '').replace('()', '')
+        if 'Group 2' in race or 'Grade 2' in race:
+            return race.replace('Group 2', '').replace('Grade 2', '').replace('()', '')
+        if 'Group 3' in race or 'Grade 3' in race:
+            return race.replace('Group 3', '').replace('Grade 3', '').replace('()', '')
 
     return race
 
@@ -315,6 +326,9 @@ def try_get_class(race):
 def try_get_pattern(race, race_class):
     pattern = ''
     r_class = 'Class 1'
+
+    if 'Forte Mile' in race and '(Group' in race:
+        return r_class, 'Group 2'
 
     if '(Group' in race:
         try:
@@ -550,7 +564,13 @@ def scrape_races(races, target, years, code):
 
             race_name = clean_race_name(race_name)
 
-            race_class, pattern = try_get_pattern(race_name, race_class)
+            try:
+                race_class, pattern = try_get_pattern(race_name, race_class)
+            except AttributeError:
+                print('try_get_pattern error:')
+                print('Race link: ', race)
+                print('Race name: ', race_name)
+                sys.exit()
 
             try:
                 band = doc.xpath("//span[@class='rp-raceTimeCourseName_ratingBandAndAgesAllowed']/text()")[0].strip().strip('()')
@@ -587,7 +607,14 @@ def scrape_races(races, target, years, code):
             except IndexError:
                 dist_y = ''
 
-            dist_f = distance_to_furlongs(distance)
+            try:
+                dist_f = distance_to_furlongs(distance)
+            except ValueError:
+                print('distance_to_furlongs()')
+                print('Distance: ', distance)
+                print('Race: ', race)
+                sys.exit()
+
             dist_m = distance_to_metres(dist_y)
             
             if dist_m == 0:
