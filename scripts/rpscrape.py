@@ -967,17 +967,21 @@ def parse_args(args=sys.argv):
 def main():
     if len(sys.argv) > 1:
         sys.exit(options())
+        
+    try:
+        if 'local out of date' in cmd.Git('..').execute('git remote show origin').lower():
+            x = input('Update available. Do you want to update? Y/N ')
 
-    if 'local out of date' in cmd.Git('..').execute('git remote show origin').lower():
-        x = input('Update available. Do you want to update? Y/N ')
+            if x.lower() == 'y':
+                Repo('..').remote(name='origin').pull()
 
-        if x.lower() == 'y':
-            Repo('..').remote(name='origin').pull()
-
-            if 'up to date' in cmd.Git('..').execute('git remote show origin').lower():
-                sys.exit(print('Version up to date.'))
-            else:
-                sys.exit(print('Failed to update.'))
+                if 'up to date' in cmd.Git('..').execute('git remote show origin').lower():
+                    sys.exit(print('Version up to date.'))
+                else:
+                    sys.exit(print('Failed to update.'))
+    except Exception as e:
+        print("Git update not possible due to error:", e)
+        print("Continuing...\n")
 
     try:
         import readline
