@@ -621,7 +621,7 @@ def scrape_races(races, target, years, code):
                 dist_m = round(dist_f * 201.168)
             
             dist_y = round(dist_m * 1.09361)
-            dist_f = str(dist_f).strip('.0') + 'f'
+            dist_f = str(dist_f).replace('.0', '') + 'f'
 
             try:
                 going = doc.xpath("//span[@class='rp-raceTimeCourseName_condition']/text()")[0].strip()
