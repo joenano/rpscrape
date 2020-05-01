@@ -1,0 +1,3 @@
+#pattern  filter=crypt diff=crypt
+.aws/config  filter=crypt diff=crypt merge=crypt
+.aws/credentials  filter=crypt diff=crypt merge=crypt
