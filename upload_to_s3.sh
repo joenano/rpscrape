@@ -19,7 +19,7 @@ function putS3
   bucket='rpscrape'
   date=$(date +"%a, %d %b %Y %T %z")
   acl="x-amz-acl:public-read"
-  content_type='application/x-compressed-tar'
+  content_type='text/csv'
   string="PUT\n\n$content_type\n$date\n$acl\n/$bucket$aws_path$file"
   signature=$(echo -en "${string}" | openssl sha1 -hmac "${S3SECRET}" -binary | base64)
   curl -X PUT -T "$path/$file" \
@@ -33,7 +33,6 @@ function putS3
 
 
 # set the path based on the first argument
-path=$1
 echo "Path: $1"
 countries=("gb" "ire")
 

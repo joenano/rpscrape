@@ -1,4 +1,5 @@
 #!/bin/bash
-echo "running command $1"
-cd scripts
-python3 rpscrape.py <<< $1
+echo "setting project_dir to ./scripts"
+cd ./scripts
+echo "Running scraper. Date: $1, Country: $2"
+echo "-d $1 $2" | python3 rpscrape.py
