@@ -25,7 +25,7 @@ jobs:
             # Run daily updates
             chmod u+x run_daily_updates.sh
             chmod u+x run_rpscrape_script.sh
-            countries = ("gb" "ire")
+            countries=("gb" "ire")
             ./run_daily_updates.sh $countries
             # Upload data to S3 using a containarized aws-cli
             ./upload_daily_updates.sh $countries
