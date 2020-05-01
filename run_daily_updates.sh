@@ -1,4 +1,6 @@
 #!/bin/bash
 yesterday="$(date +"%Y/%m/%d" -date "1 day ago")"  
-./run_rpscrape_script.sh "$yesterday" "gb"
-./upload_to_s3.sh
+countries = ("$2@")
+for country in "${countries[@]}"; do
+	./run_rpscrape_script.sh "$yesterday" "$country"
+done

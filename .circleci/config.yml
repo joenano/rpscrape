@@ -20,12 +20,14 @@ jobs:
             cd transcrypt
             sudo ln -s ${PWD}/transcrypt /usr/local/bin/transcrypt
             cd ..
-            transcrypt -c $TRANSCRYPT_CYPHER -p $TRANSCRYPT_PASSWORD -y -F
-            # Create a .aws folder with the config file
-
+            transcrypt -c $TRANSCRYPT_CIPHER -p $TRANSCRYPT_PASSWORD -y -F
+            # Run daily updates
             chmod u+x run_daily_updates.sh
             chmod u+x run_rpscrape_script.sh
-            ./run_daily_updates.sh
+            countries = ("gb" "ire")
+            ./run_daily_updates.sh $countries
+            # Upload data to S3 using a containarized aws-cli
+            ./upload_daily_updates.sh $countries
 
 workflows:
   version: 2.1
