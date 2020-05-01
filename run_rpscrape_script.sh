@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "setting project_dir to ./scripts"
-countries = ("$2@")
+countries=("$2@")
 cd ./scripts
 for country in "${countries[@]}"; do
 	echo "Running scraper. Date: $1, Country: $2"
