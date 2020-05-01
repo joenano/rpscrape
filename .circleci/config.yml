@@ -1,0 +1,34 @@
+version: 2.1
+
+jobs:
+  run_scraper:
+    working_directory: ~/project
+    docker:
+        - image: circleci/python:3.7.2
+    steps:
+      - checkout
+      - run:
+          name: Build Project
+          command: |
+            # Setup environment, install dependencies
+            virtualenv venv
+            . venv/bin/activate
+            pip install --upgrade pip
+            pip install -r requirements.txt
+            # Unencrypt files
+            git clone https://github.com/elasticdog/transcrypt.git
+            cd transcrypt
+            sudo ln -s ${PWD}/transcrypt /usr/local/bin/transcrypt
+            cd ..
+            transcrypt -c $TRANSCRYPT_CYPHER -p $TRANSCRYPT_PASSWORD -y -F
+            # Create a .aws folder with the config file
+
+            chmod u+x run_daily_updates.sh
+            chmod u+x run_rpscrape_script.sh
+            ./run_daily_updates.sh
+
+workflows:
+  version: 2.1
+  test-all:
+    jobs:
+      - run_scraper
