@@ -26,7 +26,7 @@ jobs:
             chmod u+x run_daily_updates.sh
             chmod u+x run_rpscrape_script.sh
             date = $(date -d "yesterday 13:00" '+%Y/%m/%d')
-            echo "Running rpscrape for date: $date
+            echo "Running rpscrape for date: $date"
             countries=("gb" "ire")
             ./run_daily_updates.sh $date $countries
             # Upload data to S3 using a containarized aws-cli
