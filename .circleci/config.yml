@@ -35,8 +35,6 @@ jobs:
     working_directory: ~/project
     docker:
       - image: circleci/python:3.7.2
-    orbs:
-      aws-cli: circleci/aws-cli@1.0.0
     executor: aws-cli/default
     steps:
       - checkout
@@ -63,6 +61,8 @@ jobs:
             fi
           done
 
+orbs:
+  aws-cli: circleci/aws-cli@1.0.0
 workflows:
   version: 2.1
   test-all:
