@@ -66,4 +66,6 @@ workflows:
   test-all:
     jobs:
       - build-and-scrape
-      - upload-data
+      - upload-data:
+          requires:
+            - build-and-scrape
