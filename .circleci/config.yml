@@ -1,14 +1,16 @@
 version: 2.1
 
+working_directory: ~/project
+docker:
+    - image: circleci/python:3.7.2
+orbs:
+  aws-cli: circleci/aws-cli@1.0.0
+
 jobs:
-  run_scraper:
-    working_directory: ~/project
-    docker:
-        - image: circleci/python:3.7.2
+  build-and-scrape:
     steps:
       - checkout
       - run:
-          name: Build Project
           command: |
             # Setup environment, install dependencies
             sudo apt-get install bsdmainutils
@@ -25,15 +27,43 @@ jobs:
             # Run daily updates
             chmod u+x run_daily_updates.sh
             chmod u+x run_rpscrape_script.sh
-            date = $(date -d "- 1 days" "+%Y/%m/%d")
+            date = $(date "+%Y/%m/%d")
+            $date = $($date -d "- 1 days")
             echo "Running rpscrape for date: $date"
             countries=("gb" "ire")
             ./run_daily_updates.sh $date $countries
             # Upload data to S3 using a containarized aws-cli
             ./upload_daily_updates.sh $countries
+  upload-data:
+    executor: aws-cli/default
+    steps:
+      - checkout
+      - aws-cli/setup:
+          profile-name: example
+      - run:
+        - command: |
+          #echo "Moving .aws to /.aws"
+          #cp .aws /.aws
+          # set the path based on the first argument
+          echo "Path: $1"
+          countries=("gb" "ire")
+          for country in "${countries[@]}"; do
+            echo "Uploading data for $country"
+            full_path=$1/$country
+            if [ -d "$full_path" ]; then
+              echo "Path to country folder: $full_path"
+              for file in "$full_path"/*; do
+                echo "Copying file: $full_path/${file##*/} to s3://$bucket/data/$country"
+                aws s3 cp $full_path/${file##*/} s3://$bucket/data/$country
+              done
+            else
+              echo "$full_path dosent exist, skipping"
+            fi
+          done
 
 workflows:
   version: 2.1
   test-all:
     jobs:
-      - run_scraper
+      - build-and-scrape
+      - upload-data
