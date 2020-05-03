@@ -69,3 +69,10 @@ workflows:
           requires:
             - build-and-scrape
           context: aws
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
