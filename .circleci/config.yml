@@ -28,8 +28,6 @@ jobs:
             echo "Running rpscrape for date: $date"
             countries=("gb" "ire")
             ./run_daily_updates.sh $countries $date
-            # Upload data to S3 using a containarized aws-cli
-            ./upload_daily_updates.sh $countries
   upload-data:
     working_directory: ~/project
     docker:
@@ -53,7 +51,7 @@ jobs:
                 echo "Path to country folder: $full_path"
                 for file in "$full_path"/*; do
                   echo "Copying file: $full_path/${file##*/} to s3://$bucket/data/$country"
-                  aws s3 cp $full_path/${file##*/} s3://$bucket/data/$country
+                  aws s3 cp $full_path/${file##*/} s3://$bucket/data/$country && rm $full_path/${file##*/}
                 done
               else
                 echo "$full_path dosent exist, skipping"
