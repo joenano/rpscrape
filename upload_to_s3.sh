@@ -8,8 +8,6 @@ S3_BUCKET_PATH="data"
 # This is how I upload my new Sol Trader builds (http://soltrader.net)
 # Based on a modified script from here: http://tmont.com/blargh/2014/1/uploading-to-s3-in-bash
 
-S3KEY="AKIATUMWGOXOAT6GEHYO"
-S3SECRET="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" # pass these in
 
 function putS3
 {

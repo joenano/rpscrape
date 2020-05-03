@@ -41,25 +41,25 @@ jobs:
       - aws-cli/setup:
           profile-name: example
       - run:
-        command: |
-          #echo "Moving .aws to /.aws"
-          #cp .aws /.aws
-          # set the path based on the first argument
-          echo "Path: $1"
-          countries=("gb" "ire")
-          for country in "${countries[@]}"; do
-            echo "Uploading data for $country"
-            full_path=$1/$country
-            if [ -d "$full_path" ]; then
-              echo "Path to country folder: $full_path"
-              for file in "$full_path"/*; do
-                echo "Copying file: $full_path/${file##*/} to s3://$bucket/data/$country"
-                aws s3 cp $full_path/${file##*/} s3://$bucket/data/$country
-              done
-            else
-              echo "$full_path dosent exist, skipping"
-            fi
-          done
+          command: |
+            #echo "Moving .aws to /.aws"
+            #cp .aws /.aws
+            # set the path based on the first argument
+            echo "Path: ./data"
+            countries=("gb" "ire")
+            for country in "${countries[@]}"; do
+              echo "Uploading data for $country"
+              full_path=data/$country
+              if [ -d "$full_path" ]; then
+                echo "Path to country folder: $full_path"
+                for file in "$full_path"/*; do
+                  echo "Copying file: $full_path/${file##*/} to s3://$bucket/data/$country"
+                  aws s3 cp $full_path/${file##*/} s3://$bucket/data/$country
+                done
+              else
+                echo "$full_path dosent exist, skipping"
+              fi
+            done
 
 orbs:
   aws-cli: circleci/aws-cli@1.0.0
