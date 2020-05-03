@@ -1,5 +1,10 @@
 #!/bin/bash
-echo "Path: ./data"
+cd scripts
+python3 scheduler.py
+cd ..
+
+# set the path based on the first argument
+echo "Uploading data to S3"
 countries=("gb" "ire")
 for country in "${countries[@]}"; do
   echo "Uploading data for $country"
