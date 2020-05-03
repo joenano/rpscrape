@@ -27,7 +27,7 @@ jobs:
             date=$(date +%Y/%m/%d -d "yesterday")
             echo "Running rpscrape for date: $date"
             countries=("gb" "ire")
-            ./run_daily_updates.sh $date $countries
+            ./run_daily_updates.sh $countries $date
             # Upload data to S3 using a containarized aws-cli
             ./upload_daily_updates.sh $countries
   upload-data:
