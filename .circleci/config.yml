@@ -39,30 +39,14 @@ jobs:
           profile-name: example
       - run:
           command: |
-            #echo "Moving .aws to /.aws"
-            #cp .aws /.aws
-            # set the path based on the first argument
-            echo "Path: ./data"
-            countries=("gb" "ire")
-            for country in "${countries[@]}"; do
-              echo "Uploading data for $country"
-              full_path=data/$country
-              if [ -d "$full_path" ]; then
-                echo "Path to country folder: $full_path"
-                for file in "$full_path"/*; do
-                  echo "Copying file: $full_path/${file##*/} to s3://$bucket/data/$country"
-                  aws s3 cp $full_path/${file##*/} s3://$bucket/data/$country && rm $full_path/${file##*/}
-                done
-              else
-                echo "$full_path dosent exist, skipping"
-              fi
-            done
+            chmod u+x upload_daily_updates.sh
+            ./upload_daily_updates.sh
 
 orbs:
   aws-cli: circleci/aws-cli@1.0.0
 workflows:
   version: 2.1
-  test-all:
+  daily-update:
     jobs:
       - build-and-scrape
       - upload-data:
