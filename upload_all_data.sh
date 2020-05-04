@@ -1,5 +1,5 @@
 #!/bin/bash
-cd scripts
+cd scripts || exit
 python3 scheduler.py
 cd ..
 
