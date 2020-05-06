@@ -2,17 +2,19 @@ import datetime as dt
 import subprocess
 import pandas as pd
 import os
+import awswrangler as wr
 
-from s3_tools import list_files, upload_to_s3
+from src.s3_tools import list_files
+from src.utils import clean_data
 
 PROJECT_DIR = os.environ['PROJECT_DIR']
+S3_BUCKET = os.environ['BUCKET_NAME']
 
-files = list_files(bucket=os.environ['BUCKET_NAME'], prefix='bfex_sp')
+files = list_files(bucket=S3_BUCKET, prefix='')
 # Remove folder name from the list of returned objects
 if len(files) > 1:
     files = files[1:]
-    file_names = [f.get('Key').split('rpscrape/')[1] for f in files
-                  if len(f.get('Key').split('rpscrape/')) > 1]
+    file_names = [f.get('Key') for f in files]
 else:
     file_names = []
 
@@ -30,13 +32,15 @@ def run_rpscrape(country, date):
 def upload_csv_to_s3(country, date):
     file_name = f"{str(date).replace('/', '_')}"
     df = pd.read_csv(f"{PROJECT_DIR}/data/{country}/{file_name}.csv")
-    new_file_name = f"{country}_{file_name.replace('_', '-')}"
-    df.to_json(f"{PROJECT_DIR}/tmp/{new_file_name}.json")
-    upload_to_s3(f"{PROJECT_DIR}/tmp/{new_file_name}.json", f'rpscrape/{new_file_name}.json', bucket='betfair-exchange-qemtek')
-    print(f"Finished uploading to s3 {country} - {date}")
-    os.remove(f"{PROJECT_DIR}/tmp/{new_file_name}.json")
-    os.remove(f"{PROJECT_DIR}/data/{country}/{file_name}.csv")
-    print(f"Finished clean up {country} - {date}")
+    if len(df) > 0 and df is not None:
+        # Apply some preprocessing steps
+        df = clean_data(df, country)
+        new_file_name = f"{country}_{file_name.replace('_', '-')}"
+        s3_path = f"s3://{S3_BUCKET}/{new_file_name}.parquet"
+        wr.s3.to_parquet(df,s3_path)
+        print(f"Finished uploading to S3 {country} - {date}")
+        os.remove(f"{PROJECT_DIR}/data/{country}/{file_name}.csv")
+        print(f"Finished clean up {country} - {date}")
 
 
 date_today = dt.datetime.today().date()
