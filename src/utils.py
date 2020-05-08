@@ -1,4 +1,9 @@
 import datetime as dt
+import pandas as pd
+import awswrangler as wr
+import os
+
+from settings import PROJECT_DIR, S3_BUCKET
 
 
 def convert_off_to_readable_format(x):
@@ -15,6 +20,8 @@ def convert_finish_time_to_seconds(x):
     """
     if not isinstance(x, str):
         return x
+    if x == '-':
+        return None
     if ':' in x[0:2]:
         x = '0' + x
     return float(x[0:2]) * 60 + float(x[3:5]) + float(x[6:8]) / 10
@@ -68,3 +75,21 @@ def clean_data(df_in, country):
     # Clean trainer name
     df['trainer_cleaned'] = df['trainer'].apply(lambda x: clean_name(x))
     return df
+
+
+def upload_csv_to_s3(country, date):
+    file_name = f"{str(date).replace('/', '_')}"
+    try:
+        df = pd.read_csv(f"{PROJECT_DIR}/data/{country}/{file_name}.csv")
+        if len(df) > 0 and df is not None:
+            # Apply some preprocessing steps
+            df = clean_data(df, country)
+            new_file_name = f"{country}_{file_name.replace('_', '-')}"
+            s3_path = f"s3://{S3_BUCKET}/data/{new_file_name}.parquet"
+            wr.s3.to_parquet(df,s3_path)
+            print(f"Finished uploading to S3 {country} - {date}")
+            os.remove(f"{PROJECT_DIR}/data/{country}/{file_name}.csv")
+            print(f"Finished clean up {country} - {date}")
+    except:
+        print("Upload failed, the file was likely empty")
+        os.remove(f"{PROJECT_DIR}/data/{country}/{file_name}.csv")

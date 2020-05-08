@@ -21,8 +21,7 @@ jobs:
           profile-name: example
       - run:
           command: |
-            chmod u+x upload_daily_updates.sh
-            ./upload_daily_updates.sh
+            python src/upload_data_to_s3.py
 
 orbs:
   aws-cli: circleci/aws-cli@1.0.0

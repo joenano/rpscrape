@@ -1,14 +1,10 @@
 import datetime as dt
 import subprocess
-import pandas as pd
 import os
-import awswrangler as wr
 
 from src.s3_tools import list_files
-from src.utils import clean_data
-
-PROJECT_DIR = os.environ['PROJECT_DIR']
-S3_BUCKET = os.environ['BUCKET_NAME']
+from src.utils import clean_data, upload_csv_to_s3
+from settings import PROJECT_DIR, S3_BUCKET
 
 files = list_files(bucket=S3_BUCKET, prefix='')
 # Remove folder name from the list of returned objects
@@ -29,20 +25,6 @@ def run_rpscrape(country, date):
     upload_csv_to_s3(country, date)
 
 
-def upload_csv_to_s3(country, date):
-    file_name = f"{str(date).replace('/', '_')}"
-    df = pd.read_csv(f"{PROJECT_DIR}/data/{country}/{file_name}.csv")
-    if len(df) > 0 and df is not None:
-        # Apply some preprocessing steps
-        df = clean_data(df, country)
-        new_file_name = f"{country}_{file_name.replace('_', '-')}"
-        s3_path = f"s3://{S3_BUCKET}/{new_file_name}.parquet"
-        wr.s3.to_parquet(df,s3_path)
-        print(f"Finished uploading to S3 {country} - {date}")
-        os.remove(f"{PROJECT_DIR}/data/{country}/{file_name}.csv")
-        print(f"Finished clean up {country} - {date}")
-
-
 date_today = dt.datetime.today().date()
 start_date = date_today - dt.timedelta(days=round(364.25*10))
 print(f"Start date: {start_date}")
@@ -57,7 +39,7 @@ dates = list()
 for country in countries:
     for i in range(delta.days + 1):
         day = (start_date + dt.timedelta(days=i)).strftime(format='%Y/%m/%d')
-        s3_file_name = f"{country}_{str(day).replace('/', '-')}"
+        s3_file_name = f"{country}_{str(day).replace('/', '-')}.parquet"
         local_file_path = f"{PROJECT_DIR}/data/{country}/{str(day).replace('/', '_')}.csv"
         print(local_file_path)
         exists_locally = os.path.exists(local_file_path)
@@ -70,6 +52,8 @@ for country in countries:
                 scheduler.add_job(id=str(hash(f"{day}_{country}")), func=run_rpscrape, name=f"{country}-{day}",
                                   kwargs={'country': country, 'date': day}, replace_existing=True,
                                   misfire_grace_time=99999999999)
+        else:
+            print(f"{s3_file_name} exists remotely")
 
 
 scheduler.start()
