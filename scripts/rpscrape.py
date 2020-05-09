@@ -76,9 +76,13 @@ def options(opt="help"):
 
 
 def courses(code='all'):
-    with open(f'../courses/{code}_course_ids', 'r') as courses:
-        for course in courses:
+    with open('../courses/_courses', 'r') as courses:
+        for course in json.load(courses)[code]:
             yield (course.split('-')[0].strip(), ' '.join(course.split('-')[1::]).strip())
+
+    # with open(f'../courses/{code}_course_ids', 'r') as courses:
+    #     for course in courses:
+    #         yield (course.split('-')[0].strip(), ' '.join(course.split('-')[1::]).strip())
          
 
 def course_name(code):
@@ -201,38 +205,63 @@ def pedigree_info(pedigrees):
     for p in pedigrees:
         ped_info = p.findall('a')
 
-        if len(ped_info) > 0:
-            sire = ped_info[0].text.strip()
+        if '-' in p.text_content():
+            if len(ped_info) > 0:
+                sire = ped_info[0].text.strip()
 
-            if '(' in sire:
-                sire = sire.split('(')[0].strip() + ' (' + sire.split('(')[1]
+                if '(' in sire:
+                    sire = sire.split('(')[0].strip() + ' (' + sire.split('(')[1]
+                else:
+                    sire = sire + ' (GB)'
+
+                sires.append(sire.replace('.', ' ').replace('  ', ' '))
             else:
-                sire = sire + ' (GB)'
+                sires.append('')
 
-            sires.append(sire)
+            if len(ped_info) > 1:
+                dam = ped_info[1].text.strip()
+                dam_nat = ped_info[1].find('span').text
+
+                if dam_nat is not None:
+                    dam = dam + ' ' + dam_nat.strip()
+                else:
+                    dam = dam + ' (GB)'
+            
+                dams.append(dam.replace('.', ' ').replace('  ', ' '))
+            else:
+                dams.append('')
+
+            if len(ped_info) > 2:
+                damsire = ped_info[2].text.strip().strip('()')
+                if damsire == 'Damsire Unregistered':
+                    damsire = ''
+                damsires.append(damsire.replace('.', ' ').replace('  ', ' '))
+            else:
+                damsires.append('')
         else:
             sires.append('')
 
-        if len(ped_info) > 1:
-            dam = ped_info[1].text.strip()
-            dam_nat = ped_info[1].find('span').text
+            if len(ped_info) > 0:
+                dam = ped_info[0].text.strip()
+                dam_nat = ped_info[0].find('span').text
 
-            if dam_nat is not None:
-                dam = dam + ' ' + dam_nat.strip()
+                if dam_nat is not None:
+                    dam = dam + ' ' + dam_nat.strip()
+                else:
+                    dam = dam + ' (GB)'
+            
+                dams.append(dam.replace('.', ' ').replace('  ', ' '))
             else:
-                dam = dam + ' (GB)'
-        
-            dams.append(dam)
-        else:
-            dams.append('')
+                dams.append('')
 
-        if len(ped_info) > 2:
-            damsire = ped_info[2].text.strip().strip('()')
-            if damsire == 'Damsire Unregistered':
-                damsire = ''
-            damsires.append(damsire)
-        else:
-            damsires.append('')
+            if len(ped_info) > 1:
+                damsire = ped_info[1].text.strip().strip('()')
+                if damsire == 'Damsire Unregistered':
+                    damsire = ''
+                damsires.append(damsire.replace('.', ' ').replace('  ', ' '))
+            else:
+                damsires.append('')
+
 
     return sires, dams, damsires
 
@@ -272,30 +301,33 @@ def class_from_rating_band(rating_band, code):
 def clean_race_name(race):
     if 'Class' in race:
         if 'Class A' in race or 'Class 1' in race:
-            return race.replace('Class A', '').replace('Class 1', '').replace('()', '')
+            return race.replace('Class A', '').replace('Class 1', '').replace('()', '').replace('  ', ' ').strip()
         if 'Class B' in race or 'Class 2' in race:
-            return race.replace('Class B', '').replace('Class 2', '').replace('()', '')
+            return race.replace('Class B', '').replace('Class 2', '').replace('()', '').replace('  ', ' ').strip()
         if 'Class C' in race or 'Class 3' in race:
-            return race.replace('Class C', '').replace('Class 3', '').replace('()', '')
+            return race.replace('Class C', '').replace('Class 3', '').replace('()', '').replace('  ', ' ').strip()
         if 'Class D' in race or 'Class 4' in race:
-            return race.replace('Class D', '').replace('Class 4', '').replace('()', '')
+            return race.replace('Class D', '').replace('Class 4', '').replace('()', '').replace('  ', ' ').strip()
         if 'Class E' in race or 'Class 5' in race:
-            return race.replace('Class E', '').replace('Class 5', '').replace('()', '')
+            return race.replace('Class E', '').replace('Class 5', '').replace('()', '').replace('  ', ' ').strip()
         if 'Class F' in race or 'Class 6' in race:
-            return race.replace('Class F', '').replace('Class 6', '').replace('()', '')
+            return race.replace('Class F', '').replace('Class 6', '').replace('()', '').replace('  ', ' ').strip()
         if 'Class H' in race or 'Class 7' in race:
-            return race.replace('Class H', '').replace('Class 7', '').replace('()', '')
+            return race.replace('Class H', '').replace('Class 7', '').replace('()', '').replace('  ', ' ').strip()
         if 'Class G' in race:
             return race.replace('Class G', '').replace('()', '')
         if 'Trusthouse Forte Mile Guaranteed Minimum Value £60000 (Group' in race:
-            return race.replace('(Group', '')
-    if 'Group' in race:
+            return race.replace('(Group', '').replace('  ', ' ').strip()
+    if 'Group' in race or 'Grade':
         if 'Group 1' in race or 'Grade 1' in race:
-            return race.replace('Group 1', '').replace('Grade 1', '').replace('()', '')
+            return race.replace('Group 1', '').replace('Grade 1', '').replace('()', '').replace('  ', ' ').strip()
         if 'Group 2' in race or 'Grade 2' in race:
-            return race.replace('Group 2', '').replace('Grade 2', '').replace('()', '')
+            return race.replace('Group 2', '').replace('Grade 2', '').replace('()', '').replace('  ', ' ').strip()
         if 'Group 3' in race or 'Grade 3' in race:
-            return race.replace('Group 3', '').replace('Grade 3', '').replace('()', '')
+            return race.replace('Group 3', '').replace('Grade 3', '').replace('()', '').replace('  ', ' ').strip()
+    if 'Listed' in race:
+        return race.replace('Listed Race', '').replace('(Listed)', '').replace('()', '').replace('  ', ' ').strip()
+
 
     return race
 
@@ -330,6 +362,10 @@ def try_get_pattern(race, race_class):
     if 'Forte Mile' in race and '(Group' in race:
         return r_class, 'Group 2'
 
+
+    if race.endswith(' (Listed Race Grade'):
+        return r_class, 'Listed'
+
     if '(Group' in race:
         try:
             pattern = search('(\(Grou..)\w+', race).group(0).strip('(')
@@ -350,7 +386,7 @@ def try_get_pattern(race, race_class):
         return r_class, 'Group 2'
     if '(Local Group 3)' in race:
         return r_class, 'Group 3'
-    if '(Listed' in race:
+    if '(Listed' in race or 'listed race' in race.lower():
         return r_class, 'Listed'
 
     return race_class, pattern
@@ -360,7 +396,7 @@ def try_get_race_type(race, race_dist):
     if race_dist >= 12:
         if 'national hunt flat' in race or 'nh flat race' in race or 'mares flat race' in race:
             return 'NH Flat'
-        if 'inh bumper' in race or ' sales bumper' in race or 'kepak flat race' in race:
+        if 'inh bumper' in race or ' sales bumper' in race or 'kepak flat race' in race or 'i.n.h. flat race':
             return 'NH Flat'
 
     if race_dist >= 15:
@@ -473,7 +509,9 @@ def calculate_times(win_time, dist_btn, going, code, course):
     times = []
 
     if code == 'flat':
-        if 'Firm' in going or 'Standard' in going or 'Fast' in going or 'Hard' in going or 'Slow' in going or 'Sloppy':
+        if going == '':
+            lps_scale = 6
+        elif 'Firm' in going or 'Standard' in going or 'Fast' in going or 'Hard' in going or 'Slow' in going or 'Sloppy':
             if 'southwell' in course.lower():
                 lps_scale = 5
             else:
@@ -486,7 +524,9 @@ def calculate_times(win_time, dist_btn, going, code, course):
         elif 'Soft' in going or 'Heavy' in going or 'Yielding' in going:
             lps_scale = 5
     else:
-        if 'Firm' in going or 'Standard' in going:
+        if going == '':
+            lps_scale = 5
+        elif 'Firm' in going or 'Standard' in going or 'Hard' in going:
             if 'southwell' in course.lower():
                 lps_scale = 4
             else:
@@ -824,24 +864,29 @@ def scrape_races(races, target, years, code):
             else:
                 print(f'ERROR: (winning time) {date} {course_name} {r_time}.')
 
-            if '-' not in times:
+            if winning_time == [] or winning_time == ['standard', 'time']:
+                times = ['-' for x in range(len(pos))]
+
+            if times == []:
                 if len(winning_time) > 1:
                     try:
                         win_time = float(winning_time[0].replace("m", '')) * 60 + float(winning_time[1].strip("s"))
                     except ValueError:
-                        print(f'ERROR: (winning time) {date} {course} {r_time}.')
+                        print('ERROR: winning time')
+                        print(times)
+                        print(winning_time)
+                        print(race)
+                        sys.exit()
                 else:
                     try:
                         win_time = float(winning_time[0].strip("s"))
                     except ValueError:
-                        print(f'ERROR: (winning time) {date} {course} {r_time} {winning_time[0]}.')
+                        print(f'ERROR: (winning time){winning_time[0]}.')
+                        print(race, winning_time)
+                        sys.exit()
 
-                try:
-                    times = calculate_times(win_time, time_btn, going, code, course)
-                except:
-                    print("times error:", race)
-                    sys.exit()
-            
+                times = calculate_times(win_time, time_btn, going, code, course)
+
             dec = fraction_to_decimal([sp.strip('F').strip('J').strip('C').strip() for sp in sps])
 
             race_name = race_name.replace("'", "")
