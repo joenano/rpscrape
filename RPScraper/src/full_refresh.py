@@ -1,3 +1,5 @@
+# Downloads all files from rpscrape and stores them in the data folder
+
 import datetime as dt
 import subprocess
 import os

@@ -1,7 +1,7 @@
 import os
 
 try:
-    import RPScraper.configuration
+    from RPScraper import configuration
 except ImportError:
     configuration = {}
 

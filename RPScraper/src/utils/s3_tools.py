@@ -32,15 +32,19 @@ def upload_to_s3(local_path, s3_path, bucket="betfair-exchange-qemtek"):
         print(e)
 
 
-def download_from_s3(local_path, s3_path, bucket="betfair-exchange-qemtek"):
+def download_from_s3(local_path, s3_path, bucket="betfair-exchange-qemtek", session=None):
     """Download a file from an S3 bucket
         :param local_path: Path to save the file
         :param bucket: S3 Bucket to download from
         :param s3_path: S3 path
         """
     try:
-        s3_client.download_file(Bucket=bucket, Key=s3_path, Filename=local_path)
-        print(f'File downloaded to {local_path}')
+        if session is not None:
+            client = session.client('s3')
+        else:
+            client=s3_client
+        client.download_file(Bucket=bucket, Key=s3_path, Filename=local_path)
+        print(f"Download completed for {s3_path}")
     except ClientError as e:
         if e.response['Error']['Code'] == "404":
             print("The object does not exist.")
@@ -66,7 +70,7 @@ def move_file(source, destination, bucket="betfair-exchange-qemtek"):
             raise
 
 
-def list_files(prefix, bucket):
+def list_files(prefix, bucket, session=None):
     """List files in specific S3 URL
         :param bucket: S3 Bucket to use
         :param prefix: S3 path"""
@@ -82,7 +86,11 @@ def list_files(prefix, bucket):
             if not response.get('IsTruncated'):  # At the end of the list?
                 break
             continuation_token = response.get('NextContinuationToken')
+    if session is not None:
+        client = session.client('s3')
+    else:
+        client = s3_client
     output = []
-    for file in get_all_s3_objects(s3_client=s3_client, Bucket=bucket, Prefix=prefix):
+    for file in get_all_s3_objects(s3_client=client, Bucket=bucket, Prefix=prefix):
         output.append(file)
     return output

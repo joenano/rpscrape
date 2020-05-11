@@ -87,14 +87,18 @@ def upload_csv_to_s3(country, date):
         if len(df) > 0 and df is not None:
             # Apply some preprocessing steps
             df = clean_data(df, country)
+            df['pos'] = df['pos'].astype(str)
+            df['pattern'] = df['pattern'].astype(str)
+            df['prize'] = df['prize'].astype(str)
+            df['date'] = pd.to_datetime(df['event_dt'])
+            df['year'] = df['date'].apply(lambda x: x.year)
+            # Upload to S3
             new_file_name = f"{country}_{file_name.replace('_', '-')}"
             s3_path = f"s3://{S3_BUCKET}/data/{new_file_name}.parquet"
-            # Upload to S3
             wr.s3.to_parquet(df, s3_path)
             # Upload to parquet dataset
-            df['pos'] = df['pos'].astype(str)
-            wr.s3.to_parquet(df, path='s3://RPScraper/datasets/', dataset=True, database='finish-time-predict',
-                             table='RPScraper', dtype=SCHEMA_COLUMNS, mode='append', boto3_session=session)
+            # wr.s3.to_parquet(df, path='s3://RPScraper/datasets/', dataset=True, database='finish-time-predict',
+            #                  table='rpscrape', dtype=SCHEMA_COLUMNS, mode='append', boto3_session=session)
             print(f"Finished uploading to S3 {country} - {date}")
             os.remove(f"{PROJECT_DIR}/data/{country}/{file_name}.csv")
             print(f"Finished clean up {country} - {date}")

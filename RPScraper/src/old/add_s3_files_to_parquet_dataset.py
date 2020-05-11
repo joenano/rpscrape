@@ -9,34 +9,39 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from RPScraper.settings import PROJECT_DIR, S3_BUCKET
 from RPScraper.src.utils.s3_tools import download_from_s3
-from RPScraper.src import upload_local_files_to_dataset, append_to_pdataset
+from RPScraper.src.upload_data_to_s3 import upload_local_files_to_dataset, append_to_pdataset
+from RPScraper.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
-session = boto3.session.Session()
+session = boto3.session.Session(
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+)
 
-scheduler = BackgroundScheduler()
+download = True
+upload = True
 
-# Get all files currently in S3
-files = wr.s3.list_objects(f's3://{S3_BUCKET}/data/', boto3_session=session)[1:]
+if download:
+    scheduler = BackgroundScheduler()
 
-# Download / Upload the first file manually with overwrite
-filename = f"{PROJECT_DIR}/s3_data/{files[0].split('/')[-1]}"
-download_from_s3(local_path=filename, s3_path=files[0].split(f's3://{S3_BUCKET}/')[1], bucket=S3_BUCKET)
-append_to_pdataset(filename, mode='overwrite')
-files = files[1:]
+    # Get all files currently in S3
+    files = wr.s3.list_objects(f's3://{S3_BUCKET}/data/', boto3_session=session)
+    files = [f for f in files if '.parquet' in f]
 
-for file in files:
-    filename = f"{PROJECT_DIR}/s3_data/{file.split('/')[-1]}"
-    print(filename)
-    scheduler.add_job(
-        func=download_from_s3,
-        kwargs={'local_path': filename, 's3_path': file.split(f's3://{S3_BUCKET}/')[1], 'bucket': S3_BUCKET},
-        id=f"{file.split('/')[-1]}_download", replace_existing=True, misfire_grace_time=9999999999)
+    for file in files:
+        filename = f"{PROJECT_DIR}/s3_data/{file.split('/')[-1]}"
+        print(filename)
+        scheduler.add_job(
+            func=download_from_s3,
+            kwargs={'local_path': filename, 's3_path': file.split(f's3://{S3_BUCKET}/')[1], 'bucket': S3_BUCKET,
+                    'session': session},
+            id=f"{file.split('/')[-1]}_download", replace_existing=True, misfire_grace_time=9999999999)
 
-scheduler.start()
-time.sleep(1)
-while len(scheduler._pending_jobs) > 0:
-    print(f"Jobs left: {len(scheduler._pending_jobs)}")
-scheduler.shutdown()
+    scheduler.start()
+    time.sleep(1)
+    while len(scheduler._pending_jobs) > 0:
+        print(f"Jobs left: {len(scheduler._pending_jobs)}")
+    scheduler.shutdown()
 
 # Upload the local files to a parquet dataset
-upload_local_files_to_dataset()
+if upload:
+    upload_local_files_to_dataset(folder='s3_data')
