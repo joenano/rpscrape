@@ -60,4 +60,4 @@ workflows:
           requires:
             - upload-data
           context: aws
-          timeout: 1500
+          no_output_timeout: 15m
