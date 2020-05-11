@@ -22,7 +22,8 @@ jobs:
           profile-name: example
       - run:
           command: |
-            chmod u+x RPScraper/scripts/upload_data.sh
+            cd RPScraper
+            chmod u+x scripts/upload_data.sh
             ./scripts/upload_data.sh
 
 orbs:
