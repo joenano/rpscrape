@@ -4,7 +4,7 @@ import awswrangler as wr
 import os
 import boto3
 
-from settings import PROJECT_DIR, S3_BUCKET, SCHEMA_COLUMNS
+from RPScraper.settings import PROJECT_DIR, S3_BUCKET, SCHEMA_COLUMNS
 
 session = boto3.session.Session()
 
@@ -55,7 +55,7 @@ def nullify_non_finishers(x):
 
 
 def clean_data(df_in, country):
-    """Perform all 'data cleansing' steps on raw rpscrape data
+    """Perform all 'data cleansing' steps on raw RPScraper data
     """
     df = df_in.copy()
     # Make all columns lower case
@@ -93,8 +93,8 @@ def upload_csv_to_s3(country, date):
             wr.s3.to_parquet(df, s3_path)
             # Upload to parquet dataset
             df['pos'] = df['pos'].astype(str)
-            wr.s3.to_parquet(df, path='s3://rpscrape/datasets/', dataset=True, database='finish-time-predict',
-                             table='rpscrape', dtype=SCHEMA_COLUMNS, mode='append', boto3_session=session)
+            wr.s3.to_parquet(df, path='s3://RPScraper/datasets/', dataset=True, database='finish-time-predict',
+                             table='RPScraper', dtype=SCHEMA_COLUMNS, mode='append', boto3_session=session)
             print(f"Finished uploading to S3 {country} - {date}")
             os.remove(f"{PROJECT_DIR}/data/{country}/{file_name}.csv")
             print(f"Finished clean up {country} - {date}")

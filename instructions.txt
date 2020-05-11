@@ -1,3 +1,0 @@
-- Run the rpscrape script for all active countries each day
-- Dont update automatically for now.. 
-- Upload daily data files to S3

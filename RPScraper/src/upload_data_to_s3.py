@@ -6,7 +6,7 @@ import os
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from settings import PROJECT_DIR, S3_BUCKET, AWS_GLUE_DB, AWS_GLUE_TABLE, SCHEMA_COLUMNS
+from RPScraper.settings import PROJECT_DIR, S3_BUCKET, AWS_GLUE_DB, AWS_GLUE_TABLE, SCHEMA_COLUMNS
 
 session = boto3.session.Session()
 

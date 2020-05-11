@@ -1,7 +1,7 @@
 version: 2.1
 jobs:
   build-and-scrape:
-    working_directory: ~/project
+    working_directory: ~/project/RPScraper
     docker:
       - image: circleci/python:3.7.2
     steps:
@@ -11,7 +11,7 @@ jobs:
             chmod u+x scripts/build_and_scrape.sh
             ./scripts/build_and_scrape.sh
   upload-data:
-    working_directory: ~/project
+    working_directory: ~/project/RPScraper
     docker:
       - image: circleci/python:3.7.2
     executor: aws-cli/default

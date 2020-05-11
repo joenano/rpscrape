@@ -1,8 +1,9 @@
 .DS_STORE
 .idea/*
 venv/*
-data/*
-s3_data/*
-configuration.py
-scripts/ran_error.html
+RPScraper/data/*
+RPScraper/s3_data/*
+RPScraper/configuration.py
+RPScraper/scripts/ran_error.html
 *.pyc
+.tox/*
