@@ -1,3 +1,8 @@
+# Set up virutal environment
+virtualenv venv
+. venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
 # Add environment variables
 export PROJECT_DIR=./
 export S3_BUCKET=rpscrape
