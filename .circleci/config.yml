@@ -6,31 +6,50 @@ jobs:
       - image: circleci/python:3.7.2
     steps:
       - checkout
+      - restore_cache:
+          key: py-deps-{{ checksum "requirements.txt" }}
       - run:
           command: |
             cd RPScraper
             chmod u+x scripts/build_and_scrape.sh
             ./scripts/build_and_scrape.sh
+      - save_cache:
+          key: py-deps-{{ checksum "requirements.txt" }}
+          paths:
+            - "/venv"
   upload-data:
     working_directory: ~/project
     docker:
       - image: circleci/python:3.7.2
     steps:
       - checkout
+      - restore_cache:
+          key: py-deps-{{ checksum "requirements.txt" }}
       - run:
           command: |
             chmod u+x RPScraper/scripts/upload_data.sh
             ./RPScraper/scripts/upload_data.sh
+      - save_cache:
+          key: py-deps-{{ checksum "requirements.txt" }}
+          paths:
+            - "/venv"
   run-crawler:
     working_directory: ~/project
     docker:
       - image: circleci/python:3.7.2
     steps:
       - checkout
+      - restore_cache:
+          key: py-deps-{{ checksum "requirements.txt" }}
       - run:
           command: |
-            python RPScraper/src/run_glue_crawler.py
+            chmod u+x RPScraper/scripts/run_glue_crawler.sh
+            ./RPScraper/scripts/run_glue_crawler.sh
           no_output_timeout: 15m
+      - save_cache:
+          key: py-deps-{{ checksum "requirements.txt" }}
+          paths:
+            - "/venv"
 
 orbs:
   aws-cli: circleci/aws-cli@1.0.0
