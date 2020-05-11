@@ -4,8 +4,6 @@ virtualenv venv
 pip install --upgrade pip
 pip install -r requirements.txt
 cd RPScraper
-mkdir ./s3_data
-mkdir ./tmp
 # Add environment variables
 export PROJECT_DIR=/home/circleci/project/RPScraper
 export S3_BUCKET=rpscrape
