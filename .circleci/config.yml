@@ -12,7 +12,7 @@ jobs:
             chmod u+x scripts/build_and_scrape.sh
             ./scripts/build_and_scrape.sh
   upload-data:
-    working_directory: ~/project/RPScraper
+    working_directory: ~/project
     docker:
       - image: circleci/python:3.7.2
     executor: aws-cli/default
@@ -22,7 +22,6 @@ jobs:
           profile-name: example
       - run:
           command: |
-            cd RPScraper
             chmod u+x scripts/upload_data.sh
             ./scripts/upload_data.sh
 
