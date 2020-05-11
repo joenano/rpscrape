@@ -15,15 +15,21 @@ jobs:
     working_directory: ~/project
     docker:
       - image: circleci/python:3.7.2
-    executor: aws-cli/default
     steps:
       - checkout
-      - aws-cli/setup:
-          profile-name: example
       - run:
           command: |
             chmod u+x RPScraper/scripts/upload_data.sh
             ./RPScraper/scripts/upload_data.sh
+  run-crawler:
+    working_directory: ~/project
+    docker:
+      - image: circleci/python:3.7.2
+    steps:
+      - checkout
+      - run:
+          command: |
+            python RPScraper/src/run_glue_crawler.py
 
 orbs:
   aws-cli: circleci/aws-cli@1.0.0
@@ -43,3 +49,15 @@ workflows:
 #            branches:
 #              only:
 #                - master
+  update-and-crawl:
+    jobs:
+      - build-and-scrape
+      - upload-data:
+          requires:
+            - build-and-scrape
+          context: aws
+      - run-crawler:
+          requires:
+            - upload-data
+          context: aws
+          timeout: 1500

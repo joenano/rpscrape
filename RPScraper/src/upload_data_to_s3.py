@@ -41,15 +41,6 @@ def upload_local_files_to_dataset():
         print(f"Jobs left: {len(scheduler2._pending_jobs)}")
     scheduler2.shutdown()
 
-    # Run crawler
-    print("Running crawler")
-    res = wr.s3.store_parquet_metadata(
-        path=f"s3://{S3_BUCKET}/datasets/",
-        database=AWS_GLUE_DB,
-        table=AWS_GLUE_TABLE,
-        dataset=True
-    )
-
 
 if __name__ == '__main__':
     upload_local_files_to_dataset()
