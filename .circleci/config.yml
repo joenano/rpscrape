@@ -8,8 +8,8 @@ jobs:
       - checkout
       - run:
           command: |
-            chmod u+x build_and_scrape.sh
-            ./build_and_scrape.sh
+            chmod u+x scripts/build_and_scrape.sh
+            ./scripts/build_and_scrape.sh
   upload-data:
     working_directory: ~/project
     docker:
@@ -21,7 +21,8 @@ jobs:
           profile-name: example
       - run:
           command: |
-            python src/upload_data_to_s3.py
+            chmod u+x scripts/upload_data.sh
+            ./scripts/upload_data.sh
 
 orbs:
   aws-cli: circleci/aws-cli@1.0.0
@@ -34,10 +35,10 @@ workflows:
           requires:
             - build-and-scrape
           context: aws
-    triggers:
-      - schedule:
-          cron: "0 0 * * *"
-          filters:
-            branches:
-              only:
-                - master
+#    triggers:
+#      - schedule:
+#          cron: "0 0 * * *"
+#          filters:
+#            branches:
+#              only:
+#                - master

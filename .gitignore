@@ -2,3 +2,7 @@
 .idea/*
 venv/*
 data/*
+s3_data/*
+configuration.py
+scripts/ran_error.html
+*.pyc

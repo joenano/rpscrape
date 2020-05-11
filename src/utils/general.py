@@ -2,8 +2,11 @@ import datetime as dt
 import pandas as pd
 import awswrangler as wr
 import os
+import boto3
 
-from settings import PROJECT_DIR, S3_BUCKET
+from settings import PROJECT_DIR, S3_BUCKET, SCHEMA_COLUMNS
+
+session = boto3.session.Session()
 
 
 def convert_off_to_readable_format(x):
@@ -86,7 +89,12 @@ def upload_csv_to_s3(country, date):
             df = clean_data(df, country)
             new_file_name = f"{country}_{file_name.replace('_', '-')}"
             s3_path = f"s3://{S3_BUCKET}/data/{new_file_name}.parquet"
-            wr.s3.to_parquet(df,s3_path)
+            # Upload to S3
+            wr.s3.to_parquet(df, s3_path)
+            # Upload to parquet dataset
+            df['pos'] = df['pos'].astype(str)
+            wr.s3.to_parquet(df, path='s3://rpscrape/datasets/', dataset=True, database='finish-time-predict',
+                             table='rpscrape', dtype=SCHEMA_COLUMNS, mode='append', boto3_session=session)
             print(f"Finished uploading to S3 {country} - {date}")
             os.remove(f"{PROJECT_DIR}/data/{country}/{file_name}.csv")
             print(f"Finished clean up {country} - {date}")

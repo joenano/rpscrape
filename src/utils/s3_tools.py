@@ -40,6 +40,7 @@ def download_from_s3(local_path, s3_path, bucket="betfair-exchange-qemtek"):
         """
     try:
         s3_client.download_file(Bucket=bucket, Key=s3_path, Filename=local_path)
+        print(f'File downloaded to {local_path}')
     except ClientError as e:
         if e.response['Error']['Code'] == "404":
             print("The object does not exist.")

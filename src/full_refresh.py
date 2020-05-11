@@ -1,21 +1,27 @@
 import datetime as dt
 import subprocess
 import os
-
-from src.s3_tools import list_files
-from src.utils import clean_data, upload_csv_to_s3
-from settings import PROJECT_DIR, S3_BUCKET
-
-files = list_files(bucket=S3_BUCKET, prefix='')
-# Remove folder name from the list of returned objects
-if len(files) > 1:
-    files = files[1:]
-    file_names = [f.get('Key') for f in files]
-else:
-    file_names = []
+import awswrangler as wr
+import boto3
 
 from apscheduler.schedulers.background import BlockingScheduler
 
+from src.utils.general import upload_csv_to_s3
+from settings import PROJECT_DIR, S3_BUCKET, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+
+use_files_in_s3 = True
+
+if use_files_in_s3:
+    # Get a list of all files in S3 currently
+    session = boto3.session.Session(aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                    aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+    folder_dir = f's3://{S3_BUCKET}/data/'
+    files = wr.s3.list_objects(folder_dir, boto3_session=session)
+    file_names = [f.split(folder_dir)[1] for f in files]
+else:
+    file_names = []
+
+# Define scheduler to run jobs
 scheduler = BlockingScheduler()
 
 
