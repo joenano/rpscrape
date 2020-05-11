@@ -45,7 +45,7 @@ jobs:
           command: |
             chmod u+x RPScraper/scripts/run_glue_crawler.sh
             ./RPScraper/scripts/run_glue_crawler.sh
-          no_output_timeout: 15m
+          no_output_timeout: 30m
       - save_cache:
           key: py-deps-{{ checksum "requirements.txt" }}
           paths:

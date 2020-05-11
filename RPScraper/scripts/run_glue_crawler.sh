@@ -12,4 +12,4 @@ export AWS_GLUE_TABLE=rpscrape
 export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
 export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
 export PYTHONPATH=/home/circleci/project
-python ./src/run_glue_crawler.py
+python ./src/run_glue_crawler.py overwrite
