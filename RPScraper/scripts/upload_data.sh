@@ -11,5 +11,6 @@ export AWS_GLUE_DB=finish-time-predict
 export AWS_GLUE_TABLE=rpscrape
 export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
 export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+export PYTHONPATH=/home/circleci/project/RPScraper
 # Run upload script
 python ./src/upload_data_to_s3.py
