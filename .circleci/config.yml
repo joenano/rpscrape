@@ -30,6 +30,7 @@ jobs:
       - run:
           command: |
             python RPScraper/src/run_glue_crawler.py
+          no_output_timeout: 15m
 
 orbs:
   aws-cli: circleci/aws-cli@1.0.0
@@ -60,4 +61,3 @@ workflows:
           requires:
             - upload-data
           context: aws
-          no_output_timeout: 15m
