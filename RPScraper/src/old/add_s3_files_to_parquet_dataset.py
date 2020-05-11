@@ -8,7 +8,7 @@ import time
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from RPScraper.settings import PROJECT_DIR, S3_BUCKET
-from RPScraper.src import download_from_s3
+from RPScraper.src.utils.s3_tools import download_from_s3
 from RPScraper.src import upload_local_files_to_dataset, append_to_pdataset
 
 session = boto3.session.Session()
