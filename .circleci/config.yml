@@ -62,13 +62,13 @@ workflows:
           requires:
             - build-and-scrape
           context: aws
-#    triggers:
-#      - schedule:
-#          cron: "0 0 * * *"
-#          filters:
-#            branches:
-#              only:
-#                - master
+    triggers:
+      - schedule:
+          cron: "0 2 * * 1-5"
+          filters:
+            branches:
+              only:
+                - master
   update-and-crawl:
     jobs:
       - build-and-scrape
@@ -80,3 +80,10 @@ workflows:
           requires:
             - upload-data
           context: aws
+#    triggers:
+#      - schedule:
+#          cron: "0 2 * * 6"
+#          filters:
+#            branches:
+#              only:
+#                - master
