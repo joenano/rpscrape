@@ -22,14 +22,13 @@ jobs:
           paths:
             - "/venv"
 
-
 orbs:
   aws-cli: circleci/aws-cli@1.0.0
 workflows:
   version: 2.1
   daily-update:
     jobs:
-      - build-and-scrape
+      - build-and-scrape:
           context: aws
     triggers:
       - schedule:
