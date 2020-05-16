@@ -55,11 +55,12 @@ def upload_local_files_to_dataset(folder='data'):
         print(f"Jobs left: {len(scheduler2._pending_jobs)}")
     scheduler2.shutdown()
     # Upload the dataframe to the /datasets/ directory in S3
-    df = pd.read_csv(df_all_dir)
-    wr.s3.to_parquet(df, path=f's3://{S3_BUCKET}/datasets/', dataset=True,
-                     dtype=SCHEMA_COLUMNS, mode='overwrite', boto3_session=session,
-                     database=AWS_GLUE_DB, table=AWS_GLUE_TABLE, partition_cols=['year'])
-    print(f"Uploaded data to parquet dataset")
+    if os.path.exists(df_all_dir):
+        df = pd.read_csv(df_all_dir)
+        wr.s3.to_parquet(df, path=f's3://{S3_BUCKET}/datasets/', dataset=True,
+                         dtype=SCHEMA_COLUMNS, mode='overwrite', boto3_session=session,
+                         database=AWS_GLUE_DB, table=AWS_GLUE_TABLE, partition_cols=['year'])
+        print(f"Uploaded data to parquet dataset")
 
 
 if __name__ == '__main__':
