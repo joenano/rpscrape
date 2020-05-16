@@ -5,7 +5,7 @@ pip install --upgrade pip
 pip install -r requirements.txt
 cd RPScraper
 # Add environment variables
-export PROJECT_DIR=/home/circleci/project/RPScraper/RPScraper
+export PROJECT_DIR=/home/circleci/project/RPScraper
 export S3_BUCKET=rpscrape
 export AWS_GLUE_DB=finish-time-predict
 export AWS_GLUE_TABLE=rpscrape
