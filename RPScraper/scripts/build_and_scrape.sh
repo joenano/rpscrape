@@ -5,6 +5,7 @@ virtualenv venv
 pip install --upgrade pip
 pip install -r requirements.txt
 # Run daily updates
+cd RPScraper
 chmod u+x ./scripts/run_daily_updates.sh
 chmod u+x ./scripts/run_rpscrape_script.sh
 date=$(date +%Y/%m/%d -d "yesterday")

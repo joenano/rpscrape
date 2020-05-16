@@ -1,7 +1,7 @@
 version: 2.1
 jobs:
   build-and-scrape:
-    working_directory: ~/project/RPScraper
+    working_directory: ~/project
     docker:
       - image: circleci/python:3.7.2
     steps:
@@ -10,10 +10,9 @@ jobs:
           key: py-deps-{{ checksum "requirements.txt" }}
       - run:
           command: |
-            cd RPScraper
             # Run scraper
-            chmod u+x scripts/build_and_scrape.sh
-            ./scripts/build_and_scrape.sh
+            chmod u+x RPScraper/scripts/build_and_scrape.sh
+            ./RPScraper/scripts/build_and_scrape.sh
             # Upload data
             chmod u+x RPScraper/scripts/upload_data.sh
             ./RPScraper/scripts/upload_data.sh
@@ -30,10 +29,10 @@ workflows:
     jobs:
       - build-and-scrape:
           context: aws
-    triggers:
-      - schedule:
-          cron: "0 2 * * *"
-          filters:
-            branches:
-              only:
-                - master
+#    triggers:
+#      - schedule:
+#          cron: "0 2 * * *"
+#          filters:
+#            branches:
+#              only:
+#                - master
