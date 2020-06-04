@@ -76,7 +76,7 @@ def options(opt="help"):
 
 
 def courses(code='all'):
-    with open(f'../RPScraper/courses/{code}_course_ids', 'r') as courses:
+    with open(f'../courses/{code}_course_ids', 'r') as courses:
         for course in courses:
             yield (course.split('-')[0].strip(), ' '.join(course.split('-')[1::]).strip())
          
@@ -443,7 +443,7 @@ def get_races(tracks, names, years, code, xy):
 
 
 def get_race_links(date, region):
-    valid_courses = [x.split('-')[0].strip() for x in open(f'../RPScraper/courses/{region}_course_ids')]
+    valid_courses = [x.split('-')[0].strip() for x in open(f'../courses/{region}_course_ids')]
 
     r = requests.get(
         f'https://www.racingpost.com/results/{date}', headers={'User-Agent': 'Mozilla/5.0'}
@@ -514,10 +514,10 @@ def clean(data):
 
 
 def scrape_races(races, target, years, code):
-    if not os.path.exists(f'../RPScraper/data/{code}/{target.lower()}/'):
-        os.makedirs(f'../RPScraper/data/{code}/{target.lower()}/')
+    if not os.path.exists(f'../data/{code}/{target.lower()}/'):
+        os.makedirs(f'../data/{code}/{target.lower()}/')
 
-    with open(f'../RPScraper/data/{code}/{target.lower()}/{years}.csv', 'w', encoding="utf-8") as csv:
+    with open(f'../data/{code}/{target.lower()}/{years}.csv', 'w', encoding="utf-8") as csv:
 
         csv.write(
             'Date,Course,Off,Name,Type,Class,Pattern,Rating_Band,Age_Band,Sex_Rest,Dist,Dist_Y,Dist_M,Dist_F,'
