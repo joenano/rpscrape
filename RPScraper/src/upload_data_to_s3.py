@@ -34,6 +34,9 @@ def append_to_pdataset(local_path, folder, mode='a', header=False, index=False):
         df['year'] = df['date'].apply(lambda x: x.year)
         df = df[list(SCHEMA_COLUMNS.keys())]
         df.to_csv(df_all_dir, mode=mode, header=header, index=index)
+        date = local_path.split('/')[-1].split('.')[0].replace('_', '-')
+        file_name = f"{country}_{date}"
+        wr.s3.to_parquet(df, f"s3://{S3_BUCKET}/data/{file_name}.parquet", boto3_session=session)
     except pyarrow.lib.ArrowInvalid as e:
         print(f"Loading parquet file failed. \nFile path: {local_path}. \nError: {e}")
 
@@ -78,4 +81,4 @@ def upload_local_files_to_dataset(folder='data'):
 
 
 if __name__ == '__main__':
-    upload_local_files_to_dataset(folder='s3_data')
+    upload_local_files_to_dataset()
