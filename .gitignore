@@ -7,3 +7,4 @@ RPScraper/configuration.py
 RPScraper/scripts/ran_error.html
 *.pyc
 .tox/*
+*.parquet
