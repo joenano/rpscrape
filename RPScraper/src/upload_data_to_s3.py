@@ -49,7 +49,7 @@ def upload_local_files_to_dataset(folder='data'):
         append_to_pdataset(filename, mode='w', header=True)
         files = files[1:]
         for file in files:
-            filename = f"{PROJECT_DIR}/s3_data/{file.split('/')[-1]}"
+            filename = f"{PROJECT_DIR}/{folder}/{country}/{file}"
             print(filename)
             scheduler2.add_job(func=append_to_pdataset, kwargs={"local_path": filename},
                                id=f"{file.split('/')[-1]}_upload", replace_existing=True,
