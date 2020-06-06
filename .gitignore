@@ -8,3 +8,4 @@ RPScraper/scripts/ran_error.html
 *.pyc
 .tox/*
 *.parquet
+*.csv

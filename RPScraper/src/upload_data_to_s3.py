@@ -19,12 +19,14 @@ session = boto3.session.Session(
 df_all_dir = f'{PROJECT_DIR}/tmp/df_all.csv'
 
 
-def append_to_pdataset(local_path, mode='a', header=False, index=False):
+def append_to_pdataset(local_path, folder, mode='a', header=False, index=False):
     try:
-        df = pd.read_csv(local_path)
-        country = local_path.split('/')[-2]
-        print(f"Country: {country}")
-        df = clean_data(df, country=country)
+        if folder == 'data':
+            df = pd.read_csv(local_path)
+            country = local_path.split('/')[-2]
+            df = clean_data(df, country=country)
+        elif folder == 's3_data':
+            df = pd.read_parquet(local_path)
         df['pos'] = df['pos'].astype(str)
         df['pattern'] = df['pattern'].astype(str)
         df['prize'] = df['prize'].astype(str)
@@ -46,12 +48,12 @@ def upload_local_files_to_dataset(folder='data'):
         files = [f for f in files if 'DS_Store' not in f and '.keep' not in f]
         # Download / Upload the first file manually with overwrite
         filename = f"{PROJECT_DIR}/{folder}/{country}/{files[0]}"
-        append_to_pdataset(filename, mode='w', header=True)
+        append_to_pdataset(filename, mode='w', header=True, folder=folder)
         files = files[1:]
         for file in files:
             filename = f"{PROJECT_DIR}/{folder}/{country}/{file}"
             print(filename)
-            scheduler2.add_job(func=append_to_pdataset, kwargs={"local_path": filename},
+            scheduler2.add_job(func=append_to_pdataset, kwargs={"local_path": filename, "folder": folder},
                                id=f"{file.split('/')[-1]}_upload", replace_existing=True,
                                misfire_grace_time=999999999)
     scheduler2.start()
@@ -64,11 +66,16 @@ def upload_local_files_to_dataset(folder='data'):
     # Upload the dataframe to the /datasets/ directory in S3
     if os.path.exists(df_all_dir):
         df = pd.read_csv(df_all_dir)
+        for key, value in SCHEMA_COLUMNS.items():
+            if value == 'string':
+                df[key] = df[key].astype(str)
+                df[key] = df[key].fillna(pd.NA)
         wr.s3.to_parquet(df, path=f's3://{S3_BUCKET}/datasets/', dataset=True,
-                         dtype=SCHEMA_COLUMNS, mode='overwrite', boto3_session=session,
-                         database=AWS_GLUE_DB, table=AWS_GLUE_TABLE, partition_cols=['year'])
+                         dtype=SCHEMA_COLUMNS, mode='append' if folder == 'data' else 'overwrite',
+                         boto3_session=session, database=AWS_GLUE_DB, table=AWS_GLUE_TABLE,
+                         partition_cols=['year'])
         print(f"Uploaded data to parquet dataset")
 
 
 if __name__ == '__main__':
-    upload_local_files_to_dataset()
+    upload_local_files_to_dataset(folder='s3_data')

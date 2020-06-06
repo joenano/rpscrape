@@ -15,7 +15,7 @@ jobs:
             ./RPScraper/scripts/build_and_scrape.sh
             # Upload data
             chmod u+x RPScraper/scripts/upload_data.sh
-            ./RPScraper/scripts/upload_data.sh
+            ./RPScraper/scripts/upload_data.sh /home/circleci/project/RPScraper /home/circleci/project
       - save_cache:
           key: py-deps-{{ checksum "requirements.txt" }}
           paths:
