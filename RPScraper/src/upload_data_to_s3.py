@@ -36,7 +36,7 @@ def upload_local_files_to_dataset(folder='data'):
     scheduler2 = BackgroundScheduler()
     # Get all files currently in S3
     files = os.listdir(f"{PROJECT_DIR}/{folder}/")
-    files = [f for f in files if 'DS_Store' not in f]
+    files = [f for f in files if 'DS_Store' not in f and '.keep' not in f]
     # Download / Upload the first file manually with overwrite
     filename = f"{PROJECT_DIR}/{folder}/{files[0]}"
     append_to_pdataset(filename, mode='w', header=True)
