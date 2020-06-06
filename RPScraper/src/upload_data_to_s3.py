@@ -41,7 +41,7 @@ def upload_local_files_to_dataset(folder='data'):
         files = os.listdir(f"{PROJECT_DIR}/{folder}/{country}/")
         files = [f for f in files if 'DS_Store' not in f and '.keep' not in f]
         # Download / Upload the first file manually with overwrite
-        filename = f"{PROJECT_DIR}/{folder}/{files[0]}"
+        filename = f"{PROJECT_DIR}/{folder}/{country}/{files[0]}"
         append_to_pdataset(filename, mode='w', header=True)
         files = files[1:]
         for file in files:
