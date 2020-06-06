@@ -35,18 +35,21 @@ def append_to_pdataset(local_path, mode='a', header=False, index=False):
 def upload_local_files_to_dataset(folder='data'):
     scheduler2 = BackgroundScheduler()
     # Get all files currently in S3
-    files = os.listdir(f"{PROJECT_DIR}/{folder}/")
-    files = [f for f in files if 'DS_Store' not in f and '.keep' not in f]
-    # Download / Upload the first file manually with overwrite
-    filename = f"{PROJECT_DIR}/{folder}/{files[0]}"
-    append_to_pdataset(filename, mode='w', header=True)
-    files = files[1:]
-    for file in files:
-        filename = f"{PROJECT_DIR}/s3_data/{file.split('/')[-1]}"
-        print(filename)
-        scheduler2.add_job(func=append_to_pdataset, kwargs={"local_path": filename},
-                           id=f"{file.split('/')[-1]}_upload", replace_existing=True,
-                           misfire_grace_time=999999999)
+    folders = os.listdir(f"{PROJECT_DIR}/{folder}/")
+    folders = [f for f in folders if 'DS_Store' not in f and '.keep' not in f]
+    for country in folders:
+        files = os.listdir(f"{PROJECT_DIR}/{folder}/{country}/")
+        files = [f for f in files if 'DS_Store' not in f and '.keep' not in f]
+        # Download / Upload the first file manually with overwrite
+        filename = f"{PROJECT_DIR}/{folder}/{files[0]}"
+        append_to_pdataset(filename, mode='w', header=True)
+        files = files[1:]
+        for file in files:
+            filename = f"{PROJECT_DIR}/s3_data/{file.split('/')[-1]}"
+            print(filename)
+            scheduler2.add_job(func=append_to_pdataset, kwargs={"local_path": filename},
+                               id=f"{file.split('/')[-1]}_upload", replace_existing=True,
+                               misfire_grace_time=999999999)
     scheduler2.start()
     time.sleep(1)
     print(f"Jobs left: {len(scheduler2._pending_jobs)}")
