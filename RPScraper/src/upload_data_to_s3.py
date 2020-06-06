@@ -20,7 +20,7 @@ df_all_dir = f'{PROJECT_DIR}/tmp/df_all.csv'
 
 def append_to_pdataset(local_path, mode='a', header=False, index=False):
     try:
-        df = pd.read_parquet(local_path)
+        df = pd.read_csv(local_path)
         df['pos'] = df['pos'].astype(str)
         df['pattern'] = df['pattern'].astype(str)
         df['prize'] = df['prize'].astype(str)
