@@ -9,6 +9,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from RPScraper.settings import PROJECT_DIR, S3_BUCKET, AWS_GLUE_DB, AWS_GLUE_TABLE, SCHEMA_COLUMNS, \
     AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+from RPScraper.src.utils.general import clean_data
 
 session = boto3.session.Session(
     aws_access_key_id=AWS_ACCESS_KEY_ID,
@@ -21,7 +22,9 @@ df_all_dir = f'{PROJECT_DIR}/tmp/df_all.csv'
 def append_to_pdataset(local_path, mode='a', header=False, index=False):
     try:
         df = pd.read_csv(local_path)
-        df.columns = [c.lower() for c in df.columns]
+        country = local_path.split('/')[-2]
+        print(f"Country: {country}")
+        df = clean_data(df, country=country)
         df['pos'] = df['pos'].astype(str)
         df['pattern'] = df['pattern'].astype(str)
         df['prize'] = df['prize'].astype(str)
