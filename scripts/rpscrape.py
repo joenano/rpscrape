@@ -673,13 +673,19 @@ def scrape_races(races, target, years, code):
                 race_type = 'Flat'
             else:
                 try:
-                    if 'hurdle' in doc.xpath("//span[@class='rp-raceTimeCourseName_hurdles']/text()")[0]:
+                    if 'hurdle' in doc.xpath("//span[@class='rp-raceTimeCourseName_hurdles']/text()")[0].lower():
                         race_type = 'Hurdle'
-                    elif 'fence' in doc.xpath("//span[@class='rp-raceTimeCourseName_hurdles']/text()")[0]:
+                    elif 'fence' in doc.xpath("//span[@class='rp-raceTimeCourseName_hurdles']/text()")[0].lower():
                         race_type = 'Chase'
                 except IndexError:
                     race_type = try_get_race_type(race_name.lower(), float(dist_f.strip('f')))
 
+            if race_type == '':
+                try_get_race_type(race_name.lower(), float(dist_f.strip('f')))
+
+            if race_type == '':
+                race_type = 'Flat'
+                
             pedigrees = doc.xpath("//tr[@data-test-selector='block-pedigreeInfoFullResults']/td")
             sires, dams, damsires = pedigree_info(pedigrees)
 
