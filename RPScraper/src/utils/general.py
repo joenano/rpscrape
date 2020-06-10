@@ -64,17 +64,18 @@ def clean_data(df_in, country):
     df['country'] = country
     # Drop duplicates
     df = df.drop_duplicates()
+    # Convert the 'Off' column into a time object
     df['off'] = df['off'].apply(lambda x: convert_off_to_readable_format(x))
     # Convert finish time from a time object to seconds
     df['time'] = df['time'].apply(lambda x: convert_finish_time_to_seconds(x))
-    # Convert the time of horse that did not finish to 0
+    # Convert the time of horse that did not finish to None
     df = df.apply(lambda x: nullify_non_finishers(x), axis=1)
-    # Convert the 'Off' column into a time object
-    df['id'] = df.groupby(['date', 'course', 'off']).ngroup()
+    # Add placeholder for ID
+    df['id'] = 0
     # Clean up horse name (remove the country indicator from the end and make lower case)
     df['horse_cleaned'] = df.apply(lambda x: clean_horse_name(x['horse'], append_with=x['country']), axis=1)
     # Clean jockey name
-    df['jockey_clened'] = df['jockey'].apply(lambda x: clean_name(x))
+    df['jockey_cleaned'] = df['jockey'].apply(lambda x: clean_name(x))
     # Clean trainer name
     df['trainer_cleaned'] = df['trainer'].apply(lambda x: clean_name(x))
     return df

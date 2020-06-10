@@ -11,7 +11,7 @@ from apscheduler.schedulers.background import BlockingScheduler
 from RPScraper.src.utils.general import upload_csv_to_s3
 from RPScraper.settings import PROJECT_DIR, S3_BUCKET, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
-use_files_in_s3 = True
+use_files_in_s3 = False
 
 if use_files_in_s3:
     # Get a list of all files in S3 currently
@@ -30,7 +30,7 @@ scheduler = BlockingScheduler()
 def run_rpscrape(country, date):
     subprocess.call(f'echo "-d {date} {country}" | python3 rpscrape.py', shell=True)
     print(f'Finished scraping {country} - {date}')
-    upload_csv_to_s3(country, date)
+    # upload_csv_to_s3(country, date)
 
 
 date_today = dt.datetime.today().date()

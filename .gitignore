@@ -9,3 +9,4 @@ RPScraper/scripts/ran_error.html
 .tox/*
 *.parquet
 *.csv
+*.csv

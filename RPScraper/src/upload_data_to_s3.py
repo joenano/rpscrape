@@ -41,7 +41,7 @@ def append_to_pdataset(local_path, folder, mode='a', header=False, index=False):
         print(f"Loading parquet file failed. \nFile path: {local_path}. \nError: {e}")
 
 
-def upload_local_files_to_dataset(folder='data'):
+def upload_local_files_to_dataset(folder='data', full_refresh=False):
     scheduler2 = BackgroundScheduler()
     # Get all files currently in S3
     folders = os.listdir(f"{PROJECT_DIR}/{folder}/")
@@ -74,7 +74,7 @@ def upload_local_files_to_dataset(folder='data'):
                 df[key] = df[key].astype(str)
                 df[key] = df[key].fillna(pd.NA)
         wr.s3.to_parquet(df, path=f's3://{S3_BUCKET}/datasets/', dataset=True,
-                         dtype=SCHEMA_COLUMNS, mode='append' if folder == 'data' else 'overwrite',
+                         dtype=SCHEMA_COLUMNS, mode='overwrite' if full_refresh else 'append',
                          boto3_session=session, database=AWS_GLUE_DB, table=AWS_GLUE_TABLE,
                          partition_cols=['year'])
         print(f"Uploaded data to parquet dataset")
