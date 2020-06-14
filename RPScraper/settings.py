@@ -54,7 +54,7 @@ SCHEMA_COLUMNS = {
      'country': 'string',
      'id': 'int',
      'horse_cleaned': 'string',
-     'jockey_clened': 'string',
+     'jockey_cleaned': 'string',
      'trainer_cleaned': 'string',
      'year': 'int'
  }
