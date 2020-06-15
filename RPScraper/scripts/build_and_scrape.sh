@@ -1,3 +1,4 @@
+#!/bin/bash
 # Setup environment, install dependencies
 sudo apt-get install bsdmainutils
 virtualenv venv
@@ -11,13 +12,22 @@ chmod u+x ./scripts/run_rpscrape_script.sh
 
 if [ -z "$1" ]
   then
-    echo "No argument supplied, running for yesterdays date"
+    echo "No date argument supplied, running for yesterdays date"
     date=$(date +%Y/%m/%d -d "yesterday")
   else
-    echo "No argument supplied, running for {$1}"
+    echo "Date argument supplied, running for {$1}"
     date="$1"
 fi
 
+if [ -z "$2" ]
+  then
+    echo "No country argument supplied, running for gb/ire"
+    countries=("gb" "ire")
+  else
+    echo "Country argument supplied, running for {$1}"
+    countries=("$1")
+fi
+
 echo "Running rpscrape for date: $date"
-countries=("gb" "ire")
-./scripts/run_daily_updates.sh $countries $date
+
+./scripts/run_daily_updates.sh "${countries[@]}" $date
