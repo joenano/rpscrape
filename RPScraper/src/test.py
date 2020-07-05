@@ -29,10 +29,11 @@ missing_dates_ire = [d for d in dd if d not in list(df_ire['date'].unique())]
 
 
 def run_rpscrape(country, date):
-    subprocess.call(f'echo "-d {date} {country}" | python3 rpscrape.py', shell=True)
+    subprocess.call(f'echo "-d {date} {country}" | python3 ../scripts/rpscrape.py', shell=True)
     print(f'Finished scraping {country} - {date}')
-    # upload_csv_to_s3(country, date)
 
+import os
+gb_files = os.listdir({})
 
 for date in missing_dates_gb:
     run_rpscrape('gb', str(date.date()).replace('-', '/'))

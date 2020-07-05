@@ -10,3 +10,6 @@ RPScraper/scripts/ran_error.html
 *.parquet
 *.csv
 *.csv
+*.csv
+RPScraper/src/ran_error.html
+*.csv

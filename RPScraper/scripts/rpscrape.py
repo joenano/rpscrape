@@ -863,9 +863,6 @@ def scrape_races(races, target, years, code):
                     f'{going},{num},{p},{ran},{dr},{bt},{ovr_bt},{n} {nat},{sp},{dc},{a},{s},{w},'
                     f'{l},{g},{time},{j},{tr},{o},{rp},{t},{pr},{sire},{dam},{damsire},{owner},{com}\n'
                 ))
-
-                
-
         print(f'\nFinished scraping. {years}.csv saved in RPScraper/data/{code}/{target.lower()}')
 
 

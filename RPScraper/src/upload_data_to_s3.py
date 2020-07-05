@@ -23,20 +23,22 @@ def append_to_pdataset(local_path, folder, mode='a', header=False, index=False):
     try:
         if folder == 'data':
             df = pd.read_csv(local_path)
-            country = local_path.split('/')[-2]
-            df = clean_data(df, country=country)
+            if len(df) > 0:
+                country = local_path.split('/')[-2]
+                df = clean_data(df, country=country)
         elif folder == 's3_data':
             df = pd.read_parquet(local_path)
-        df['pos'] = df['pos'].astype(str)
-        df['pattern'] = df['pattern'].astype(str)
-        df['prize'] = df['prize'].astype(str)
-        df['date'] = pd.to_datetime(df['date'])
-        df['year'] = df['date'].apply(lambda x: x.year)
-        df = df[list(SCHEMA_COLUMNS.keys())]
-        df.to_csv(df_all_dir, mode=mode, header=header, index=index)
-        date = local_path.split('/')[-1].split('.')[0].replace('_', '-')
-        file_name = f"{country}_{date}"
-        wr.s3.to_parquet(df, f"s3://{S3_BUCKET}/data/{file_name}.parquet", boto3_session=session)
+        if len(df) > 0:
+            df['pos'] = df['pos'].astype(str)
+            df['pattern'] = df['pattern'].astype(str)
+            df['prize'] = df['prize'].astype(str)
+            df['date'] = pd.to_datetime(df['date'])
+            df['year'] = df['date'].apply(lambda x: x.year)
+            df = df[list(SCHEMA_COLUMNS.keys())]
+            df.to_csv(df_all_dir, mode=mode, header=header, index=index)
+            date = local_path.split('/')[-1].split('.')[0].replace('_', '-')
+            file_name = f"{country}_{date}"
+            wr.s3.to_parquet(df, f"s3://{S3_BUCKET}/data/{file_name}.parquet", boto3_session=session)
     except pyarrow.lib.ArrowInvalid as e:
         print(f"Loading parquet file failed. \nFile path: {local_path}. \nError: {e}")
 
@@ -46,6 +48,7 @@ def upload_local_files_to_dataset(folder='data', full_refresh=False):
     # Get all files currently in S3
     folders = os.listdir(f"{PROJECT_DIR}/{folder}/")
     folders = [f for f in folders if 'DS_Store' not in f and '.keep' not in f]
+    print(f"Folders found: {folders}")
     for country in folders:
         files = os.listdir(f"{PROJECT_DIR}/{folder}/{country}/")
         files = [f for f in files if 'DS_Store' not in f and '.keep' not in f]
@@ -81,4 +84,4 @@ def upload_local_files_to_dataset(folder='data', full_refresh=False):
 
 
 if __name__ == '__main__':
-    upload_local_files_to_dataset()
+    upload_local_files_to_dataset(full_refresh=True)

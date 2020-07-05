@@ -76,7 +76,7 @@ def options(opt="help"):
 
 
 def courses(code='all'):
-    with open('../courses/_courses', 'r') as courses:
+    with open('../../courses/_courses', 'r') as courses:
         for course in json.load(courses)[code]:
             yield (course.split('-')[0].strip(), ' '.join(course.split('-')[1::]).strip())
          
@@ -125,7 +125,7 @@ def x_y():
 
 
 def regions():
-    with open('../courses/_countries', 'r') as regions:
+    with open('../../courses/_countries', 'r') as regions:
         return json.load(regions)
 
 
@@ -477,7 +477,7 @@ def get_races(tracks, names, years, code, xy):
 
 
 def get_race_links(date, region):
-    with open('../courses/_courses', 'r') as courses:
+    with open('../../courses/_courses', 'r') as courses:
         valid_courses = [course.split('-')[0].strip() for course in json.load(courses)[region]]
 
     r = requests.get(
@@ -790,7 +790,7 @@ def scrape_races(races, target, years, code):
                 print(race)
                 print('Failed to find number of runners.')
 
-                with open('ran_error.html', 'w') as ran_error:
+                with open('../ran_error.html', 'w') as ran_error:
                     ran_error.write(str(r.content))
 
                 sys.exit()

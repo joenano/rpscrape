@@ -28,9 +28,12 @@ scheduler = BlockingScheduler()
 
 
 def run_rpscrape(country, date):
-    subprocess.call(f'echo "-d {date} {country}" | python3 rpscrape.py', shell=True)
-    print(f'Finished scraping {country} - {date}')
-    # upload_csv_to_s3(country, date)
+    try:
+        subprocess.call(f'echo "-d {date} {country}" | python3 ../scripts/rpscrape.py', shell=True)
+        print(f'Finished scraping {country} - {date}')
+        # upload_csv_to_s3(country, date)
+    except EOFError:
+        pass
 
 
 date_today = dt.datetime.today().date()
@@ -40,7 +43,7 @@ end_date = date_today - dt.timedelta(days=1)
 print(f"End date: {end_date}")
 
 # Get the countries we want
-countries = ["gb", "ire"]
+countries = ["gb"]
 # Find the number of days between the start and end dates
 delta = end_date - start_date
 dates = list()
