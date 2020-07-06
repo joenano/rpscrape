@@ -47,7 +47,8 @@ def upload_local_files_to_dataset(folder='data', full_refresh=False):
     scheduler2 = BackgroundScheduler()
     # Get all files currently in S3
     folders = os.listdir(f"{PROJECT_DIR}/{folder}/")
-    folders = [f for f in folders if 'DS_Store' not in f and '.keep' not in f]
+    folders = [f for f in folders if 'DS_Store' not in f and '.keep' not in f
+               and '.ipynb_checkpoints' not in f]
     print(f"Folders found: {folders}")
     for country in folders:
         files = os.listdir(f"{PROJECT_DIR}/{folder}/{country}/")

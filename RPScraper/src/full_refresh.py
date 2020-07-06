@@ -43,7 +43,7 @@ end_date = date_today - dt.timedelta(days=1)
 print(f"End date: {end_date}")
 
 # Get the countries we want
-countries = ["gb"]
+countries = ["gb", "ire"]
 # Find the number of days between the start and end dates
 delta = end_date - start_date
 dates = list()
@@ -57,8 +57,8 @@ for country in countries:
         exists_remotely = True if s3_file_name in file_names else False
         if not exists_remotely:
             if exists_locally:
-                print(f'{country}/{day} exists locally but not on S3, uploading local file..')
-                upload_csv_to_s3(country, day)
+                print(f"{country}/{str(day).replace('/', '_')} exists locally but not on S3, uploading local file..")
+                #upload_csv_to_s3(country, day)
             else:
                 scheduler.add_job(id=str(hash(f"{day}_{country}")), func=run_rpscrape, name=f"{country}-{day}",
                                   kwargs={'country': country, 'date': day}, replace_existing=True,
