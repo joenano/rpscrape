@@ -85,4 +85,4 @@ def upload_local_files_to_dataset(folder='data', full_refresh=False):
 
 
 if __name__ == '__main__':
-    upload_local_files_to_dataset(full_refresh=True)
+    upload_local_files_to_dataset(full_refresh=False)
