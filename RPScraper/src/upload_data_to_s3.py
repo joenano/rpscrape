@@ -34,6 +34,7 @@ def append_to_pdataset(local_path, folder, mode='a', header=False, index=False):
             df['prize'] = df['prize'].astype(str)
             df['date'] = pd.to_datetime(df['date'])
             df['year'] = df['date'].apply(lambda x: x.year)
+            df['id'] = df.apply(lambda x: hash(f"{x['country']}_{x['date']}_{x['name']}_{x['off']}"), axis=1)
             df = df[list(SCHEMA_COLUMNS.keys())]
             df.to_csv(df_all_dir, mode=mode, header=header, index=index)
             date = local_path.split('/')[-1].split('.')[0].replace('_', '-')
