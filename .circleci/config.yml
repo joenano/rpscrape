@@ -29,10 +29,10 @@ workflows:
     jobs:
       - build-and-scrape:
           context: aws
-    triggers:
-      - schedule:
-          cron: "0 2 * * *"
-          filters:
-            branches:
-              only:
-                - master
+#    triggers:
+#      - schedule:
+#          cron: "0 2 * * *"
+#          filters:
+#            branches:
+#              only:
+#                - master
