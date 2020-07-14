@@ -80,7 +80,7 @@ def upload_local_files_to_dataset(folder='data', full_refresh=False):
                 df[key] = df[key].astype(str)
                 df[key] = df[key].fillna(pd.NA)
             elif value == 'int':
-                df[key] = df[key].astype(int)
+                df[key] = df[key].astype(float)
             elif value == 'double':
                 df[key] = df[key].astype(float)
         wr.s3.to_parquet(df, path=f's3://{S3_BUCKET}/datasets/', dataset=True,
