@@ -4,6 +4,7 @@ import pandas as pd
 import time
 import os
 import pyarrow
+import numpy as np
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -80,9 +81,9 @@ def upload_local_files_to_dataset(folder='data', full_refresh=False):
                 df[key] = df[key].astype(str)
                 df[key] = df[key].fillna(pd.NA)
             elif value == 'int':
-                df[key] = df[key].astype(float)
+                df[key] = df[key].astype(np.int32)
             elif value == 'double':
-                df[key] = df[key].astype(float)
+                df[key] = df[key].astype(np.float32)
         wr.s3.to_parquet(df, path=f's3://{S3_BUCKET}/datasets/', dataset=True,
                          dtype=SCHEMA_COLUMNS, mode='overwrite' if full_refresh else 'append',
                          boto3_session=session, database=AWS_GLUE_DB, table=AWS_GLUE_TABLE,
