@@ -82,10 +82,10 @@ def upload_local_files_to_dataset(folder='data', full_refresh=False):
                 df[key] = df[key].fillna(pd.NA)
             elif value == 'int':
                 df.loc[~df[key].isna(), key] = df.loc[~df[key].isna(), key].astype(np.int32)
-                df[key] = df[key].fillna(pd.NA)
+                #df[key] = df[key].fillna(pd.NA)
             elif value == 'double':
                 df.loc[~df[key].isna(), key] = df.loc[~df[key].isna(), key].astype(np.float32)
-                df[key] = df[key].fillna(pd.NA)
+                #df[key] = df[key].fillna(pd.NA)
         wr.s3.to_parquet(df, path=f's3://{S3_BUCKET}/datasets/', dataset=True,
                          dtype=SCHEMA_COLUMNS, mode='overwrite' if full_refresh else 'append',
                          boto3_session=session, database=AWS_GLUE_DB, table=AWS_GLUE_TABLE,
