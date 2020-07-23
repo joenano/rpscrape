@@ -64,7 +64,7 @@ def upload_local_files_to_dataset(folder='data', full_refresh=False):
             filename = f"{PROJECT_DIR}/{folder}/{country}/{file}"
             print(filename)
             scheduler2.add_job(func=append_to_pdataset, kwargs={"local_path": filename, "folder": folder},
-                               id=f"{file.split('/')[-1]}_upload", replace_existing=True,
+                               id=f"{country}_{file.split('/')[-1]}", replace_existing=True,
                                misfire_grace_time=999999999)
     scheduler2.start()
     time.sleep(1)
