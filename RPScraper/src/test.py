@@ -33,7 +33,6 @@ def run_rpscrape(country, date):
     print(f'Finished scraping {country} - {date}')
 
 import os
-gb_files = os.listdir({})
 
 for date in missing_dates_gb:
     run_rpscrape('gb', str(date.date()).replace('-', '/'))
