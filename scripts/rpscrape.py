@@ -1015,16 +1015,16 @@ def main():
     if len(sys.argv) > 1:
         sys.exit(options())
 
-    # if 'local out of date' in cmd.Git('..').execute(['git', 'remote', 'show', 'origin']).lower():
-    #     x = input('Update available. Do you want to update? Y/N ')
+    if 'local out of date' in cmd.Git('..').execute(['git', 'remote', 'show', 'origin']).lower():
+        x = input('Update available. Do you want to update? Y/N ')
 
-    #     if x.lower() == 'y':
-    #         Repo('..').remote(name='origin').pull()
+        if x.lower() == 'y':
+            Repo('..').remote(name='origin').pull()
 
-    #         if 'up to date' in cmd.Git('..').execute(['git', 'remote', 'show', 'origin']).lower():
-    #             sys.exit(print('Version up to date.'))
-    #         else:
-    #             sys.exit(print('Failed to update.'))
+            if 'up to date' in cmd.Git('..').execute(['git', 'remote', 'show', 'origin']).lower():
+                sys.exit(print('Version up to date.'))
+            else:
+                sys.exit(print('Failed to update.'))
 
     try:
         import readline
