@@ -16,6 +16,7 @@ from time import sleep
 class Completer:
     def __init__(self, options):
         self.options = sorted(options)
+        self.matches = []
 
     def complete(self, text, state):
         if state == 0:
@@ -78,12 +79,8 @@ def options(opt="help"):
 def courses(code='all'):
     with open('../courses/_courses', 'r') as courses:
         for course in json.load(courses)[code]:
-            yield (course.split('-')[0].strip(), ' '.join(course.split('-')[1::]).strip())
+            yield course.split('-')[0].strip(), ' '.join(course.split('-')[1::]).strip()
 
-    # with open(f'../courses/{code}_course_ids', 'r') as courses:
-    #     for course in courses:
-    #         yield (course.split('-')[0].strip(), ' '.join(course.split('-')[1::]).strip())
-         
 
 def course_name(code):
     if code.isalpha():
@@ -157,7 +154,7 @@ def valid_region(code):
 
 def valid_years(years):
     if years:
-        return all(year.isdigit() and int(year) >= 1987 and int(year) <= 2020 for year in years)
+        return all(year.isdigit() and 1987 <= int(year) <= 2020 for year in years)
 
     return False
 
@@ -166,10 +163,10 @@ def valid_date(date):
     if len(date.split('/')) == 3:
         try:
             year, month, day = [int(x) for x in date.split('/')]
-            return year >= 1987 and year <= 2020 and month > 0 and month <= 12 and day > 0 and day <= 31
+            return 1987 <= year <= 2020 and 0 < month <= 12 and 0 < day <= 31
         except ValueError:
             return False
-    
+
     return False
 
 
@@ -195,8 +192,15 @@ def fraction_to_decimal(fractions):
 
 def convert_date(date):
     dmy = date.split('-')
-    
+
     return dmy[0] + '-' + dmy[1] + '-' + dmy[2]
+
+
+def distance_to_decimal(dist):
+    return (
+        dist.strip().replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('snk', '0.2').replace('nk', '0.3')
+        .replace('sht-hd', '0.1').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0').replace('dist', '30')
+    )
 
 
 def pedigree_info(pedigrees):
@@ -214,7 +218,7 @@ def pedigree_info(pedigrees):
                 else:
                     sire = sire + ' (GB)'
 
-                sires.append(sire.replace('.', ' ').replace('  ', ' '))
+                sires.append(sire.replace('.', ' ').replace('  ', ' ').replace(',', ''))
             else:
                 sires.append('')
 
@@ -226,8 +230,8 @@ def pedigree_info(pedigrees):
                     dam = dam + ' ' + dam_nat.strip()
                 else:
                     dam = dam + ' (GB)'
-            
-                dams.append(dam.replace('.', ' ').replace('  ', ' '))
+
+                dams.append(dam.replace('.', ' ').replace('  ', ' ').replace(',', ''))
             else:
                 dams.append('')
 
@@ -235,7 +239,7 @@ def pedigree_info(pedigrees):
                 damsire = ped_info[2].text.strip().strip('()')
                 if damsire == 'Damsire Unregistered':
                     damsire = ''
-                damsires.append(damsire.replace('.', ' ').replace('  ', ' '))
+                damsires.append(damsire.replace('.', ' ').replace('  ', ' ').replace(',', ''))
             else:
                 damsires.append('')
         else:
@@ -249,8 +253,8 @@ def pedigree_info(pedigrees):
                     dam = dam + ' ' + dam_nat.strip()
                 else:
                     dam = dam + ' (GB)'
-            
-                dams.append(dam.replace('.', ' ').replace('  ', ' '))
+
+                dams.append(dam.replace('.', ' ').replace('  ', ' ').replace(',', ''))
             else:
                 dams.append('')
 
@@ -258,10 +262,9 @@ def pedigree_info(pedigrees):
                 damsire = ped_info[1].text.strip().strip('()')
                 if damsire == 'Damsire Unregistered':
                     damsire = ''
-                damsires.append(damsire.replace('.', ' ').replace('  ', ' '))
+                damsires.append(damsire.replace('.', ' ').replace('  ', ' ').replace(',', ''))
             else:
                 damsires.append('')
-
 
     return sires, dams, damsires
 
@@ -328,7 +331,6 @@ def clean_race_name(race):
     if 'Listed' in race:
         return race.replace('Listed Race', '').replace('(Listed)', '').replace('()', '').replace('  ', ' ').strip()
 
-
     return race
 
 
@@ -362,24 +364,26 @@ def try_get_pattern(race, race_class):
     if 'Forte Mile' in race and '(Group' in race:
         return r_class, 'Group 2'
 
+    if 'Stakis Casinos Scottish Grand National Handicap Chase Class A Guaranteed Minimum Value £60000 Grade' in race:
+        return r_class, pattern
 
     if race.endswith(' (Listed Race Grade'):
         return r_class, 'Listed'
 
     if '(Group' in race:
         try:
-            pattern = search('(\(Grou..)\w+', race).group(0).strip('(')
+            pattern = search(r'(\(Grou..)\w+', race).group(0).strip('(')
         except AttributeError:
-            pattern = search('(\(Grou.)\w+', race).group(0).strip('(')
+            pattern = search(r'(\(Grou.)\w+', race).group(0).strip('(')
         return r_class, pattern
     if '(Grade' in race:
         try:
-            pattern = search('(\(Grad..)\w+', race).group(0).strip('(')
+            pattern = search(r'(\(Grad..)\w+', race).group(0).strip('(')
         except AttributeError:
-            pattern = search('(\(Grad.)\w+', race).group(0).strip('(')
+            pattern = search(r'(\(Grad.)\w+', race).group(0).strip('(')
         return r_class, pattern
     if 'Grade' in race:
-        return r_class, search('Grad..\w+', race).group(0)
+        return r_class, search(r'Grad..\w+', race).group(0)
     if '(Local Group 1)' in race:
         return r_class, 'Group 1'
     if '(Local Group 2)' in race:
@@ -409,7 +413,7 @@ def try_get_race_type(race, race_dist):
 
 
 def sex_restricted(race):
-    if ('(Entire Colts & Fillies)') in race or '(Colts & Fillies)' in race:
+    if '(Entire Colts & Fillies)' in race or '(Colts & Fillies)' in race:
         return 'C & F'
     elif '(Fillies & Mares)' in race or '(Filles & Mares)' in race:
         return 'F & M'
@@ -479,7 +483,8 @@ def get_races(tracks, names, years, code, xy):
 
 
 def get_race_links(date, region):
-    valid_courses = [x.split('-')[0].strip() for x in open(f'../courses/{region}_course_ids')]
+    with open('../courses/_courses', 'r') as courses:
+        valid_courses = [course.split('-')[0].strip() for course in json.load(courses)[region]]
 
     r = requests.get(
         f'https://www.racingpost.com/results/{date}', headers={'User-Agent': 'Mozilla/5.0'}
@@ -517,11 +522,11 @@ def calculate_times(win_time, dist_btn, going, code, course):
             else:
                 lps_scale = 6
         elif 'Good' in going:
-            if 'Soft' in going or 'Yielding'in going:
+            if 'Soft' in going or 'Yielding' in going:
                 lps_scale = 5.5
             else:
                 lps_scale = 6
-        elif 'Soft' in going or 'Heavy' in going or 'Yielding' in going:
+        elif 'Soft' in going or 'Heavy' in going or 'Yielding' in going or 'Holding' in going:
             lps_scale = 5
     else:
         if going == '':
@@ -532,11 +537,11 @@ def calculate_times(win_time, dist_btn, going, code, course):
             else:
                 lps_scale = 5
         elif 'Good' in going:
-            if 'Soft' in going or 'Yielding'in going:
+            if 'Soft' in going or 'Yielding' in going:
                 lps_scale = 4.5
             else:
                 lps_scale = 5
-        elif 'Soft' in going or 'Heavy' in going or 'Yielding' in going or 'Slow' in going:
+        elif 'Soft' in going or 'Heavy' in going or 'Yielding' in going or 'Slow' in going or 'Holding' in going:
             lps_scale = 4
 
     for dist in dist_btn:
@@ -550,7 +555,7 @@ def calculate_times(win_time, dist_btn, going, code, course):
 
 
 def clean(data):
-    return [d.strip().replace('–', '') for d in data]
+    return [d.strip().replace('–', '').replace(',', '') for d in data]
 
 
 def scrape_races(races, target, years, code):
@@ -589,20 +594,18 @@ def scrape_races(races, target, years, code):
                 r_time = ''
 
             try:
-                race_name = doc.xpath("//h2[@class='rp-raceTimeCourseName__title']/text()")[0].strip().strip('\n')\
+                race_name = doc.xpath("//h2[@class='rp-raceTimeCourseName__title']/text()")[0].strip().strip('\n') \
                     .replace(',', ' ').replace('"', '').replace('\x80', '').replace('\\x80', '').replace('  ', ' ')
             except IndexError:
                 race_name = ''
 
             try:
                 race_class = doc.xpath("//span[@class='rp-raceTimeCourseName_class']/text()")[0].strip().strip('()')
-            except:
+            except IndexError:
                 race_class = ''
 
             if race_class == '':
                 race_class = try_get_class(race_name)
-
-            race_name = clean_race_name(race_name)
 
             try:
                 race_class, pattern = try_get_pattern(race_name, race_class)
@@ -612,8 +615,12 @@ def scrape_races(races, target, years, code):
                 print('Race name: ', race_name)
                 sys.exit()
 
+            race_name = clean_race_name(race_name)
+            race_name = clean_race_name(race_name)
+
             try:
-                band = doc.xpath("//span[@class='rp-raceTimeCourseName_ratingBandAndAgesAllowed']/text()")[0].strip().strip('()')
+                band = doc.xpath("//span[@class='rp-raceTimeCourseName_ratingBandAndAgesAllowed']/text()")[
+                    0].strip().strip('()')
             except:
                 band = ''
 
@@ -650,16 +657,15 @@ def scrape_races(races, target, years, code):
             try:
                 dist_f = distance_to_furlongs(distance)
             except ValueError:
-                print('distance_to_furlongs()')
-                print('Distance: ', distance)
+                print('ERROR: distance_to_furlongs()')
                 print('Race: ', race)
                 sys.exit()
 
             dist_m = distance_to_metres(dist_y)
-            
+
             if dist_m == 0:
                 dist_m = round(dist_f * 201.168)
-            
+
             dist_y = round(dist_m * 1.09361)
             dist_f = str(dist_f).replace('.0', '') + 'f'
 
@@ -674,12 +680,18 @@ def scrape_races(races, target, years, code):
                 race_type = 'Flat'
             else:
                 try:
-                    if 'hurdle' in doc.xpath("//span[@class='rp-raceTimeCourseName_hurdles']/text()")[0]:
+                    if 'hurdle' in doc.xpath("//span[@class='rp-raceTimeCourseName_hurdles']/text()")[0].lower():
                         race_type = 'Hurdle'
-                    elif 'fence' in doc.xpath("//span[@class='rp-raceTimeCourseName_hurdles']/text()")[0]:
+                    elif 'fence' in doc.xpath("//span[@class='rp-raceTimeCourseName_hurdles']/text()")[0].lower():
                         race_type = 'Chase'
                 except IndexError:
                     race_type = try_get_race_type(race_name.lower(), float(dist_f.strip('f')))
+
+            if race_type == '':
+                try_get_race_type(race_name.lower(), float(dist_f.strip('f')))
+
+            if race_type == '':
+                race_type = 'Flat'
 
             pedigrees = doc.xpath("//tr[@data-test-selector='block-pedigreeInfoFullResults']/td")
             sires, dams, damsires = pedigree_info(pedigrees)
@@ -694,11 +706,12 @@ def scrape_races(races, target, years, code):
 
             coms = doc.xpath("//tr[@class='rp-horseTable__commentRow ng-cloak']/td/text()")
             coms = [x.strip().replace('  ', '').replace(',', ' -').replace('\n', ' ').replace('\r', '') for x in coms]
-            
+
             possy = doc.xpath("//span[@data-test-selector='text-horsePosition']/text()")
+            
             del possy[1::2]
             pos = [x.strip() for x in possy]
-            
+
             prizes = doc.xpath("//div[@data-test-selector='text-prizeMoney']/text()")
             prize = [p.strip().replace(",", '').replace('£', '') for p in prizes]
             try:
@@ -715,20 +728,19 @@ def scrape_races(races, target, years, code):
             ovr_btn = []
 
             for x in doc.xpath("//span[@class='rp-horseTable__pos__length']"):
-
                 distances = x.findall('span')
 
                 if len(distances) == 2:
-                    if distances[0].text == None:
+                    if distances[0].text is None:
                         btn.append('0')
                     else:
                         btn.append(distances[0].text)
-                    if distances[1].text == None:
+                    if distances[1].text is None:
                         ovr_btn.append('0')
                     else:
                         ovr_btn.append(distances[1].text.strip('[]'))
                 else:
-                    if distances[0].text == None:
+                    if distances[0].text is None:
                         btn.append('0')
                         ovr_btn.append('0')
                     else:
@@ -743,20 +755,12 @@ def scrape_races(races, target, years, code):
                             ovr_btn.append(distances[0].text)
 
             try:
-                btn = [
-                    b.strip().replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('snk', '0.2').replace('nk', '0.3')\
-                    .replace('sht-hd', '0.1').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0').replace('dist', '30')\
-                    for b in btn
-                ]
+                btn = [distance_to_decimal(b) for b in btn]
             except AttributeError:
                 print("btn error: ", race)
                 sys.exit()
 
-            ovr_btn = [
-                b.strip().strip("[]").replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('snk', '0.2').replace('nk', '0.3')\
-                .replace('sht-hd', '0.1').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0').replace('dist', '30')\
-                for b in ovr_btn
-            ]
+            ovr_btn = [distance_to_decimal(b) for b in btn]
 
             if len(ovr_btn) < len(pos):
                 ovr_btn.extend(['' for x in range(len(pos) - len(ovr_btn))])
@@ -782,13 +786,11 @@ def scrape_races(races, target, years, code):
                     "//span[@class='rp-raceInfo__value rp-raceInfo__value_black']/text()"
                 )[0].replace('ran', '').strip('\n').strip()
             except IndexError:
+                if possy[0].strip() == 'VOI':
+                    continue
                 print(r.status_code)
                 print(race)
                 print('Failed to find number of runners.')
-
-                with open('ran_error.html', 'w') as ran_error:
-                    ran_error.write(str(r.content))
-
                 sys.exit()
 
             horse_nat = doc.xpath("//span[@class='rp-horseTable__horse__country']/text()")
@@ -840,7 +842,8 @@ def scrape_races(races, target, years, code):
                 else:
                     gear.append('')
 
-            info = doc.xpath('//div[@class="rp-raceInfo"]')[0].find('.//li').findall('.//span[@class="rp-raceInfo__value"]')
+            info = doc.xpath('//div[@class="rp-raceInfo"]')[0].find('.//li').findall(
+                './/span[@class="rp-raceInfo__value"]')
 
             times = []
 
@@ -849,7 +852,8 @@ def scrape_races(races, target, years, code):
 
                 if winning_time[0] == '0.0.00s' or winning_time[0] == '0.00s':
                     try:
-                        winning_time = info[1].text.split("(")[1].lower().replace('fast by', '').strip().strip(')').split()
+                        winning_time = info[1].text.split("(")[1].lower().replace('fast by', '').strip().strip(
+                            ')').split()
                     except IndexError:
                         times = ['-' for x in range(len(pos))]
 
@@ -858,7 +862,8 @@ def scrape_races(races, target, years, code):
 
                 if winning_time[0] == '0.0.00s' or winning_time[0] == '0.00s':
                     try:
-                        winning_time = info[0].text.split("(")[1].lower().replace('fast by', '').strip().strip(')').split()
+                        winning_time = info[0].text.split("(")[1].lower().replace('fast by', '').strip().strip(
+                            ')').split()
                     except IndexError:
                         times = ['-' for x in range(len(pos))]
             else:
@@ -867,14 +872,12 @@ def scrape_races(races, target, years, code):
             if winning_time == [] or winning_time == ['standard', 'time']:
                 times = ['-' for x in range(len(pos))]
 
-            if times == []:
+            if not times:
                 if len(winning_time) > 1:
                     try:
                         win_time = float(winning_time[0].replace("m", '')) * 60 + float(winning_time[1].strip("s"))
                     except ValueError:
                         print('ERROR: winning time')
-                        print(times)
-                        print(winning_time)
                         print(race)
                         sys.exit()
                 else:
@@ -882,7 +885,7 @@ def scrape_races(races, target, years, code):
                         win_time = float(winning_time[0].strip("s"))
                     except ValueError:
                         print(f'ERROR: (winning time){winning_time[0]}.')
-                        print(race, winning_time)
+                        print(race)
                         sys.exit()
 
                 times = calculate_times(win_time, time_btn, going, code, course)
@@ -892,24 +895,21 @@ def scrape_races(races, target, years, code):
             race_name = race_name.replace("'", "")
 
             for num, p, pr, dr, bt, ovr_bt, n, nat, sp, dc, time, j, tr, a, s, o, rp, t, w, l, g, com, sire, dam, damsire, owner in \
-            zip(numbers, pos, prize, draw, btn, ovr_btn, name, nats, sps, dec, times, jock, trainer, age, sex, _or, rpr, ts,\
-                wgt, lbs, gear, coms, sires, dams, damsires, owners):
-
+                    zip(numbers, pos, prize, draw, btn, ovr_btn, name, nats, sps, dec, times, jock, trainer, age, sex, _or, rpr, ts,
+                        wgt, lbs, gear, coms, sires, dams, damsires, owners):
                 sire = sire.replace("'", '')
                 dam = dam.replace("'", '')
                 damsire = damsire.replace("'", '')
                 j = j.replace("'", '')
                 tr = tr.replace("'", '')
                 com = com.replace('\n', '').strip()
-                
+
                 csv.write((
                     f'{date},{course},{r_time},{race_name},{race_type},{race_class},{pattern},'
                     f'{rating_band},{age_band},{sex_rest},{distance},{dist_y},{dist_m},{dist_f},'
                     f'{going},{num},{p},{ran},{dr},{bt},{ovr_bt},{n} {nat},{sp},{dc},{a},{s},{w},'
                     f'{l},{g},{time},{j},{tr},{o},{rp},{t},{pr},{sire},{dam},{damsire},{owner},{com}\n'
                 ))
-
-                
 
         print(f'\nFinished scraping. {years}.csv saved in rpscrape/data/{code}/{target.lower()}')
 
@@ -936,7 +936,9 @@ def parse_args(args=sys.argv):
                 course_search(args[1])
     elif len(args) == 3:
         if args[0] == '-d' or args[0] == 'date':
-            if not valid_region(args[2]):
+            region_code = args[2]
+
+            if not valid_region(region_code):
                 return print("Invalid region.")
 
             if check_date(args[1]):
@@ -956,11 +958,11 @@ def parse_args(args=sys.argv):
                 races = []
 
                 for d in dates:
-                    for link in get_race_links(d, args[2]):
+                    for link in get_race_links(d, region_code):
                         races.append(link)
 
-                scrape_races(races, args[2], args[1].replace('/', '_'), '')
-                
+                scrape_races(races, region_code, args[1].replace('/', '_'), '')
+
             else:
                 return print('Invalid date. Expected format: YYYY/MM/DD')
         else:
@@ -1013,20 +1015,21 @@ def main():
     if len(sys.argv) > 1:
         sys.exit(options())
 
-    if 'local out of date' in cmd.Git('..').execute(['git', 'remote', 'show', 'origin']).lower():
-        x = input('Update available. Do you want to update? Y/N ')
+    # if 'local out of date' in cmd.Git('..').execute(['git', 'remote', 'show', 'origin']).lower():
+    #     x = input('Update available. Do you want to update? Y/N ')
 
-        if x.lower() == 'y':
-            Repo('..').remote(name='origin').pull()
+    #     if x.lower() == 'y':
+    #         Repo('..').remote(name='origin').pull()
 
-            if 'up to date' in cmd.Git('..').execute(['git', 'remote', 'show', 'origin']).lower():
-                sys.exit(print('Version up to date.'))
-            else:
-                sys.exit(print('Failed to update.'))
+    #         if 'up to date' in cmd.Git('..').execute(['git', 'remote', 'show', 'origin']).lower():
+    #             sys.exit(print('Version up to date.'))
+    #         else:
+    #             sys.exit(print('Failed to update.'))
 
     try:
         import readline
-        completions = Completer(["courses", "regions", "options", "help", "quit", "exit", "clear", "flat", "jumps", "date"])
+        completions = Completer(
+            ["courses", "regions", "options", "help", "quit", "exit", "clear", "flat", "jumps", "date"])
         readline.set_completer(completions.complete)
         readline.parse_and_bind('tab: complete')
     except ModuleNotFoundError:  # windows
