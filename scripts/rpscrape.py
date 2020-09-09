@@ -79,8 +79,13 @@ def options(opt="help"):
 def courses(code='all'):
     with open('../courses/_courses', 'r') as courses:
         for course in json.load(courses)[code]:
+<<<<<<< HEAD
             yield course.split('-')[0].strip(), ' '.join(course.split('-')[1::]).strip()
 
+=======
+            yield (course.split('-')[0].strip(), ' '.join(course.split('-')[1::]).strip())
+         
+>>>>>>> 5669b6204379ebc2be31f68afaa90ae0190405d4
 
 def course_name(code):
     if code.isalpha():
@@ -230,7 +235,11 @@ def pedigree_info(pedigrees):
                     dam = dam + ' ' + dam_nat.strip()
                 else:
                     dam = dam + ' (GB)'
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 5669b6204379ebc2be31f68afaa90ae0190405d4
                 dams.append(dam.replace('.', ' ').replace('  ', ' ').replace(',', ''))
             else:
                 dams.append('')
@@ -253,7 +262,11 @@ def pedigree_info(pedigrees):
                     dam = dam + ' ' + dam_nat.strip()
                 else:
                     dam = dam + ' (GB)'
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 5669b6204379ebc2be31f68afaa90ae0190405d4
                 dams.append(dam.replace('.', ' ').replace('  ', ' ').replace(',', ''))
             else:
                 dams.append('')
@@ -692,7 +705,11 @@ def scrape_races(races, target, years, code):
 
             if race_type == '':
                 race_type = 'Flat'
+<<<<<<< HEAD
 
+=======
+                
+>>>>>>> 5669b6204379ebc2be31f68afaa90ae0190405d4
             pedigrees = doc.xpath("//tr[@data-test-selector='block-pedigreeInfoFullResults']/td")
             sires, dams, damsires = pedigree_info(pedigrees)
 
@@ -962,7 +979,11 @@ def parse_args(args=sys.argv):
                         races.append(link)
 
                 scrape_races(races, region_code, args[1].replace('/', '_'), '')
+<<<<<<< HEAD
 
+=======
+                
+>>>>>>> 5669b6204379ebc2be31f68afaa90ae0190405d4
             else:
                 return print('Invalid date. Expected format: YYYY/MM/DD')
         else:
