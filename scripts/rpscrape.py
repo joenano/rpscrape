@@ -713,10 +713,9 @@ def scrape_races(races, target, years, code):
             prize = [p.strip().replace(",", '').replace('£', '') for p in prizes]
             try:
                 del prize[0]
-                for i in range(len(pos) - len(prize)):
-                    prize.append('')
+                [prize.append('') for i in range(len(pos) - len(prize))]
             except IndexError:
-                prize = ['' for x in range(len(pos))]
+                prize = ['' for i in range(len(pos))]
 
             draw = clean(doc.xpath("//sup[@class='rp-horseTable__pos__draw']/text()"))
             draw = [d.strip("()") for d in draw]
@@ -757,7 +756,7 @@ def scrape_races(races, target, years, code):
                 print("btn error: ", race)
                 sys.exit()
 
-            ovr_btn = [distance_to_decimal(b) for b in btn]
+            ovr_btn = [distance_to_decimal(b) for b in ovr_btn]
 
             if len(ovr_btn) < len(pos):
                 ovr_btn.extend(['' for x in range(len(pos) - len(ovr_btn))])
