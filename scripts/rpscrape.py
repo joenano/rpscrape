@@ -508,10 +508,10 @@ def get_race_links(date, region):
     return links
 
 
-def calculate_times(win_time, dist_btn, going, code, course):
+def calculate_times(win_time, dist_btn, going, code, course, race_type):
     times = []
 
-    if code == 'flat':
+    if code == 'flat' or race_type == 'flat':
         if going == '':
             lps_scale = 6
         elif 'Firm' in going or 'Standard' in going or 'Fast' in going or 'Hard' in going or 'Slow' in going or 'Sloppy':
@@ -529,7 +529,7 @@ def calculate_times(win_time, dist_btn, going, code, course):
     else:
         if going == '':
             lps_scale = 5
-        elif 'Firm' in going or 'Standard' in going or 'Hard' in going:
+        elif 'Firm' in going or 'Standard' in going or 'Hard' in going or 'Fast' in going:
             if 'southwell' in course.lower():
                 lps_scale = 4
             else:
@@ -690,6 +690,7 @@ def scrape_races(races, target, years, code):
 
             if race_type == '':
                 race_type = 'Flat'
+
             pedigrees = doc.xpath("//tr[@data-test-selector='block-pedigreeInfoFullResults']/td")
             sires, dams, damsires = pedigree_info(pedigrees)
 
@@ -884,7 +885,7 @@ def scrape_races(races, target, years, code):
                         print(race)
                         sys.exit()
 
-                times = calculate_times(win_time, time_btn, going, code, course)
+                times = calculate_times(win_time, time_btn, going, code, course, race_type)
 
             dec = fraction_to_decimal([sp.strip('F').strip('J').strip('C').strip() for sp in sps])
 
