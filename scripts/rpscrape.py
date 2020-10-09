@@ -404,7 +404,7 @@ def try_get_race_type(race, race_dist):
     if race_dist >= 12:
         if 'national hunt flat' in race or 'nh flat race' in race or 'mares flat race' in race:
             return 'NH Flat'
-        if 'inh bumper' in race or ' sales bumper' in race or 'kepak flat race' in race or 'i.n.h. flat race':
+        if 'inh bumper' in race or ' sales bumper' in race or 'kepak flat race' in race or 'i.n.h. flat race' in race:
             return 'NH Flat'
 
     if race_dist >= 15:
