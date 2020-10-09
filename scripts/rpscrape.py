@@ -45,33 +45,31 @@ def options(opt="help"):
     )
 
     if opt == "help" or opt == "?":
-        print(
-            "\n".join(
-                [
-                    "  Usage:",
-                    "       ~$ ./rpscrape.py"
-                    "       [rpscrape]> [region|course] [year|range] [flat|jumps]",
-                    "",
-                    "       Regions have alphabetic codes.",
-                    "       Courses have numeric codes.",
-                    "",
-                    "  Examples:",
-                    "       [rpscrape]> ire 1999 flat",
-                    "       [rpscrape]> gb 2015-2018 jumps",
-                    "       [rpscrape]> 533 1998-2018 flat",
-                    "",
-                    "  Options:",
-                    "{}".format(opts),
-                    "",
-                    "  More info:",
-                    "       help            Show help",
-                    "       options         Show options",
-                    "       cls, clear      Clear screen",
-                    "       q, quit, exit   Quit",
-                    "",
-                ]
-            )
-        )
+        print("\n".join(
+            [
+                "  Usage:",
+                "       ~$ ./rpscrape.py"
+                "       [rpscrape]> [region|course] [year|range] [flat|jumps]",
+                "",
+                "       Regions have alphabetic codes.",
+                "       Courses have numeric codes.",
+                "",
+                "  Examples:",
+                "       [rpscrape]> ire 1999 flat",
+                "       [rpscrape]> gb 2015-2018 jumps",
+                "       [rpscrape]> 533 1998-2018 flat",
+                "",
+                "  Options:",
+                "{}".format(opts),
+                "",
+                "  More info:",
+                "       help            Show help",
+                "       options         Show options",
+                "       cls, clear      Clear screen",
+                "       q, quit, exit   Quit",
+                "",
+            ]
+        ))
     else:
         print(opts)
 
@@ -198,12 +196,15 @@ def convert_date(date):
 
 def distance_to_decimal(dist):
     return (
-        dist.strip().replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('snk', '0.2').replace('nk', '0.3')
-        .replace('sht-hd', '0.1').replace('shd', '0.1').replace('hd', '0.2').replace('nse', '0.05').replace('dht', '0').replace('dist', '30')
+        dist.strip().replace('¼', '.25').replace('½', '.5').replace('¾', '.75').replace('snk', '0.2')
+        .replace('nk', '0.3').replace('sht-hd', '0.1').replace('shd', '0.1').replace('hd', '0.2')
+        .replace('nse', '0.05').replace('dht', '0').replace('dist', '30')
     )
 
 
 def pedigree_info(pedigrees):
+    clean_name = lambda name: name.replace('.', ' ').replace('  ', ' ').replace(',', '')
+
     sires, dams, damsires = [], [], []
 
     for p in pedigrees:
@@ -218,7 +219,7 @@ def pedigree_info(pedigrees):
                 else:
                     sire = sire + ' (GB)'
 
-                sires.append(sire.replace('.', ' ').replace('  ', ' ').replace(',', ''))
+                sires.append(clean_name(sire))
             else:
                 sires.append('')
 
@@ -230,7 +231,7 @@ def pedigree_info(pedigrees):
                     dam = dam + ' ' + dam_nat.strip()
                 else:
                     dam = dam + ' (GB)'
-                dams.append(dam.replace('.', ' ').replace('  ', ' ').replace(',', ''))
+                dams.append(clean_name(dam))
             else:
                 dams.append('')
 
@@ -238,7 +239,7 @@ def pedigree_info(pedigrees):
                 damsire = ped_info[2].text.strip().strip('()')
                 if damsire == 'Damsire Unregistered':
                     damsire = ''
-                damsires.append(damsire.replace('.', ' ').replace('  ', ' ').replace(',', ''))
+                damsires.append(clean_name(damsire))
             else:
                 damsires.append('')
         else:
@@ -252,7 +253,7 @@ def pedigree_info(pedigrees):
                     dam = dam + ' ' + dam_nat.strip()
                 else:
                     dam = dam + ' (GB)'
-                dams.append(dam.replace('.', ' ').replace('  ', ' ').replace(',', ''))
+                dams.append(clean_name(dam))
             else:
                 dams.append('')
 
@@ -260,7 +261,7 @@ def pedigree_info(pedigrees):
                 damsire = ped_info[1].text.strip().strip('()')
                 if damsire == 'Damsire Unregistered':
                     damsire = ''
-                damsires.append(damsire.replace('.', ' ').replace('  ', ' ').replace(',', ''))
+                damsires.append(clean_name(damsire))
             else:
                 damsires.append('')
 
@@ -300,34 +301,39 @@ def class_from_rating_band(rating_band, code):
 
 
 def clean_race_name(race):
+    clean_race = lambda race, x, y = '': race.replace(x, '').replace(y, '').replace('()', '').replace('  ', ' ').strip()
+
     if 'Class' in race:
         if 'Class A' in race or 'Class 1' in race:
-            return race.replace('Class A', '').replace('Class 1', '').replace('()', '').replace('  ', ' ').strip()
+            return clean_race(race, 'Class A', 'Class 1')
         if 'Class B' in race or 'Class 2' in race:
-            return race.replace('Class B', '').replace('Class 2', '').replace('()', '').replace('  ', ' ').strip()
+            return clean_race(race, 'Class B', 'Class 2')
         if 'Class C' in race or 'Class 3' in race:
-            return race.replace('Class C', '').replace('Class 3', '').replace('()', '').replace('  ', ' ').strip()
+            return clean_race(race, 'Class C', 'Class 3')
         if 'Class D' in race or 'Class 4' in race:
-            return race.replace('Class D', '').replace('Class 4', '').replace('()', '').replace('  ', ' ').strip()
+            return clean_race(race, 'Class D', 'Class 4')
         if 'Class E' in race or 'Class 5' in race:
-            return race.replace('Class E', '').replace('Class 5', '').replace('()', '').replace('  ', ' ').strip()
+            return clean_race(race, 'Class E', 'Class 5')
         if 'Class F' in race or 'Class 6' in race:
-            return race.replace('Class F', '').replace('Class 6', '').replace('()', '').replace('  ', ' ').strip()
+            return clean_race(race, 'Class F', 'Class 6')
         if 'Class H' in race or 'Class 7' in race:
-            return race.replace('Class H', '').replace('Class 7', '').replace('()', '').replace('  ', ' ').strip()
+            return clean_race(race, 'Class H', 'Class 7')
         if 'Class G' in race:
-            return race.replace('Class G', '').replace('()', '')
+            return clean_race(race, 'Class G')
+
         if 'Trusthouse Forte Mile Guaranteed Minimum Value £60000 (Group' in race:
-            return race.replace('(Group', '').replace('  ', ' ').strip()
-    if 'Group' in race or 'Grade':
+            return race.replace(race, '(Group')
+
+    if 'Group' in race or 'Grade' in race:
         if 'Group 1' in race or 'Grade 1' in race:
-            return race.replace('Group 1', '').replace('Grade 1', '').replace('()', '').replace('  ', ' ').strip()
+            return clean_race(race, 'Group 1', 'Grade 1')
         if 'Group 2' in race or 'Grade 2' in race:
-            return race.replace('Group 2', '').replace('Grade 2', '').replace('()', '').replace('  ', ' ').strip()
+            return clean_race(race, 'Group 2', 'Grade 2')
         if 'Group 3' in race or 'Grade 3' in race:
-            return race.replace('Group 3', '').replace('Grade 3', '').replace('()', '').replace('  ', ' ').strip()
+            return clean_race(race, 'Group 3', 'Grade 3')
+
     if 'Listed' in race:
-        return race.replace('Listed Race', '').replace('(Listed)', '').replace('()', '').replace('  ', ' ').strip()
+        return clean_race(race, 'Listed Race', '(Listed)')
 
     return race
 
@@ -514,7 +520,7 @@ def calculate_times(win_time, dist_btn, going, code, course, race_type):
     if code == 'flat' or race_type == 'flat':
         if going == '':
             lps_scale = 6
-        elif 'Firm' in going or 'Standard' in going or 'Fast' in going or 'Hard' in going or 'Slow' in going or 'Sloppy':
+        elif 'Firm' in going or 'Standard' in going or 'Fast' in going or 'Hard' in going or 'Slow' in going or 'Sloppy' in going:
             if 'southwell' in course.lower():
                 lps_scale = 5
             else:
@@ -984,11 +990,11 @@ def parse_args(args=sys.argv):
             else:
                 years = [args[1]]
             if not valid_years(years):
-                return print("\nINVALID YEAR: must be in range 1988-2020 for flat and 1987-2019 for jumps.\n")
+                return print("\nINVALID YEAR: must be in range 1988-2020 for flat and 1987-2020 for jumps.\n")
 
             if code == "jumps":
-                if int(years[-1]) > 2019:
-                    return print("\nINVALID YEAR: the latest jump season started in 2019.\n")
+                if int(years[-1]) > 2020:
+                    return print("\nINVALID YEAR: the latest jump season started in 2020.\n")
 
             if "region" in locals():
                 tracks = [course[0] for course in courses(region)]
