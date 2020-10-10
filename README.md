@@ -135,7 +135,6 @@ To scrape by date or date range, use the -d flag or date option, followed by the
 
 The date format is YYYY/MM/DD, to specify a range of dates, separate them with a dash '-', start date followed by end date.
 
-
 ### Examples
 ```
 [rpscrape]> -d 2019/12/18 gb
@@ -144,7 +143,32 @@ The date format is YYYY/MM/DD, to specify a range of dates, separate them with a
 [rpscrape]> -d 2019/12/15-2019/12/18 ire
 ```
 
-#### Options
+## Command Line Arguments
+Its now possible to run from the command line with a few flags.
+
+### Examples
+To scrape by date, use the -d flag for dates and -r flag for optional region, if no region code is provided, all races from the given dates will be scraped by default.
+
+All races will be scraped on date.
+```
+./rpscrape.py -d 2020/10/01
+```
+
+Only races from GB will be scraped.
+```
+./rpscrape.py -d 2020/10/01 -r gb
+```
+
+To scrape a particular course or region, use the -c or -r flags with the course or region code. Use the -y flag for the year and -t flag for the type of racing, flat or jumps.
+```
+./rpscrape.py -c 2 -y 2015-2020 -t jumps
+```
+
+```
+./rpscrape.py -r ire -y 2019 -t flat
+```
+
+### Options
 
 ```
 regions             List all available region codes
