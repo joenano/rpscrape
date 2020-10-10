@@ -874,8 +874,7 @@ def scrape_races(races, target, years, code):
                 else:
                     gear.append('')
 
-            info = doc.xpath('//div[@class="rp-raceInfo"]')[0].find('.//li').findall(
-                './/span[@class="rp-raceInfo__value"]')
+            info = doc.xpath('//div[@class="rp-raceInfo"]')[0].find('.//li').findall('.//span[@class="rp-raceInfo__value"]')
 
             times = []
 
@@ -884,8 +883,7 @@ def scrape_races(races, target, years, code):
 
                 if winning_time[0] == '0.0.00s' or winning_time[0] == '0.00s':
                     try:
-                        winning_time = info[1].text.split("(")[1].lower().replace('fast by', '').strip().strip(
-                            ')').split()
+                        winning_time = info[1].text.split("(")[1].lower().replace('fast by', '').strip().strip(')').split()
                     except IndexError:
                         times = ['-' for x in range(len(pos))]
 
@@ -894,8 +892,7 @@ def scrape_races(races, target, years, code):
 
                 if winning_time[0] == '0.0.00s' or winning_time[0] == '0.00s':
                     try:
-                        winning_time = info[0].text.split("(")[1].lower().replace('fast by', '').strip().strip(
-                            ')').split()
+                        winning_time = info[0].text.split("(")[1].lower().replace('fast by', '').strip().strip(')').split()
                     except IndexError:
                         times = ['-' for x in range(len(pos))]
             else:
