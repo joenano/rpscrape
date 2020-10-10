@@ -2,6 +2,7 @@
 
 """ Scrapes results and saves them in csv format """
 
+import argparse
 from datetime import date, timedelta
 from git import Repo, cmd
 import json
@@ -77,7 +78,7 @@ def options(opt="help"):
 def courses(code='all'):
     with open('../courses/_courses', 'r') as courses:
         for course in json.load(courses)[code]:
-            yield (course.split('-')[0].strip(), ' '.join(course.split('-')[1::]).strip())
+            yield course.split('-')[0].strip(), ' '.join(course.split('-')[1::]).strip()
          
 
 def course_name(code):
@@ -218,7 +219,6 @@ def pedigree_info(pedigrees):
                     sire = sire.split('(')[0].strip() + ' (' + sire.split('(')[1]
                 else:
                     sire = sire + ' (GB)'
-
                 sires.append(clean_name(sire))
             else:
                 sires.append('')
@@ -408,9 +408,9 @@ def try_get_race_type(race, race_dist):
             return 'NH Flat'
 
     if race_dist >= 15:
-        if ' hurdle' in race:
+        if ' hurdle' in race or '(hurdle)' in race:
             return 'Hurdle'
-        if ' chase' in race:
+        if ' chase' in race or 'steeplechase' in race or '(chase)' in race:
             return 'Chase'
 
     return ''
@@ -464,6 +464,31 @@ def distance_to_metres(distance):
             metres += int(dist.split('m')[1].strip('yds')) * .914
 
     return round(metres)
+
+
+def parse_years(year_str):
+    if "-" in year_str:
+        try:
+            return [str(x) for x in range(int(year_str.split("-")[0]), int(year_str.split("-")[1]) + 1)]
+        except ValueError:
+            return []
+    else:
+        return [year_str]
+
+
+def get_dates(date_str):
+    if '-' in date_str:
+        start_year, start_month, start_day = date_str.split('-')[0].split('/')
+        end_year, end_month, end_day = date_str.split('-')[1].split('/')
+
+        start_date = date(int(start_year), int(start_month), int(start_day))
+        end_date = date(int(end_year), int(end_month), int(end_day))
+
+        return [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
+    else:
+        year, month, day = date_str.split('/')
+
+        return [date(int(year), int(month), int(day))]
 
 
 def get_races(tracks, names, years, code, xy):
@@ -532,6 +557,8 @@ def calculate_times(win_time, dist_btn, going, code, course, race_type):
                 lps_scale = 6
         elif 'Soft' in going or 'Heavy' in going or 'Yielding' in going or 'Holding' in going:
             lps_scale = 5
+        else:
+            lps_scale = 5
     else:
         if going == '':
             lps_scale = 5
@@ -547,6 +574,8 @@ def calculate_times(win_time, dist_btn, going, code, course, race_type):
                 lps_scale = 5
         elif 'Soft' in going or 'Heavy' in going or 'Yielding' in going or 'Slow' in going or 'Holding' in going:
             lps_scale = 4
+        else:
+            lps_scale = 5
 
     for dist in dist_btn:
         try:
@@ -945,18 +974,7 @@ def parse_args(args=sys.argv):
                 return print("Invalid region.")
 
             if check_date(args[1]):
-                if '-' in args[1]:
-                    start_year, start_month, start_day = args[1].split('-')[0].split('/')
-                    end_year, end_month, end_day = args[1].split('-')[1].split('/')
-
-                    start_date = date(int(start_year), int(start_month), int(start_day))
-                    end_date = date(int(end_year), int(end_month), int(end_day))
-
-                    dates = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
-                else:
-                    year, month, day = args[1].split('/')
-
-                    dates = [date(int(year), int(month), int(day))]
+                dates = get_dates(args[1])
 
                 races = []
 
@@ -982,13 +1000,8 @@ def parse_args(args=sys.argv):
             else:
                 return print("Invalid racing code. -f, flat or -j, jumps.")
 
-            if "-" in args[1]:
-                try:
-                    years = [str(x) for x in range(int(args[1].split("-")[0]), int(args[1].split("-")[1]) + 1)]
-                except ValueError:
-                    return print("\nINVALID YEAR: must be in range 1996-2020.\n")
-            else:
-                years = [args[1]]
+            years = parse_years(args[1])
+
             if not valid_years(years):
                 return print("\nINVALID YEAR: must be in range 1988-2020 for flat and 1987-2020 for jumps.\n")
 
@@ -996,16 +1009,11 @@ def parse_args(args=sys.argv):
                 if int(years[-1]) > 2020:
                     return print("\nINVALID YEAR: the latest jump season started in 2020.\n")
 
-            if "region" in locals():
-                tracks = [course[0] for course in courses(region)]
-                names = [course_name(track) for track in tracks]
-                scrape_target = region
-                print(f"Scraping {code} results from {scrape_target} in {args[1]}...")
-            else:
-                tracks = [course]
-                names = [course_name(course)]
-                scrape_target = course
-                print(f"Scraping {code} results from {course_name(scrape_target)} in {args[1]}...")
+            tracks = [course[0] for course in courses(region)] if 'region' in locals() else [course]
+            names = [course_name(track) for track in tracks]
+            scrape_target = region if 'region' in locals() else course
+
+            print(f"Scraping {code} results from {course_name(scrape_target)} in {args[1]}...")
 
             races = get_races(tracks, names, years, code, x_y())
             scrape_races(races, course_name(scrape_target), args[1], code)
@@ -1014,9 +1022,6 @@ def parse_args(args=sys.argv):
 
 
 def main():
-    if len(sys.argv) > 1:
-        sys.exit(options())
-
     if 'local out of date' in cmd.Git('..').execute(['git', 'remote', 'show', 'origin']).lower():
         x = input('Update available. Do you want to update? Y/N ')
 
@@ -1027,6 +1032,68 @@ def main():
                 sys.exit(print('Version up to date.'))
             else:
                 sys.exit(print('Failed to update.'))
+
+    if len(sys.argv) > 1:
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-d', '--date',     type=str, metavar='', help='Date or date range in format YYYY/MM/DD e.g 2020/01/19-2020/05/01')
+        parser.add_argument('-c', '--course',   type=str, metavar='', help='Numeric course code e.g 20')
+        parser.add_argument('-r', '--region',   type=str, metavar='', help='Region code e.g ire')
+        parser.add_argument('-y', '--year',     type=str, metavar='', help='Year or year range in format YYYY e.g 2018-2020')
+        parser.add_argument('-t', '--type',     type=str, metavar='', help='Race type [flat/jumps]')
+        args = parser.parse_args()
+
+        if args.date and any([args.course, args.year, args.type]):
+            print('Arguments not compatible with -d flag.\n\nFormat:\n\t\t-d YYYY/MM/DD -r [REGION CODE]\n\nExamples:\n\t\t-d 2020/01/19 -r gb\n')
+            print('When scraping by date, if no region code is specified, all available races will be scraped by default.')
+            sys.exit()
+
+        if args.date:
+            if not check_date(args.date):
+                sys.exit(print('Invalid date.\n\nFormat:\n\t\tYYYY/MM/DD\n\t\tYYYY/MM/DD-YYYY/MM/DD\n\nExamples:\n\t\t2015/03/27\n\t\t2020/01/19-2020/05/01'))
+
+            if args.region:
+                if not valid_region(args.region):
+                    sys.exit(print('Invalid region code.\n\nExamples:\n\t\t-r gb\n\t\t-r ire'))
+                region = args.region
+            else:
+                region = 'all'
+
+            races = []
+            dates = get_dates(args.date)
+
+            for d in dates:
+                for link in get_race_links(d, region):
+                    races.append(link)
+
+            scrape_races(races, region, args.date.replace('/', '_'), '')
+            sys.exit()
+
+        if args.course:
+            if not valid_course(args.course):
+                sys.exit(print('Invalid course code.\n\nExamples:\n\t\t-c 20\n\t\t-c 1083'))
+
+        if args.region:
+            if not valid_region(args.region):
+                sys.exit(print('Invalid region code.\n\nExamples:\n\t\t-r gb\n\t\t-r ire'))
+
+        years = parse_years(args.year) if args.year else []
+
+        if not years or not valid_years(years):
+            sys.exit(print('Invalid year.\n\nFormat:\n\t\tYYYY\n\nExamples:\n\t\t-y 2015\n\t\t-y 2012-2017'))
+
+        if not args.type or args.type not in ['flat', 'jumps']:
+            sys.exit(print('Invalid race type.\n\nMust be either flat or jumps.\n\nExamples:\n\t\t-t flat\n\t\t-t jumps'))
+
+        if not args.course and not args.region:
+            sys.exit(print('Must supply a course or region code.'))
+
+        tracks = [course[0] for course in courses(args.region)] if args.region else [args.course]
+        names = [course_name(track) for track in tracks]
+        target = args.region if args.region else course_name(args.course)
+
+        races = get_races(tracks, names, years, args.type, x_y())
+        scrape_races(races, target, args.year, args.type)
+        sys.exit()
 
     try:
         import readline
