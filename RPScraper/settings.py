@@ -1,4 +1,8 @@
+import boto3
+
 from RPScraper.src.utils.config import get_attribute
+
+boto3_session = boto3.session.Session()
 
 PROJECT_DIR = get_attribute('PROJECT_DIR')
 S3_BUCKET = get_attribute('S3_BUCKET')

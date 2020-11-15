@@ -2,11 +2,8 @@ import datetime as dt
 import pandas as pd
 import awswrangler as wr
 import os
-import boto3
 
-from RPScraper.settings import PROJECT_DIR, S3_BUCKET, SCHEMA_COLUMNS
-
-session = boto3.session.Session()
+from RPScraper.settings import PROJECT_DIR, S3_BUCKET
 
 
 def convert_off_to_readable_format(x):
@@ -70,14 +67,22 @@ def clean_data(df_in, country):
     df['time'] = df['time'].apply(lambda x: convert_finish_time_to_seconds(x))
     # Convert the time of horse that did not finish to None
     df = df.apply(lambda x: nullify_non_finishers(x), axis=1)
-    # Add placeholder for ID
-    df['id'] = 0
+    # Create a unique identifier for each race
+    df['id'] = df.apply(
+        lambda x: hash(f"{x['date']}_{x['course']}_{x['off']}_{x['dist_m']}_{x['age_band']}"), axis=1)
     # Clean up horse name (remove the country indicator from the end and make lower case)
-    df['horse_cleaned'] = df.apply(lambda x: clean_horse_name(x['horse'], append_with=x['country']), axis=1)
+    df['horse_cleaned'] = df['horse_cleaned'].apply(lambda x: clean_horse_name(x))
+    # Clean up dam name (remove the country indicator from the end and make lower case)
+    df['dam_cleaned'] = df['dam'].apply(lambda x: clean_horse_name(x))
+    # Clean up sire name (remove the country indicator from the end and make lower case)
+    df['sire_cleaned'] = df['sire'].apply(lambda x: clean_horse_name(x))
+    # Add dam and sire names to horse name to make it unique
+    df['horse_cleaned'] = df.apply(lambda x: f"{x['horse_cleaned']}_{x['dam_cleaned']}_{x['sire_cleaned']}", axis=1)
     # Clean jockey name
     df['jockey_cleaned'] = df['jockey'].apply(lambda x: clean_name(x))
     # Clean trainer name
     df['trainer_cleaned'] = df['trainer'].apply(lambda x: clean_name(x))
+
     return df
 
 
