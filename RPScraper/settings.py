@@ -2,8 +2,6 @@ import boto3
 
 from RPScraper.src.utils.config import get_attribute
 
-boto3_session = boto3.session.Session()
-
 PROJECT_DIR = get_attribute('PROJECT_DIR')
 S3_BUCKET = get_attribute('S3_BUCKET')
 
@@ -12,6 +10,8 @@ AWS_GLUE_TABLE = get_attribute('AWS_GLUE_TABLE')
 
 AWS_ACCESS_KEY_ID = get_attribute('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = get_attribute('AWS_SECRET_ACCESS_KEY')
+
+boto3_session = boto3.session.Session()
 
 SCHEMA_COLUMNS = {
      'date': 'timestamp',
