@@ -71,7 +71,7 @@ def clean_data(df_in, country):
     df['id'] = df.apply(
         lambda x: hash(f"{x['date']}_{x['course']}_{x['off']}_{x['dist_m']}_{x['age_band']}"), axis=1)
     # Clean up horse name (remove the country indicator from the end and make lower case)
-    df['horse_cleaned'] = df['horse_cleaned'].apply(lambda x: clean_horse_name(x))
+    df['horse_cleaned'] = df['horse'].apply(lambda x: clean_horse_name(x))
     # Clean up dam name (remove the country indicator from the end and make lower case)
     df['dam_cleaned'] = df['dam'].apply(lambda x: clean_horse_name(x))
     # Clean up sire name (remove the country indicator from the end and make lower case)
