@@ -2,7 +2,12 @@
 .idea/*
 *.csv
 *.pyc
-Venv/*
-*.DS_Store
-RPScraper/configuration.py
+*.parquet
 *.html
+*.DS_Store
+Venv/*
+RPScraper/configuration.py
+RPScraper/data/*
+RPScraper/s3_data/*
+RPScraper/configuration.py
+RPScraper/scripts/ran_error.html

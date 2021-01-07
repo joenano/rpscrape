@@ -1,0 +1,38 @@
+version: 2.1
+jobs:
+  build-and-scrape:
+    working_directory: ~/project
+    docker:
+      - image: circleci/python:3.7.2
+    steps:
+      - checkout
+      - restore_cache:
+          key: py-deps-{{ checksum "requirements.txt" }}
+      - run:
+          command: |
+            # Run scraper
+            chmod u+x RPScraper/scripts/build_and_scrape.sh
+            ./RPScraper/scripts/build_and_scrape.sh
+            # Upload data
+            chmod u+x RPScraper/scripts/upload_data.sh
+            ./RPScraper/scripts/upload_data.sh /home/circleci/project/RPScraper /home/circleci/project
+      - save_cache:
+          key: py-deps-{{ checksum "requirements.txt" }}
+          paths:
+            - "/venv"
+
+orbs:
+  aws-cli: circleci/aws-cli@1.0.0
+workflows:
+  version: 2.1
+  daily-update:
+    jobs:
+      - build-and-scrape:
+          context: aws
+    triggers:
+      - schedule:
+          cron: "0 2 * * *"
+          filters:
+            branches:
+              only:
+                - master

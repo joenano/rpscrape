@@ -1,5 +1,3 @@
-# rpscrape
-
 Horse racing data has been hoarded by a few companies, enabling them to effectively extort the public for access to any worthwhile historical amount. Compared to other sports where historical data is easily and freely available to use and query as you please, racing data in most countries is far harder to come by and is often only available with subscriptions to expensive software.
 
 The aim of this tool is to provide a way of gathering large amounts of historical results data at no cost.
@@ -187,3 +185,4 @@ q, quit, exit       Quit
 ```
 
 Tab complete for option keywords is available on Linux.
+
