@@ -1,0 +1,8 @@
+.tox/*
+.idea/*
+*.csv
+*.pyc
+Venv/*
+*.DS_Store
+RPScraper/configuration.py
+*.html
