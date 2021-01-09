@@ -3,7 +3,7 @@
 """ Scrapes results and saves them in csv format """
 
 import argparse
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from git import Repo, cmd
 import json
 from lxml import html
@@ -153,7 +153,7 @@ def valid_region(code):
 
 def valid_years(years):
     if years:
-        return all(year.isdigit() and 1987 <= int(year) <= 2020 for year in years)
+        return all(year.isdigit() and 1987 <= int(year) <= int(datetime.today().year) for year in years)
 
     return False
 
@@ -162,7 +162,7 @@ def valid_date(date):
     if len(date.split('/')) == 3:
         try:
             year, month, day = [int(x) for x in date.split('/')]
-            return 1987 <= year <= 2020 and 0 < month <= 12 and 0 < day <= 31
+            return 1987 <= year <= int(datetime.today().year) and 0 < month <= 12 and 0 < day <= 31
         except ValueError:
             return False
 
@@ -1000,11 +1000,11 @@ def parse_args(args=sys.argv):
             years = parse_years(args[1])
 
             if not valid_years(years):
-                return print("\nINVALID YEAR: must be in range 1988-2020 for flat and 1987-2020 for jumps.\n")
+                return print(f"\nINVALID YEAR: must be in range 1988-{int(datetime.today().year)} for flat and 1987-{int(datetime.today().year)} for jumps.\n")
 
             if code == "jumps":
-                if int(years[-1]) > 2020:
-                    return print("\nINVALID YEAR: the latest jump season started in 2020.\n")
+                if int(years[-1]) > int(datetime.today().year):
+                    return print(f"\nINVALID YEAR: the latest jump season started in {int(datetime.today().year)}.\n")
 
             tracks = [course[0] for course in courses(region)] if 'region' in locals() else [course]
             names = [course_name(track) for track in tracks]
