@@ -1004,7 +1004,7 @@ def parse_args(args=sys.argv):
 
             if code == "jumps":
                 if int(years[-1]) > int(datetime.today().year):
-                    return print("\nINVALID YEAR: the latest jump season started in {int(datetime.today().year)}.\n")
+                    return print(f"\nINVALID YEAR: the latest jump season started in {int(datetime.today().year)}.\n")
 
             tracks = [course[0] for course in courses(region)] if 'region' in locals() else [course]
             names = [course_name(track) for track in tracks]
