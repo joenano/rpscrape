@@ -20,6 +20,12 @@ In addition, the [Requests](http://docs.python-requests.org/en/master/), [GitPyt
 ```
 ~$ pip install requests gitpython lxml
 ```
+**NB:** Debian 10 is a special case as Python 2 and Python 3 are both installed alongside each other. Pip and Git for Python 3 need to be specifically installed and Python 3 called to use rpscrape.py
+
+```
+~$ apt install python3-pip python3-git
+~$ pip3 install requests lxml
+```
 
 ## Install
 
@@ -33,6 +39,12 @@ Run the program from the scripts folder:
 ```
 > cd rpscrape/scripts
 > python rpscrape.py
+```
+
+For Debian 10:
+
+```
+python3 rpscrape.py
 ```
 
 To scrape you must provide 3 options in the following format:
