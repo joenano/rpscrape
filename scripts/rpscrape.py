@@ -96,21 +96,13 @@ def course_search(term):
 
 
 def print_course(code, course):
-    if len(code) == 5:
-        print(f'     CODE: {code}| {course}')
-    elif len(code) == 4:
-        print(f'     CODE: {code} | {course}')
-    elif len(code) == 3:
-        print(f'     CODE: {code}  | {course}')
-    elif len(code) == 2:
-        print(f'     CODE: {code}   | {course}')
-    else:
-        print(f'     CODE: {code}    | {course}')
+    print(f'     CODE: {code}{" " * (6 - len(code))}|  {course}')
+
 
 
 def print_courses(code='all'):
     for course in courses(code):
-        print_course(course[0], course[1])
+    	print_course(course[0], course[1])
 
 
 def valid_course(code):
@@ -136,10 +128,7 @@ def region_search(term):
 
 
 def print_region(code, region):
-    if len(code) == 3:
-        print(f'     CODE: {code} | {region}')
-    else:
-        print(f'     CODE: {code}  | {region}')
+    print(f'     CODE: {code}{" " * (5 - len(code))}|  {region}')
 
 
 def print_regions():
@@ -956,7 +945,7 @@ def parse_args(args=sys.argv):
         elif 'courses' in args:
             print_courses()
     elif len(args) >= 2 and args[0].startswith('region'):
-        	region_search(' '.join(args[1:]))
+        region_search(' '.join(args[1:]))
     elif len(args) >= 2 and args[0].startswith('course'):
         if valid_region(args[1]):
             print_courses(args[1])
