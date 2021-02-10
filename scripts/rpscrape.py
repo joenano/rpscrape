@@ -125,7 +125,7 @@ def x_y():
 
 
 def regions():
-    with open('../courses/_countries', 'r') as regions:
+    with open('../courses/_regions', 'r') as regions:
         return json.load(regions)
 
 
@@ -955,14 +955,13 @@ def parse_args(args=sys.argv):
             print_regions()
         elif 'courses' in args:
             print_courses()
-    elif len(args) == 2:
-        if args[0] == 'regions':
-        	region_search(args[1])
-        elif args[0] == 'courses':
-            if valid_region(args[1]):
-                print_courses(args[1])
-            else:
-            	course_search(args[1])
+    elif len(args) >= 2 and args[0].startswith('region'):
+        	region_search(' '.join(args[1:]))
+    elif len(args) >= 2 and args[0].startswith('course'):
+        if valid_region(args[1]):
+            print_courses(args[1])
+        else:
+        	course_search(' '.join(args[1:]))
     elif len(args) == 3:
         if args[0] == '-d' or args[0] == 'date':
             region_code = args[2]
