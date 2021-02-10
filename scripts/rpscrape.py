@@ -31,7 +31,7 @@ class Completer:
             return None
 
 
-def options(opt="help"):
+def options(opt='help'):
     opts = "\n".join(
         [
             "       regions              List all available region codes",
@@ -45,7 +45,7 @@ def options(opt="help"):
         ]
     )
 
-    if opt == "help" or opt == "?":
+    if opt == 'help' or opt == '?':
         print("\n".join(
             [
                 "  Usage:",
@@ -467,9 +467,9 @@ def distance_to_metres(distance):
 
 
 def parse_years(year_str):
-    if "-" in year_str:
+    if '-' in year_str:
         try:
-            return [str(x) for x in range(int(year_str.split("-")[0]), int(year_str.split("-")[1]) + 1)]
+            return [str(x) for x in range(int(year_str.split('-')[0]), int(year_str.split('-')[1]) + 1)]
         except ValueError:
             return []
     else:
@@ -595,7 +595,7 @@ def scrape_races(races, target, years, code):
     if not os.path.exists(f'../data/{code}/{target.lower()}/'):
         os.makedirs(f'../data/{code}/{target.lower()}/')
 
-    with open(f'../data/{code}/{target.lower()}/{years}.csv', 'w', encoding="utf-8") as csv:
+    with open(f'../data/{code}/{target.lower()}/{years}.csv', 'w', encoding='utf-8') as csv:
 
         csv.write(
             'Date,Course,Off,Name,Type,Class,Pattern,Rating_Band,Age_Band,Sex_Rest,Dist,Dist_Y,Dist_M,Dist_F,'
@@ -789,7 +789,7 @@ def scrape_races(races, target, years, code):
             try:
                 btn = [distance_to_decimal(b) for b in btn]
             except AttributeError:
-                print("btn error: ", race)
+                print('btn error: ', race)
                 sys.exit()
 
             ovr_btn = [distance_to_decimal(b) for b in ovr_btn]
@@ -921,7 +921,7 @@ def scrape_races(races, target, years, code):
 
             dec = fraction_to_decimal([sp.strip('F').strip('J').strip('C').strip() for sp in sps])
 
-            race_name = race_name.replace("'", "")
+            race_name = race_name.replace("'", '')
 
             for num, p, pr, dr, bt, ovr_bt, n, nat, sp, dc, time, j, tr, a, s, o, rp, t, w, l, g, com, sire, dam, damsire, owner in \
                     zip(numbers, pos, prize, draw, btn, ovr_btn, name, nats, sps, dec, times, jock, trainer, age, sex, _or, rpr, ts,
@@ -945,30 +945,30 @@ def scrape_races(races, target, years, code):
 
 def parse_args(args=sys.argv):
     if len(args) == 1:
-        if "help" in args or "options" in args or "?" in args:
+        if 'help' in args or 'options' in args or '?' in args:
             options(args[0])
-        elif "clear" in args:
-            os.system("cls" if os.name == "nt" else "clear")
-        elif "quit" in args or "q" in args or "exit" in args:
+        elif 'clear' in args or 'cls' in args or 'clr' in args:
+            os.system('cls' if os.name == 'nt' else 'clear')
+        elif 'quit' in args or 'q' in args or 'exit' in args:
             sys.exit()
-        elif "regions" in args:
+        elif 'regions' in args:
             print_regions()
-        elif "courses" in args:
+        elif 'courses' in args:
             print_courses()
     elif len(args) == 2:
-        if args[0] == "regions":
-            region_search(args[1])
-        elif args[0] == "courses":
+        if args[0] == 'regions':
+        	region_search(args[1])
+        elif args[0] == 'courses':
             if valid_region(args[1]):
                 print_courses(args[1])
             else:
-                course_search(args[1])
+            	course_search(args[1])
     elif len(args) == 3:
         if args[0] == '-d' or args[0] == 'date':
             region_code = args[2]
 
             if not valid_region(region_code):
-                return print("Invalid region.")
+                return print('Invalid region.')
 
             if check_date(args[1]):
                 dates = get_dates(args[1])
@@ -988,29 +988,29 @@ def parse_args(args=sys.argv):
             elif valid_course(args[0]):
                 course = args[0]
             else:
-                return print("Invalid course or region.")
+                return print('Invalid course or region.')
 
-            if "jumps" in args or "jump" in args or "-j" in args:
-                code = "jumps"
-            elif "flat" in args or "-f" in args:
-                code = "flat"
+            if 'jumps' in args or 'jump' in args or '-j' in args:
+                code = 'jumps'
+            elif 'flat' in args or '-f' in args:
+                code = 'flat'
             else:
-                return print("Invalid racing code. -f, flat or -j, jumps.")
+                return print('Invalid racing code. -f, flat or -j, jumps.')
 
             years = parse_years(args[1])
 
             if not valid_years(years):
-                return print(f"\nINVALID YEAR: must be in range 1988-{int(datetime.today().year)} for flat and 1987-{int(datetime.today().year)} for jumps.\n")
+                return print(f'\nINVALID YEAR: must be in range 1988-{int(datetime.today().year)} for flat and 1987-{int(datetime.today().year)} for jumps.\n')
 
-            if code == "jumps":
+            if code == 'jumps':
                 if int(years[-1]) > int(datetime.today().year):
-                    return print(f"\nINVALID YEAR: the latest jump season started in {int(datetime.today().year)}.\n")
+                    return print(f'\nINVALID YEAR: the latest jump season started in {int(datetime.today().year)}.\n')
 
             tracks = [course[0] for course in courses(region)] if 'region' in locals() else [course]
             names = [course_name(track) for track in tracks]
             scrape_target = region if 'region' in locals() else course
 
-            print(f"Scraping {code} results from {course_name(scrape_target)} in {args[1]}...")
+            print(f'Scraping {code} results from {course_name(scrape_target)} in {args[1]}...')
 
             races = get_races(tracks, names, years, code, x_y())
             scrape_races(races, course_name(scrape_target), args[1], code)
@@ -1094,8 +1094,7 @@ def main():
 
     try:
         import readline
-        completions = Completer(
-            ["courses", "regions", "options", "help", "quit", "exit", "clear", "flat", "jumps", "date"])
+        completions = Completer(['courses', 'regions', 'options', 'help', 'quit', 'exit', 'clear', 'flat', 'jumps', 'date'])
         readline.set_completer(completions.complete)
         readline.parse_and_bind('tab: complete')
     except ModuleNotFoundError:  # windows
