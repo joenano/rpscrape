@@ -102,7 +102,7 @@ def print_course(code, course):
 
 def print_courses(code='all'):
     for course in courses(code):
-    	print_course(course[0], course[1])
+        print_course(course[0], course[1])
 
 
 def valid_course(code):
@@ -950,7 +950,7 @@ def parse_args(args=sys.argv):
         if valid_region(args[1]):
             print_courses(args[1])
         else:
-        	course_search(' '.join(args[1:]))
+            course_search(' '.join(args[1:]))
     elif len(args) == 3:
         if args[0] == '-d' or args[0] == 'date':
             region_code = args[2]
@@ -1007,16 +1007,19 @@ def parse_args(args=sys.argv):
 
 
 def main():
-    if 'local out of date' in cmd.Git('..').execute(['git', 'remote', 'show', 'origin']).lower():
-        x = input('Update available. Do you want to update? Y/N ')
+    settings = json.load(open('../settings.json', 'r'))
 
-        if x.lower() == 'y':
-            Repo('..').remote(name='origin').pull()
+    if(settings['auto_update']):
+        if 'local out of date' in cmd.Git('..').execute(['git', 'remote', 'show', 'origin']).lower():
+            x = input('Update available. Do you want to update? Y/N ')
 
-            if 'up to date' in cmd.Git('..').execute(['git', 'remote', 'show', 'origin']).lower():
-                sys.exit(print('Version up to date.'))
-            else:
-                sys.exit(print('Failed to update.'))
+            if x.lower() == 'y':
+                Repo('..').remote(name='origin').pull()
+
+                if 'up to date' in cmd.Git('..').execute(['git', 'remote', 'show', 'origin']).lower():
+                    sys.exit(print('Version up to date.'))
+                else:
+                    sys.exit(print('Failed to update.'))
 
     if len(sys.argv) > 1:
         parser = argparse.ArgumentParser()
