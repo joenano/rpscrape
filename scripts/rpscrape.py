@@ -167,7 +167,7 @@ def check_date(date):
 def fraction_to_decimal(fractions):
     decimal = []
     for fraction in fractions:
-        if fraction == '' or fraction == 'No Odds':
+        if fraction == '' or fraction == 'No Odds' or fraction == '&':
             decimal.append('')
         elif 'evens' in fraction.lower() or fraction.lower() == 'evs':
             decimal.append('2.00')
