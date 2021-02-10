@@ -18,7 +18,7 @@ You must have Python 3.6 or greater, and GIT installed. You can download the lat
 In addition, the [Requests](http://docs.python-requests.org/en/master/), [GitPython](https://gitpython.readthedocs.io/en/stable/) and [LXML](https://lxml.de/) python modules are needed, they can be installed using PIP(_included with Python_) with the following command.
 
 ```
-~$ pip install requests gitpython lxml
+~$ pip3 install requests gitpython lxml
 ```
 
 ## Install
@@ -32,7 +32,7 @@ In addition, the [Requests](http://docs.python-requests.org/en/master/), [GitPyt
 Run the program from the scripts folder:
 ```
 > cd rpscrape/scripts
-> python rpscrape.py
+> python3 rpscrape.py
 ```
 
 To scrape you must provide 3 options in the following format:
