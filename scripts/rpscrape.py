@@ -4,7 +4,6 @@
 
 import argparse
 from datetime import date, timedelta, datetime
-from git import Repo, cmd
 import json
 from lxml import html
 import os
@@ -1006,10 +1005,10 @@ def parse_args(args=sys.argv):
         options()
 
 
-def main():
-    settings = json.load(open('../settings.json', 'r'))
+def check_for_update():
+    try:
+        from git import Repo, cmd
 
-    if(settings['auto_update']):
         if 'local out of date' in cmd.Git('..').execute(['git', 'remote', 'show', 'origin']).lower():
             x = input('Update available. Do you want to update? Y/N ')
 
@@ -1017,9 +1016,18 @@ def main():
                 Repo('..').remote(name='origin').pull()
 
                 if 'up to date' in cmd.Git('..').execute(['git', 'remote', 'show', 'origin']).lower():
-                    sys.exit(print('Version up to date.'))
+                    sys.exit(print('Updated successfully.'))
                 else:
                     sys.exit(print('Failed to update.'))
+    except ModuleNotFoundError:
+        sys.exit(print('gitpython module not found.\n\nInstall with "pip3 install gitpython" or disable auto update in settings.'))
+
+
+def main():
+    settings = json.load(open('../settings.json', 'r'))
+
+    if(settings['auto_update']):
+        check_for_update()
 
     if len(sys.argv) > 1:
         parser = argparse.ArgumentParser()
