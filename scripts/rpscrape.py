@@ -98,7 +98,6 @@ def print_course(code, course):
     print(f'     CODE: {code}{" " * (6 - len(code))}|  {course}')
 
 
-
 def print_courses(code='all'):
     for course in courses(code):
         print_course(course[0], course[1])
@@ -179,7 +178,6 @@ def fraction_to_decimal(fractions):
 
 def convert_date(date):
     dmy = date.split('-')
-
     return dmy[0] + '-' + dmy[1] + '-' + dmy[2]
 
 
@@ -1024,7 +1022,11 @@ def check_for_update():
 
 
 def main():
-    settings = json.load(open('../settings.json', 'r'))
+    try:
+        settings = json.load(open('../settings.json', 'r'))
+    except ValueError:
+        print('Failed to parse settings.json')
+        settings = {'auto_update': True}
 
     if(settings['auto_update']):
         check_for_update()
