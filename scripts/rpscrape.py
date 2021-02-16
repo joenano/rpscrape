@@ -74,6 +74,10 @@ def options(opt='help'):
         print(opts)
 
 
+def substr_match(s, lst):
+    return any(x.lower() in s.lower() for x in lst)
+
+
 def courses(code='all'):
     with open('../courses/_courses', 'r') as courses:
         for course in json.load(courses)[code]:
@@ -290,19 +294,19 @@ def clean_race_name(race):
     clean_race = lambda race, x, y = '': race.replace(x, '').replace(y, '').replace('()', '').replace('  ', ' ').strip()
 
     if 'Class' in race:
-        if 'Class A' in race or 'Class 1' in race:
+        if substr_match(race, ['class a', 'class 1']):
             return clean_race(race, 'Class A', 'Class 1')
-        if 'Class B' in race or 'Class 2' in race:
+        if substr_match(race, ['class b', 'class 2']):
             return clean_race(race, 'Class B', 'Class 2')
-        if 'Class C' in race or 'Class 3' in race:
+        if substr_match(race, ['class c', 'class 3']):
             return clean_race(race, 'Class C', 'Class 3')
-        if 'Class D' in race or 'Class 4' in race:
+        if substr_match(race, ['class d', 'class 4']):
             return clean_race(race, 'Class D', 'Class 4')
-        if 'Class E' in race or 'Class 5' in race:
+        if substr_match(race, ['class e', 'class 5']):
             return clean_race(race, 'Class E', 'Class 5')
-        if 'Class F' in race or 'Class 6' in race:
+        if substr_match(race, ['class f', 'class 6']):
             return clean_race(race, 'Class F', 'Class 6')
-        if 'Class H' in race or 'Class 7' in race:
+        if substr_match(race, ['class h', 'class 7']):
             return clean_race(race, 'Class H', 'Class 7')
         if 'Class G' in race:
             return clean_race(race, 'Class G')
@@ -310,12 +314,12 @@ def clean_race_name(race):
         if 'Trusthouse Forte Mile Guaranteed Minimum Value £60000 (Group' in race:
             return race.replace(race, '(Group')
 
-    if 'Group' in race or 'Grade' in race:
-        if 'Group 1' in race or 'Grade 1' in race:
+    if substr_match(race, ['Group', 'Grade']):
+        if substr_match(race, ['Group 1', 'Grade 1']):
             return clean_race(race, 'Group 1', 'Grade 1')
-        if 'Group 2' in race or 'Grade 2' in race:
+        if substr_match(race, ['Group 2', 'Grade 2']):
             return clean_race(race, 'Group 2', 'Grade 2')
-        if 'Group 3' in race or 'Grade 3' in race:
+        if substr_match(race, ['Group 3', 'Grade 3']):
             return clean_race(race, 'Group 3', 'Grade 3')
 
     if 'Listed' in race:
@@ -325,19 +329,19 @@ def clean_race_name(race):
 
 
 def try_get_class(race):
-    if 'Class A' in race or 'Class 1' in race:
+    if substr_match(race, ['class a', 'class 1']):
         return 'Class 1'
-    if 'Class B' in race or 'Class 2' in race:
+    if substr_match(race, ['class b', 'class 2']):
         return 'Class 2'
-    if 'Class C' in race or 'Class 3' in race:
+    if substr_match(race, ['class c', 'class 3']):
         return 'Class 3'
-    if 'Class D' in race or 'Class 4' in race:
+    if substr_match(race, ['class d', 'class 4']):
         return 'Class 4'
-    if 'Class E' in race or 'Class 5' in race:
+    if substr_match(race, ['class e', 'class 5']):
         return 'Class 5'
-    if 'Class F' in race or 'Class 6' in race:
+    if substr_match(race, ['class f', 'class 6']):
         return 'Class 6'
-    if 'Class H' in race or 'Class 7' in race:
+    if substr_match(race, ['class h', 'class 7']):
         return 'Class 7'
     if 'Class G' in race:
         return 'Class 6'
@@ -388,28 +392,28 @@ def try_get_pattern(race, race_class):
 
 def try_get_race_type(race, race_dist):
     if race_dist >= 12:
-        if 'national hunt flat' in race or 'nh flat race' in race or 'mares flat race' in race:
+        if substr_match(race, ['national hunt flat', 'nh flat race', 'mares flat race']):
             return 'NH Flat'
-        if 'inh bumper' in race or ' sales bumper' in race or 'kepak flat race' in race or 'i.n.h. flat race' in race:
+        if substr_match(race, ['inh bumper', ' sales bumper', 'kepak flat race', 'i.n.h. flat race']):
             return 'NH Flat'
 
     if race_dist >= 15:
-        if ' hurdle' in race or '(hurdle)' in race:
+        if substr_match(race, [' hurdle', '(hurdle)']):
             return 'Hurdle'
-        if ' chase' in race or 'steeplechase' in race or '(chase)' in race:
+        if substr_match(race, [' chase', 'steeplechase', '(chase)']):
             return 'Chase'
 
     return ''
 
 
 def sex_restricted(race):
-    if '(Entire Colts & Fillies)' in race or '(Colts & Fillies)' in race:
+    if substr_match(race, ['(Entire Colts & Fillies)', '(Colts & Fillies)']):
         return 'C & F'
-    elif '(Fillies & Mares)' in race or '(Filles & Mares)' in race:
+    elif substr_match(race, ['(Fillies & Mares)', '(Filles & Mares)']):
         return 'F & M'
-    elif '(Fillies)' in race or 'Fillies' in race:
+    elif substr_match(race, ['(Fillies)', 'Fillies']):
         return 'F'
-    elif '(Colts & Geldings)' in race or '(C & G)' in race or ' Colts & Geldings)' in race:
+    elif substr_match(race, ['(Colts & Geldings)', '(C & G)', ' Colts & Geldings)']):
         return 'C & G'
     elif '(Mares & Geldings)' in race:
         return 'M & G'
@@ -501,16 +505,11 @@ def get_race_links(date, region):
     with open('../courses/_courses', 'r') as courses:
         valid_courses = [course.split('-')[0].strip() for course in json.load(courses)[region]]
 
-    r = requests.get(
-        f'https://www.racingpost.com/results/{date}', headers={'User-Agent': 'Mozilla/5.0'}
-    )
+    r = requests.get(f'https://www.racingpost.com/results/{date}', headers={'User-Agent': 'Mozilla/5.0'})
 
     while r.status_code == 403:
         sleep(5)
-
-        r = requests.get(
-            f'https://www.racingpost.com/results/{date}', headers={'User-Agent': 'Mozilla/5.0'}
-        )
+        r = requests.get(f'https://www.racingpost.com/results/{date}', headers={'User-Agent': 'Mozilla/5.0'})
 
     doc = html.fromstring(r.content)
     race_links = doc.xpath('//a[@data-test-selector="link-listCourseNameLink"]')
@@ -531,34 +530,34 @@ def calculate_times(win_time, dist_btn, going, code, course, race_type):
     if code == 'flat' or race_type == 'flat':
         if going == '':
             lps_scale = 6
-        elif 'Firm' in going or 'Standard' in going or 'Fast' in going or 'Hard' in going or 'Slow' in going or 'Sloppy' in going:
+        elif substr_match(going, ['firm', 'standard', 'fast', 'hard', 'slow', 'sloppy']):
             if 'southwell' in course.lower():
                 lps_scale = 5
             else:
                 lps_scale = 6
         elif 'Good' in going:
-            if 'Soft' in going or 'Yielding' in going:
+            if substr_match(going, ['soft', 'yielding']):
                 lps_scale = 5.5
             else:
                 lps_scale = 6
-        elif 'Soft' in going or 'Heavy' in going or 'Yielding' in going or 'Holding' in going:
+        elif substr_match(going, ['soft', 'heavy', 'yielding', 'holding']):
             lps_scale = 5
         else:
             lps_scale = 5
     else:
         if going == '':
             lps_scale = 5
-        elif 'Firm' in going or 'Standard' in going or 'Hard' in going or 'Fast' in going:
+        elif substr_match(going, ['firm', 'standard', 'hard', 'fast']):
             if 'southwell' in course.lower():
                 lps_scale = 4
             else:
                 lps_scale = 5
         elif 'Good' in going:
-            if 'Soft' in going or 'Yielding' in going:
+            if substr_match(going, ['soft', 'yielding']):
                 lps_scale = 4.5
             else:
                 lps_scale = 5
-        elif 'Soft' in going or 'Heavy' in going or 'Yielding' in going or 'Slow' in going or 'Holding' in going:
+        elif substr_match(going, ['soft', 'heavy', 'yielding', 'slow', 'holding']):
             lps_scale = 4
         else:
             lps_scale = 5
@@ -638,8 +637,7 @@ def scrape_races(races, target, years, code):
             race_name = clean_race_name(race_name)
 
             try:
-                band = doc.xpath("//span[@class='rp-raceTimeCourseName_ratingBandAndAgesAllowed']/text()")[
-                    0].strip().strip('()')
+                band = doc.xpath("//span[@class='rp-raceTimeCourseName_ratingBandAndAgesAllowed']/text()")[0].strip().strip('()')
             except:
                 band = ''
 
