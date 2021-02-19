@@ -78,6 +78,23 @@ def substr_match(s, lst):
     return any(x.lower() in s.lower() for x in lst)
 
 
+def get_region(race):
+    course_id, course = race.split('/')[4:6]
+
+    with open('../courses/_courses', 'r') as courses:
+        js = json.load(courses)
+        js.pop('all')
+
+        for key in js.keys():
+            for item in js[key]:
+                item_id, item_course = item.split('-', 1)
+
+                if item_id.strip() == course_id and item_course.strip().lower() == course.lower():
+                    return key.upper()
+
+    return ''
+
+
 def courses(code='all'):
     with open('../courses/_courses', 'r') as courses:
         for course in json.load(courses)[code]:
@@ -583,12 +600,13 @@ def scrape_races(races, target, years, code):
     with open(f'../data/{code}/{target.lower()}/{years}.csv', 'w', encoding='utf-8') as csv:
 
         csv.write(
-            'Date,Course,Off,Name,Type,Class,Pattern,Rating_Band,Age_Band,Sex_Rest,Dist,Dist_Y,Dist_M,Dist_F,'
+            'Date,Region,Course,Off,Name,Type,Class,Pattern,Rating_Band,Age_Band,Sex_Rest,Dist,Dist_Y,Dist_M,Dist_F,'
             'Going,Num,Pos,Ran,Draw,Btn,Ovr_Btn,Horse,SP,Dec,Age,Sex,Wgt,Lbs,HG,Time,Jockey,Trainer,OR,RPR,TS,'
             'Prize,Sire,Dam,Damsire,Owner,Comment\n'
         )
 
         for race in races:
+
             r = requests.get(race, headers={'User-Agent': 'Mozilla/5.0'})
 
             while r.status_code == 403 or r.status_code == 404 or r.status_code == 503:
@@ -603,6 +621,7 @@ def scrape_races(races, target, years, code):
 
             doc = html.fromstring(r.content)
 
+            region = get_region(race)
             course = race.split('/')[5]
             date = convert_date(race.split('/')[6])
 
@@ -918,7 +937,7 @@ def scrape_races(races, target, years, code):
                 com = com.replace('\n', '').strip()
 
                 csv.write((
-                    f'{date},{course},{r_time},{race_name},{race_type},{race_class},{pattern},'
+                    f'{date},{region},{course},{r_time},{race_name},{race_type},{race_class},{pattern},'
                     f'{rating_band},{age_band},{sex_rest},{distance},{dist_y},{dist_m},{dist_f},'
                     f'{going},{num},{p},{ran},{dr},{bt},{ovr_bt},{n} {nat},{sp},{dc},{a},{s},{w},'
                     f'{l},{g},{time},{j},{tr},{o},{rp},{t},{pr},{sire},{dam},{damsire},{owner},{com}\n'
