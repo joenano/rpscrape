@@ -2,14 +2,12 @@
 
 Horse racing data has been hoarded by a few companies, enabling them to effectively extort the public for access to any worthwhile historical amount. Compared to other sports where historical data is easily and freely available to use and query as you please, racing data in most countries is far harder to come by and is often only available with subscriptions to expensive software.
 
-The aim of this tool is to provide a way of gathering large amounts of historical results data at no cost.
+The aim of this tool is to provide a way of gathering large amounts of historical data at no cost.
 
 
-#### Example data from Ascot 2018
+#### Example data (Ascot 2018)
 
 ![data](https://i.postimg.cc/7LncCDMG/data1.png)
-![data](https://i.postimg.cc/SsQPC5DZ/data2.png)
-
 
 ## Requirements
 
@@ -42,7 +40,7 @@ To scrape you must provide 3 options in the following format:
 
 The first option can be either a region or a specific course.
 
-Each region has a 2 or 3 letter code like "ire" for Ireland or "gb" for Great Britain. You can show the list of region codes with the following command:
+Each region has a 2 or 3 letter code like "ire" for Ireland or "gb" for Great Britain. You can list region codes with the regions command:
 ```
 [rpscrape]> regions
      CODE: mal | Malaysia
@@ -51,12 +49,9 @@ Each region has a 2 or 3 letter code like "ire" for Ireland or "gb" for Great Br
      CODE: ity | Italy
      CODE: swi | Switzerland
      CODE: tur | Turkey
-     CODE: hk  | Hong Kong
-     CODE: chi | Chile
-     CODE: uae | United Arab Emirates
 ```
 
-The other possibility for the first option is that of a specific course. Courses codes are numeric and up to 4 digits long. To view the course codes, use the courses option as shown in the following example.
+The other possibility for the first option is that of a specific course. Course codes are numeric and up to 4 digits long. You can list course codes with the courses command:
 
 ```
 [rpscrape]> courses
@@ -66,11 +61,9 @@ The other possibility for the first option is that of a specific course. Courses
      CODE: 4    | Bangor
      CODE: 5    | Bath
      CODE: 6    | Beverley
-     CODE: 7    | Brighton
-     CODE: 8    | Carlisle
 ```
 
-If you want to search for a specific region or course, add a search term as shown below.
+Add a search term to search for a specific region or course:
 
 ```
 [rpscrape]> regions france
@@ -83,7 +76,7 @@ If you want to search for a specific region or course, add a search term as show
     CODE: 1347 | York Aus
 ```
 
-To list the courses from a specific region, add the region code like so:
+Add a region code to list the courses from that region:
  ```
 [rpscrape]> courses ire
      CODE: 175  | Ballinrobe
@@ -92,8 +85,6 @@ To list the courses from a specific region, add the region code like so:
      CODE: 596  | Cork
      CODE: 178  | Curragh
      CODE: 180  | Down Royal
-     CODE: 179  | Downpatrick
-     CODE: 181  | Dundalk
  ```
 
 The second option can be a year e.g "1999", or a range of years e.g "2005-2015".
@@ -128,7 +119,7 @@ In the above example, Cheltenham races from the season 2018-2019 are scraped, th
 
 ## Scrape by date
 
-To scrape by date or date range, use the -d flag or date option, followed by the date/date range and the region, scraping individual courses in this manner is not included:
+To scrape by date or date range, use the -d flag followed by the date/date range and the region. Scraping individual courses in this manner is not included:
 ```
 [rpscrape]> -d [date|range] [region]
 ```
