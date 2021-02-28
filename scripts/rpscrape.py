@@ -79,7 +79,7 @@ def substr_match(s, lst):
 
 
 def get_region(race):
-    course_id, course = race.split('/')[4:6]
+    course_id = race.split('/')[4]
 
     with open('../courses/_courses', 'r') as courses:
         js = json.load(courses)
@@ -87,11 +87,11 @@ def get_region(race):
 
         for key in js.keys():
             for item in js[key]:
-                item_id, item_course = item.split('-', 1)
+                item_id = item.split('-')[0]
 
-                if item_id.strip() == course_id and item_course.strip().lower() == course.lower():
+                if item_id.strip() == course_id:
                     return key.upper()
-
+                    
     return ''
 
 
@@ -606,7 +606,6 @@ def scrape_races(races, target, years, code):
         )
 
         for race in races:
-
             r = requests.get(race, headers={'User-Agent': 'Mozilla/5.0'})
 
             while r.status_code == 403 or r.status_code == 404 or r.status_code == 503:
@@ -855,9 +854,7 @@ def scrape_races(races, target, years, code):
             age = [a.replace('-', '.') for a in age]
 
             _or = clean(doc.xpath("//td[@data-ending='OR']/text()"))
-
             ts = clean(doc.xpath("//td[@data-ending='TS']/text()"))
-
             rpr = clean(doc.xpath("//td[@data-ending='RPR']/text()"))
 
             st = doc.xpath("//span[@data-ending='st']/text()")
