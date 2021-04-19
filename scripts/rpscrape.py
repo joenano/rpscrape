@@ -415,22 +415,22 @@ def try_get_race_type(race, race_dist):
             return 'NH Flat'
 
     if race_dist >= 15:
-        if substr_match(race, [' hurdle', '(hurdle)']):
+        if substr_match(race, [' hurdle']):
             return 'Hurdle'
-        if substr_match(race, [' chase', 'steeplechase', '(chase)']):
+        if substr_match(race, [' chase', 'steeplechase', 'steeple-chase']):
             return 'Chase'
 
     return ''
 
 
 def sex_restricted(race):
-    if substr_match(race, ['(Entire Colts & Fillies)', '(Colts & Fillies)']):
+    if substr_match(race, ['Entire Colts & Fillies', 'Colts & Fillies']):
         return 'C & F'
-    elif substr_match(race, ['(Fillies & Mares)', '(Filles & Mares)']):
+    elif substr_match(race, ['Fillies & Mares', 'Filles & Mares']):
         return 'F & M'
-    elif substr_match(race, ['(Fillies)', 'Fillies']):
+    elif substr_match(race, ['Fillies']):
         return 'F'
-    elif substr_match(race, ['(Colts & Geldings)', '(C & G)', ' Colts & Geldings)']):
+    elif substr_match(race, ['Colts & Geldings', '(C & G)']):
         return 'C & G'
     elif '(Mares & Geldings)' in race:
         return 'M & G'
