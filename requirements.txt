@@ -1,3 +1,4 @@
 gitpython
 lxml
 requests
+toml
