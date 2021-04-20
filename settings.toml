@@ -1,15 +1,14 @@
 auto_update = true # check git for latest version and automatically pull
 
-[fields]
+# [fields]
 
-[fields.id]
-    rp_id_horse = false     # Racing Post Horse ID
-    rp_id_jockey = false    # Racing Post Jockey ID
-    rp_id_trainer = false   # Racing Post Trainer ID
-    rp_id_dam = false       # Racing Post Dam ID
-    rp_id_sire = false      # Racing Post Sire ID
+# [fields.id]
+#     rp_id_horse = false     # Racing Post Horse ID
+#     rp_id_jockey = false    # Racing Post Jockey ID
+#     rp_id_trainer = false   # Racing Post Trainer ID
+#     rp_id_dam = false       # Racing Post Dam ID
+#     rp_id_sire = false      # Racing Post Sire ID
 
 
-[fields.ratings]
-    top_speed = false
-
+# [fields.ratings]
+#     top_speed = false
