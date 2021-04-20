@@ -11,6 +11,7 @@ from re import search
 import requests
 import sys
 from time import sleep
+import toml
 
 
 class Completer:
@@ -1037,12 +1038,12 @@ def check_for_update():
 
 def main():
     try:
-        settings = json.load(open('../settings.json', 'r'))
+        settings = toml.load(open('../settings.toml', 'r'))
     except ValueError:
-        print('Failed to parse settings.json')
+        print('Failed to parse settings.toml')
         settings = {'auto_update': True}
 
-    if(settings['auto_update']):
+    if settings['auto_update']:
         check_for_update()
 
     if len(sys.argv) > 1:
