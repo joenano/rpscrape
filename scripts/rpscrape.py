@@ -2,7 +2,9 @@
 
 """ Scrapes results and saves them in csv format """
 
+import aiohttp
 import argparse
+import asyncio
 from datetime import date, timedelta, datetime
 import json
 from lxml import html
@@ -98,16 +100,16 @@ def get_region(race):
 
 def courses(code='all'):
     with open('../courses/_courses', 'r') as courses:
-        for course in json.load(courses)[code]:
-            yield course.split('-')[0].strip(), ' '.join(course.split('-')[1::]).strip()
-         
+        for id, course in json.load(courses)[code].items():
+            yield id, course
+
 
 def course_name(code):
     if code.isalpha():
         return code
     for course in courses():
         if course[0] == code:
-            return course[1].replace('()', '').replace(' ', '-')
+            return course[1].replace(' ', '-')
 
 
 def course_search(term):
@@ -499,11 +501,11 @@ def get_dates(date_str):
         return [date(int(year), int(month), int(day))]
 
 
-def get_races(tracks, names, years, code, xy):
-    races = []
-    for track, name in zip(tracks, names):
+def get_race_urls(tracks, years, code, xy):
+    urls = []
+    for track in tracks:
         for year in years:
-            r = requests.get(f'{xy[0]}/{track}/{year}/{code}/all-races', headers={'User-Agent': 'Mozilla/5.0'})
+            r = requests.get(f'{xy[0]}/{track[0]}/{year}/{code}/all-races', headers={'User-Agent': 'Mozilla/5.0'})
             if r.status_code == 200:
                 try:
                     results = r.json()
@@ -511,35 +513,84 @@ def get_races(tracks, names, years, code, xy):
                         print(f'No {code} race data for {course_name(track)} in {year}.')
                     else:
                         for result in results['data']['principleRaceResults']:
-                            races.append(f'{xy[1]}/{track}/{name}/{result["raceDatetime"][:10]}/{result["raceInstanceUid"]}')
+                            url = f'{xy[1]}/{track[0]}/{track[1]}/{result["raceDatetime"][:10]}/{result["raceInstanceUid"]}'
+                            urls.append(url.replace(' ', '-'))
                 except:
                     pass
             else:
-                print(f'Unable to access races from {course_name(track)} in {year}')
-    return races
+                print(f'Unable to access races from {course_name(track[0])} in {year}')
+
+    return urls
 
 
-def get_race_links(date, region):
-    with open('../courses/_courses', 'r') as courses:
-        valid_courses = [course.split('-')[0].strip() for course in json.load(courses)[region]]
+def get_race_urls_async(tracks, years, code, xy):
+    urls = []
+    courses = []
 
-    r = requests.get(f'https://www.racingpost.com/results/{date}', headers={'User-Agent': 'Mozilla/5.0'})
+    for track in tracks:
+        for year in years:
+            courses.append((track, f'{xy[0]}/{track[0]}/{year}/{code}/all-races'))
 
-    while r.status_code == 403:
-        sleep(5)
-        r = requests.get(f'https://www.racingpost.com/results/{date}', headers={'User-Agent': 'Mozilla/5.0'})
+    races = asyncio.run(get_jsons(courses))
 
-    doc = html.fromstring(r.content)
-    race_links = doc.xpath('//a[@data-test-selector="link-listCourseNameLink"]')
+    for race in races:
+        results = json.loads(race[1])['data']['principleRaceResults']
 
-    links = []
+        if results:
+            for result in results:
+                url = f'{xy[1]}/{race[0][0]}/{race[0][1]}/{result["raceDatetime"][:10]}/{result["raceInstanceUid"]}'
+                urls.append(url.replace(' ', '-'))
 
-    for race in race_links:
-        if 'https://www.racingpost.com' + race.attrib['href'] not in links:
-            if race.attrib['href'].split('/')[2] in valid_courses:
-                links.append('https://www.racingpost.com' + race.attrib['href'])
+    return urls
 
-    return links
+
+def get_race_urls_date(dates, region):
+    urls = []
+
+    days = [f'https://www.racingpost.com/results/{d}' for d in dates]
+    docs = asyncio.run(get_documents(days))
+
+    for doc in docs:
+        race_links = doc[1].xpath('//a[@data-test-selector="link-listCourseNameLink"]')
+
+        for race in race_links:
+            if 'https://www.racingpost.com' + race.attrib['href'] not in urls:
+                if race.attrib['href'].split('/')[2] in [course[0] for course in courses(region)]:
+                    urls.append('https://www.racingpost.com' + race.attrib['href'])
+
+    return urls
+
+
+async def get_jsons(courses):
+    session = get_session()
+    ret = await asyncio.gather(*[get_json(course, session) for course in courses])
+    await session.close()
+    return ret
+
+
+async def get_json(course, session):
+    async with session.get(course[1]) as response:
+        resp = await response.text()
+        return (course[0], resp)
+
+
+async def get_documents(urls):
+    session = get_session()
+    ret = await asyncio.gather(*[get_document(url, session) for url in urls])
+    await session.close()
+    return ret
+
+
+async def get_document(url, session):
+    async with session.get(url) as response:
+        resp = await response.text()
+        return (url, html.fromstring(resp))
+
+
+def get_session():
+    session = aiohttp.ClientSession(connector=aiohttp.TCPConnector())
+    session.headers.update({'User-Agent': 'Mozilla/5.0'})
+    return session
 
 
 def calculate_times(win_time, dist_btn, going, code, course, race_type):
@@ -606,20 +657,11 @@ def scrape_races(races, target, years, code):
             'Prize,Sire,Dam,Damsire,Owner,Comment\n'
         )
 
-        for race in races:
-            r = requests.get(race, headers={'User-Agent': 'Mozilla/5.0'})
+        docs = asyncio.run(get_documents(races))
 
-            while r.status_code == 403 or r.status_code == 404 or r.status_code == 503:
-                if r.status_code == 404:
-                    sleep(2)
-                elif r.status_code == 503:
-                    sleep(2)
-                else:
-                    sleep(5)
-
-                r = requests.get(race, headers={'User-Agent': 'Mozilla/5.0'})
-
-            doc = html.fromstring(r.content)
+        for race in docs:
+            doc = race[1]
+            race = race[0]
 
             region = get_region(race)
             course = race.split('/')[5]
@@ -972,13 +1014,7 @@ def parse_args(args=sys.argv):
 
             if check_date(args[1]):
                 dates = get_dates(args[1])
-
-                races = []
-
-                for d in dates:
-                    for link in get_race_links(d, region_code):
-                        races.append(link)
-
+                races = get_race_urls_date(dates, region_code)
                 scrape_races(races, region_code, args[1].replace('/', '_'), '')
             else:
                 return print('Invalid date. Expected format: YYYY/MM/DD')
@@ -986,7 +1022,7 @@ def parse_args(args=sys.argv):
             if valid_region(args[0]):
                 region = args[0]
             elif valid_course(args[0]):
-                course = args[0]
+                course_id = args[0]
             else:
                 return print('Invalid course or region.')
 
@@ -998,21 +1034,29 @@ def parse_args(args=sys.argv):
                 return print('Invalid racing code. -f, flat or -j, jumps.')
 
             years = parse_years(args[1])
+            current_year = int(datetime.today().year)
 
             if not valid_years(years):
-                return print(f'\nINVALID YEAR: must be in range 1988-{int(datetime.today().year)} for flat and 1987-{int(datetime.today().year)} for jumps.\n')
+                print(f'\nINVALID YEAR: must be in range 1988-{current_year}.\n')
+                return
 
             if code == 'jumps':
-                if int(years[-1]) > int(datetime.today().year):
-                    return print(f'\nINVALID YEAR: the latest jump season started in {int(datetime.today().year)}.\n')
+                latest_valid_year = current_year - 1 if int(datetime.today().month) < 6 else current_year
 
-            tracks = [course[0] for course in courses(region)] if 'region' in locals() else [course]
-            names = [course_name(track) for track in tracks]
-            scrape_target = region if 'region' in locals() else course
+                if int(years[-1]) > latest_valid_year:
+                    print(f'\nINVALID YEAR: the latest jump season started in {latest_valid_year}.\n')
+                    return
 
-            print(f'Scraping {code} results from {course_name(scrape_target)} in {args[1]}...')
+            scrape_target = region if 'region' in locals() else course_id
 
-            races = get_races(tracks, names, years, code, x_y())
+            if 'region' in locals():
+                tracks = [course for course in courses(region)]
+            else:
+                tracks = [(course_id, course_name(course_id))]
+
+            # races = get_race_urls(tracks, years, code, x_y())
+            races = get_race_urls_async(tracks, years, code, x_y())
+
             scrape_races(races, course_name(scrape_target), args[1], code)
     else:
         options()
@@ -1071,14 +1115,10 @@ def main():
             else:
                 region = 'all'
 
-            races = []
             dates = get_dates(args.date)
-
-            for d in dates:
-                for link in get_race_links(d, region):
-                    races.append(link)
-
+            races = get_race_urls_date(dates, region)
             scrape_races(races, region, args.date.replace('/', '_'), '')
+
             sys.exit()
 
         if args.course:
@@ -1100,12 +1140,18 @@ def main():
         if not args.course and not args.region:
             sys.exit(print('Must supply a course or region code.'))
 
-        tracks = [course[0] for course in courses(args.region)] if args.region else [args.course]
-        names = [course_name(track) for track in tracks]
         target = args.region if args.region else course_name(args.course)
 
-        races = get_races(tracks, names, years, args.type, x_y())
+        if args.region:
+            tracks = [course for course in courses(args.region)]
+        else:
+            tracks = [(args.course, course_name(args.course))]
+
+        # races = get_race_urls(tracks, years, args.type, x_y())
+        races = get_race_urls_async(tracks, years, args.type, x_y())
+
         scrape_races(races, target, args.year, args.type)
+
         sys.exit()
 
     try:
