@@ -865,7 +865,6 @@ def scrape_races(races, target, years, code):
             except IndexError:
                 if possy[0].strip() == 'VOI':
                     continue
-                print(r.status_code)
                 print(race)
                 print('Failed to find number of runners.')
                 sys.exit()
@@ -1089,6 +1088,9 @@ def main():
 
     if settings['auto_update']:
         check_for_update()
+
+    if sys.version_info[0] == 3 and sys.version_info[1] >= 8 and sys.platform.startswith('win'):
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     if len(sys.argv) > 1:
         parser = argparse.ArgumentParser()
