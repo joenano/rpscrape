@@ -81,27 +81,21 @@ def substr_match(s, lst):
     return any(x.lower() in s.lower() for x in lst)
 
 
-def get_region(race):
-    course_id = race.split('/')[4]
+def get_region(course_id):
+    courses = json.load(open('../courses/_courses', 'r'))
+    courses.pop('all')
 
-    with open('../courses/_courses', 'r') as courses:
-        js = json.load(courses)
-        js.pop('all')
-
-        for key in js.keys():
-            for item in js[key]:
-                item_id = item.split('-')[0]
-
-                if item_id.strip() == course_id:
-                    return key.upper()
-                    
-    return ''
+    for region, course in courses.items():
+        for id in course.keys():
+            if id == course_id:
+                return region.upper()
 
 
 def courses(code='all'):
-    with open('../courses/_courses', 'r') as courses:
-        for id, course in json.load(courses)[code].items():
-            yield id, course
+    courses = json.load(open('../courses/_courses', 'r'))
+    
+    for id, course in courses[code].items():
+        yield id, course
 
 
 def course_name(code):
@@ -139,8 +133,7 @@ def x_y():
 
 
 def regions():
-    with open('../courses/_regions', 'r') as regions:
-        return json.load(regions)
+    return json.load(open('../courses/_regions', 'r'))
 
 
 def region_search(term):
@@ -420,7 +413,7 @@ def try_get_race_type(race, race_dist):
     if race_dist >= 15:
         if substr_match(race, [' hurdle']):
             return 'Hurdle'
-        if substr_match(race, [' chase', 'steeplechase', 'steeple-chase']):
+        if substr_match(race, [' chase', 'steeplechase', 'steeple-chase', 'steeplchase', 'steepl-chase']):
             return 'Chase'
 
     return ''
@@ -663,7 +656,7 @@ def scrape_races(races, target, years, code):
             doc = race[1]
             race = race[0]
 
-            region = get_region(race)
+            region = get_region(race.split('/')[4])
             course = race.split('/')[5]
             date = convert_date(race.split('/')[6])
 
