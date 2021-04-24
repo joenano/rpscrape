@@ -9,6 +9,16 @@ The aim of this tool is to provide a way of gathering large amounts of historica
 
 ![data](https://i.postimg.cc/7LncCDMG/data1.png)
 
+
+#### Table of Contents
+- [Requirements](#requirements)
+- [Install](#install)
+- [Usage](#usage)
+- [Scrape by date](#scrapebydate)
+- [Command Line Arguments](#commandlinearguments)
+- [Scrape Racecards](#scraperacecards)
+- [Options](#options)
+
 ## Requirements
 
 You must have Python 3.7 or greater, and GIT installed. You can download the latest Python release [here](https://www.python.org/downloads/). You can download GIT [here](https://git-scm.com/downloads).
@@ -158,6 +168,22 @@ To scrape a particular course or region, use the -c or -r flags with the course 
 ```
 ./rpscrape.py -r ire -y 2019 -t flat
 ```
+
+## Scrape Racecards
+You can scrape racecards for today or tomorrow, using racecards.py which saves a file containing a json object of racecard information.
+
+### Examples
+There are only two parameter options, either 'today' or 'tomorrow'.
+
+```
+./racecards.py today
+``
+
+You can see the outer structure of the json and some of the race information below.
+
+[json](https://i.postimg.cc/Y2ZNmLh5/json.png)
+
+[json](https://i.postimg.cc/c1thTGtt/json.png)
 
 ### Options
 
