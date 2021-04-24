@@ -177,13 +177,14 @@ There are only two parameter options, either 'today' or 'tomorrow'.
 
 ```
 ./racecards.py today
-``
+```
 
 You can see the outer structure of the json and some of the race information below.
 
-![json](https://i.postimg.cc/Y2ZNmLh5/json.png)
+![json1](https://i.postimg.cc/Y2ZNmLh5/json.png)
 
-![json](https://i.postimg.cc/c1thTGtt/json.png)
+![json2](https://i.postimg.cc/c1thTGtt/json.png)
+
 
 ### Options
 
