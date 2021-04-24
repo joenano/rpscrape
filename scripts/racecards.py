@@ -385,7 +385,7 @@ def main():
 
     if sys.argv[1].lower() == 'tomorrow':
         racecard_url += '/tomorrow'
-        day = (datetime.today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        date = (datetime.today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
 
     session = requests.Session()
     session.headers.update({'User-Agent': 'Mozilla/5.0'})
@@ -399,7 +399,7 @@ def main():
     if not os.path.exists('../racecards'):
         os.makedirs(f'../racecards')
 
-    with open(f'../racecards/{day}.json', 'w') as f:
+    with open(f'../racecards/{date}.json', 'w') as f:
         f.write(json.dumps(races))
 
 
