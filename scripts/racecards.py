@@ -61,7 +61,7 @@ def get_going_info(session):
     return going_info
 
 
-def get_pattern(race_name, race_class):
+def get_pattern(race_name):
     if 'grade' in race_name:
         if 'grade 1' in race_name:
             return 'Grade 1'
@@ -99,7 +99,7 @@ def get_race_urls(session, racecard_url):
     for meeting in doc.xpath("//section[@data-accordion-row]"):
         for race in meeting.xpath(".//a[@class='RC-meetingItem__link js-navigate-url']"):
             race_urls.append('https://www.racingpost.com' + race.attrib['href'])
-    
+
     return sorted(list(set(race_urls)))
 
 
@@ -122,7 +122,7 @@ def get_runners(profile_urls, race_id):
         runner['sex_code'] = js['profile']['horseSexCode']
         runner['colour'] = js['profile']['horseColour']
         runner['region'] = js['profile']['horseCountryOriginCode']
-     
+
         runner['breeder'] = js['profile']['breederName']
         runner['dam'] = js['profile']['damHorseName']
         runner['dam_region'] = js['profile']['damCountryOriginCode']
@@ -204,7 +204,7 @@ def get_runners(profile_urls, race_id):
                 quotes.append(quote)
 
             runner['quotes'] = quotes
-        
+
         runner['stable_tour'] = None
 
         if js['stableTourQuotes']:
@@ -225,46 +225,46 @@ def get_runners(profile_urls, race_id):
 
 
 def parse_going(going_info):
-	in_places = ''
-	going_stick = ''
-	watered = ''
-	rail_movements = ''
+    in_places = ''
+    going_stick = ''
+    watered = ''
+    rail_movements = ''
 
-	going = going_info.split('(')[0].split(',')[0].strip()
-	info = going_info.split(going)[1]
+    going = going_info.split('(')[0].split(',')[0].strip()
+    info = going_info.split(going)[1]
 
-	try:
-		going_stick = re.search('\((Going.*?)\)', info).group(0).split(' ')[1].strip(')')
-		going_stick = f' (GS: {going_stick})'
-	except AttributeError:
-		try:
-			going_stick = re.search('\((Watered;.*?)\)', info).group(0).split(' ')[1].strip(')')
-			going_stick = f' (GS: {going_stick})'
-		except AttributeError:
-			pass
+    try:
+        going_stick = re.search('\((Going.*?)\)', info).group(0).split(' ')[1].strip(')')
+        going_stick = f' (GS: {going_stick})'
+    except AttributeError:
+        try:
+            going_stick = re.search('\((Watered;.*?)\)', info).group(0).split(' ')[1].strip(')')
+            going_stick = f' (GS: {going_stick})'
+        except AttributeError:
+            pass
 
-	if 'watered' in info.lower() or 'watering' in info.lower():
-		watered = ' (Watered)'
+    if 'watered' in info.lower() or 'watering' in info.lower():
+        watered = ' (Watered)'
 
-	if 'rail movements' in info.lower():
-		rail_movements = [x.strip() for x in info.split('Rail movements:')[1].strip().strip(')').split(',')]
+    if 'rail movements' in info.lower():
+        rail_movements = [x.strip() for x in info.split('Rail movements:')[1].strip().strip(')').split(',')]
 
-	if 'good to firm' in info.lower():
-		in_places = ' (Good To Firm in places)'
-	elif 'good to soft' in info.lower():
-		in_places = ' (Good To Soft in places)'
-	elif 'soft to heavy' in info.lower():
-		in_places = ' (Soft To Heavy in places)'
-	elif 'heavy' in info.lower():
-		in_places = ' (Heavy in places)'
-	elif 'soft' in info.lower():
-		in_places = ' (Soft in places)'
-	elif 'firm' in info.lower():
-		in_places = ' (Firm in places)'
-	elif 'yielding' in info.lower():
-		in_places = ' (Yielding in places)'
+    if 'good to firm' in info.lower():
+        in_places = ' (Good To Firm in places)'
+    elif 'good to soft' in info.lower():
+        in_places = ' (Good To Soft in places)'
+    elif 'soft to heavy' in info.lower():
+        in_places = ' (Soft To Heavy in places)'
+    elif 'heavy' in info.lower():
+        in_places = ' (Heavy in places)'
+    elif 'soft' in info.lower():
+        in_places = ' (Soft in places)'
+    elif 'firm' in info.lower():
+        in_places = ' (Firm in places)'
+    elif 'yielding' in info.lower():
+        in_places = ' (Yielding in places)'
 
-	return going + in_places + watered + going_stick, rail_movements
+    return going + in_places + watered + going_stick, rail_movements
 
 
 def find(doc, tag, value, property='data-test-selector', **kwargs):
@@ -294,12 +294,12 @@ def parse_races(session, race_docs):
         race['race_name'] = find(doc, 'span', 'RC-header__raceInstanceTitle')
         race['distance_round'] = find(doc, 'strong', 'RC-header__raceDistanceRound')
         race['distance'] = find(doc, 'span', 'RC-header__raceDistance')
-        race['distance'] = race['distance_round'] if not race['distance'] else race['distance']
+        race['distance'] = race['distance_round'] if not race['distance'] else race['distance'].strip('()')
         race['distance_f'] = distance_to_furlongs(race['distance_round'])
         race['region'] = get_region(str(race['course_id']))
         race['race_class'] = find(doc, 'span', 'RC-header__raceClass')
         race['race_class'] = race['race_class'].strip('()') if race['race_class'] else None
-        race['pattern'] = get_pattern(race['race_name'].lower(), race['race_class'])
+        race['pattern'] = get_pattern(race['race_name'].lower())
         band = find(doc, 'span', 'RC-header__rpAges').strip('()').split()
         race['age_band'] = band[0]
         race['rating_band'] = band[1] if len(band) > 1 else None
@@ -307,7 +307,7 @@ def parse_races(session, race_docs):
         race['prize'] = prize.split('winner:')[1].strip() if 'winner:' in prize else None
         field_size = find(doc, 'div', 'RC-headerBox__runners').lower()
         race['field_size'] = int(field_size.split('runners:')[1].split('(')[0].strip())
-        
+
         going_info = get_going_info(session)
 
         try:
@@ -335,12 +335,12 @@ def parse_races(session, race_docs):
 
             runners[horse_id]['number'] = int(find(horse, 'span', 'RC-cardPage-runnerNumber-no', attrib='data-order-no'))
             runners[horse_id]['draw'] = int(find(horse, 'span', 'RC-cardPage-runnerNumber-draw', attrib='data-order-draw'))
-            
+
             runners[horse_id]['headgear'] = find(horse, 'span', 'RC-cardPage-runnerHeadGear')
             runners[horse_id]['headgear_first'] = find(horse, 'span', 'RC-cardPage-runnerHeadGear-first')
-            
+
             runners[horse_id]['lbs'] = int(find(horse, 'span', 'RC-cardPage-runnerWgt-carried', attrib='data-order-wgt'))
-            
+
             try:
                 runners[horse_id]['ofr'] = int(find(horse, 'span', 'RC-cardPage-runnerOr', attrib='data-order-or'))
             except ValueError:
@@ -368,8 +368,6 @@ def parse_races(session, race_docs):
             runners[horse_id]['form'] = find(horse, 'span', 'RC-cardPage-runnerForm')
 
         race['runners'] = [runner for runner in runners.values()]
-
-        
         races[race['region']][race['course']][race['off_time']] = race
 
     return races
@@ -381,9 +379,9 @@ def main():
 
     if sys.version_info[0] == 3 and sys.version_info[1] >= 8 and sys.platform.startswith('win'):
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    
+
     racecard_url = 'https://www.racingpost.com/racecards'
-    
+
     date = datetime.today().strftime('%Y-%m-%d')
 
     if sys.argv[1].lower() == 'tomorrow':
@@ -407,4 +405,4 @@ def main():
 
 
 if __name__ == '__main__':
-	main()
+    main()
