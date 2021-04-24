@@ -378,6 +378,9 @@ def parse_races(session, race_docs):
 def main():
     if len(sys.argv) != 2 or sys.argv[1].lower() not in ['today', 'tomorrow']:
         return print('Usage: ./racecards.py [today|tomorrow]')
+
+    if sys.version_info[0] == 3 and sys.version_info[1] >= 8 and sys.platform.startswith('win'):
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     
     racecard_url = 'https://www.racingpost.com/racecards'
     
