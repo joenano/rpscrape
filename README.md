@@ -14,9 +14,9 @@ The aim of this tool is to provide a way of gathering large amounts of historica
 - [Requirements](#requirements)
 - [Install](#install)
 - [Usage](#usage)
-- [Scrape by date](#scrapebydate)
-- [Command Line Arguments](#commandlinearguments)
-- [Scrape Racecards](#scraperacecards)
+- [Scrape by date](#scrape-by-date)
+- [Command Line Arguments](#command-line-arguments)
+- [Scrape Racecards](#scrape-racecards)
 - [Options](#options)
 
 ## Requirements
