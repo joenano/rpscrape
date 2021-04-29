@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-""" Scrapes results and saves them in csv format """
-
 import aiohttp
 import argparse
 import asyncio

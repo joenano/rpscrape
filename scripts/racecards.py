@@ -4,7 +4,7 @@ import aiohttp
 import asyncio
 from collections import defaultdict
 from dateutil.parser import parse
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 from lxml import html
 import os
@@ -334,8 +334,12 @@ def parse_races(session, race_docs):
             horse_id = int(find(horse, 'a', 'RC-cardPage-runnerName', attrib='href').split('/')[3])
 
             runners[horse_id]['number'] = int(find(horse, 'span', 'RC-cardPage-runnerNumber-no', attrib='data-order-no'))
-            runners[horse_id]['draw'] = int(find(horse, 'span', 'RC-cardPage-runnerNumber-draw', attrib='data-order-draw'))
-
+            
+            try:
+                runners[horse_id]['draw'] = int(find(horse, 'span', 'RC-cardPage-runnerNumber-draw', attrib='data-order-draw'))
+            except ValueError:
+                runners[horse_id]['draw'] = None
+                
             runners[horse_id]['headgear'] = find(horse, 'span', 'RC-cardPage-runnerHeadGear')
             runners[horse_id]['headgear_first'] = find(horse, 'span', 'RC-cardPage-runnerHeadGear-first')
 
@@ -386,7 +390,7 @@ def main():
 
     if sys.argv[1].lower() == 'tomorrow':
         racecard_url += '/tomorrow'
-        date = (datetime.today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        date = (datetime.today() + timedelta(days=1)).strftime('%Y-%m-%d')
 
     session = requests.Session()
     session.headers.update({'User-Agent': 'Mozilla/5.0'})
