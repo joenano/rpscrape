@@ -295,18 +295,45 @@ def parse_races(session, race_docs):
         race['distance_round'] = find(doc, 'strong', 'RC-header__raceDistanceRound')
         race['distance'] = find(doc, 'span', 'RC-header__raceDistance')
         race['distance'] = race['distance_round'] if not race['distance'] else race['distance'].strip('()')
-        race['distance_f'] = distance_to_furlongs(race['distance_round'])
+        try:
+            race['distance_f'] = distance_to_furlongs(race['distance_round'])
+        except AttributeError:
+            race['distance_f'] = None
         race['region'] = get_region(str(race['course_id']))
         race['race_class'] = find(doc, 'span', 'RC-header__raceClass')
         race['race_class'] = race['race_class'].strip('()') if race['race_class'] else None
-        race['pattern'] = get_pattern(race['race_name'].lower())
-        band = find(doc, 'span', 'RC-header__rpAges').strip('()').split()
-        race['age_band'] = band[0]
-        race['rating_band'] = band[1] if len(band) > 1 else None
-        prize = find(doc, 'div', 'RC-headerBox__winner').lower()
-        race['prize'] = prize.split('winner:')[1].strip() if 'winner:' in prize else None
-        field_size = find(doc, 'div', 'RC-headerBox__runners').lower()
-        race['field_size'] = int(field_size.split('runners:')[1].split('(')[0].strip())
+        try:
+            race['pattern'] = get_pattern(race['race_name'].lower())
+        except AttributeError:
+            race['pattern'] = None
+        try:
+            band = find(doc, 'span', 'RC-header__rpAges').strip('()').split()
+        except AttributeError:
+            band = None
+        try:
+            race['age_band'] = band[0]
+        except TypeError:
+            race['age_band'] = None
+        try:
+            race['rating_band'] = band[1] if len(band) > 1 else None
+        except TypeError:
+            race['rating_band'] = None
+        try:
+            prize = find(doc, 'div', 'RC-headerBox__winner').lower()
+        except AttributeError:
+            prize = None
+        try:
+            race['prize'] = prize.split('winner:')[1].strip() if 'winner:' in prize else None
+        except TypeError:
+            race['prize'] = None
+        try:
+            field_size = find(doc, 'div', 'RC-headerBox__runners').lower()
+        except AttributeError:
+            field_size = None
+        try:
+            race['field_size'] = int(field_size.split('runners:')[1].split('(')[0].strip())
+        except AttributeError:
+            race['field_size'] = None
 
         going_info = get_going_info(session)
 
