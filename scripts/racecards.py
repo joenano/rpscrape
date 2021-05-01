@@ -27,6 +27,16 @@ def distance_to_furlongs(distance):
     return float(dist)
 
 
+def find(doc, tag, value, property='data-test-selector', **kwargs):
+    try:
+        element = doc.find(f'.//{tag}[@{property}="{value}"]')
+        if 'attrib' in kwargs:
+            return element.attrib[kwargs['attrib']]
+        return element.text_content().strip()
+    except AttributeError:
+        return None
+
+
 async def get_documents(urls):
     session = aiohttp.ClientSession(connector=aiohttp.TCPConnector())
     session.headers.update({'User-Agent': 'Mozilla/5.0'})
@@ -267,16 +277,6 @@ def parse_going(going_info):
     return going + in_places + watered + going_stick, rail_movements
 
 
-def find(doc, tag, value, property='data-test-selector', **kwargs):
-    try:
-        element = doc.find(f'.//{tag}[@{property}="{value}"]')
-        if 'attrib' in kwargs:
-            return element.attrib[kwargs['attrib']]
-        return element.text_content().strip()
-    except AttributeError:
-        return None
-
-
 def parse_races(session, race_docs):
     races = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 
@@ -362,8 +362,12 @@ def parse_races(session, race_docs):
 
             claim = find(horse, 'span', 'RC-cardPage-runnerJockey-allowance')
             jockey = find(horse, 'a', 'RC-cardPage-runnerJockey-name', attrib='data-order-jockey')
-            runners[horse_id]['jockey'] = jockey if not claim else jockey + f'({claim})'
 
+            if jockey:
+                runners[horse_id]['jockey'] = jockey if not claim else jockey + f'({claim})'
+            else:
+                runners[horse_id]['jockey'] = None
+            
             try:
                 runners[horse_id]['last_run'] = find(horse, 'div', 'RC-cardPage-runnerStats-lastRun')
             except TypeError:
