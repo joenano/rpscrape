@@ -579,7 +579,7 @@ async def get_document(url, session):
 
 
 def get_session():
-    session = aiohttp.ClientSession(connector=aiohttp.TCPConnector())
+    session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=50))
     session.headers.update({'User-Agent': 'Mozilla/5.0'})
     return session
 

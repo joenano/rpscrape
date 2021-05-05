@@ -3,7 +3,6 @@
 import aiohttp
 import asyncio
 from collections import defaultdict
-from dateutil.parser import parse
 from datetime import datetime, timedelta
 import json
 from lxml import html
@@ -38,7 +37,7 @@ def find(doc, tag, value, property='data-test-selector', **kwargs):
 
 
 async def get_documents(urls):
-    session = aiohttp.ClientSession(connector=aiohttp.TCPConnector())
+    session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=30))
     session.headers.update({'User-Agent': 'Mozilla/5.0'})
     ret = await asyncio.gather(*[get_document(url, session) for url in urls])
     await session.close()
@@ -126,7 +125,7 @@ def get_runners(profile_urls, race_id):
 
         runner['horse_id'] = js['profile']['horseUid']
         runner['name'] = js['profile']['horseName']
-        runner['dob'] = parse(js['profile']['horseDateOfBirth']).strftime('%Y-%m-%d')
+        runner['dob'] = js['profile']['horseDateOfBirth'].split('T')[0]
         runner['age'] = int(js['profile']['age'].split('-')[0])
         runner['sex'] = js['profile']['horseSex']
         runner['sex_code'] = js['profile']['horseSexCode']
@@ -384,8 +383,8 @@ def parse_races(session, race_docs):
 def main():
     if len(sys.argv) != 2 or sys.argv[1].lower() not in ['today', 'tomorrow']:
         return print('Usage: ./racecards.py [today|tomorrow]')
-
-    if sys.version_info[0] == 3 and sys.version_info[1] >= 8 and sys.platform.startswith('win'):
+    
+    if sys.version_info[0] == 3 and sys.version_info[1] >= 7 and sys.platform.startswith('win'):
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     racecard_url = 'https://www.racingpost.com/racecards'
