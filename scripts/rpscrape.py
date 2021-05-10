@@ -10,7 +10,6 @@ import os
 from re import search
 import requests
 import sys
-from time import sleep
 import toml
 
 
@@ -408,10 +407,9 @@ def try_get_race_type(race, race_dist):
         if substr_match(race, ['inh bumper', ' sales bumper', 'kepak flat race', 'i.n.h. flat race']):
             return 'NH Flat'
 
-    if race_dist >= 15:
-        if substr_match(race, [' hurdle']):
+        if substr_match(race, [' hurdle', '(hurdle)']):
             return 'Hurdle'
-        if substr_match(race, [' chase', 'steeplechase', 'steeple-chase', 'steeplchase', 'steepl-chase']):
+        if substr_match(race, [' chase', '(chase)', 'steeplechase', 'steeple-chase', 'steeplchase', 'steepl-chase']):
             return 'Chase'
 
     return ''
@@ -424,7 +422,7 @@ def sex_restricted(race):
         return 'F & M'
     elif substr_match(race, ['Fillies']):
         return 'F'
-    elif substr_match(race, ['Colts & Geldings', '(C & G)']):
+    elif substr_match(race, ['Colts & Geldings', 'Colts/Geldings', '(C & G)']):
         return 'C & G'
     elif '(Mares & Geldings)' in race:
         return 'M & G'
@@ -777,7 +775,6 @@ def scrape_races(races, target, years, code):
             coms = [x.strip().replace('  ', '').replace(',', ' -').replace('\n', ' ').replace('\r', '') for x in coms]
 
             possy = doc.xpath("//span[@data-test-selector='text-horsePosition']/text()")
-            
             del possy[1::2]
             pos = [x.strip() for x in possy]
 
@@ -868,7 +865,10 @@ def scrape_races(races, target, years, code):
                 else:
                     nats.append(nat.strip())
 
-            name = clean(doc.xpath("//a[@data-test-selector='link-horseName']/text()"))
+            names = clean(doc.xpath("//a[@data-test-selector='link-horseName']/text()"))
+
+            profiles = doc.xpath("//a[@data-test-selector='link-horseName']/@href")
+            profiles = [p.replace('/profile/horse/', '') for p in profiles]
 
             sps = clean(doc.xpath("//span[@class='rp-horseTable__horse__price']/text()"))
             sps = [x.replace('No Odds', '') for x in sps]
@@ -882,6 +882,9 @@ def scrape_races(races, target, years, code):
 
             owners = doc.xpath("//a[@data-test-selector='link-silk']")
             owners = [x.attrib['href'].split('/')[-1].replace('-', ' ').title() for x in owners]
+
+            silks = doc.xpath("//img[@class='rp-horseTable__silk']")
+            silks = [s.attrib['src'] for s in silks]
 
             age = clean(doc.xpath("//td[@data-test-selector='horse-age']/text()"))
             age = [a.replace('-', '.') for a in age]
@@ -918,7 +921,7 @@ def scrape_races(races, target, years, code):
                     try:
                         winning_time = info[1].text.split("(")[1].lower().replace('fast by', '').strip().strip(')').split()
                     except IndexError:
-                        times = ['-' for x in range(len(pos))]
+                        times = ['-' for i in range(len(pos))]
 
             elif len(info) == 2:
                 winning_time = info[0].text.split("(")[0].split()
@@ -927,12 +930,12 @@ def scrape_races(races, target, years, code):
                     try:
                         winning_time = info[0].text.split("(")[1].lower().replace('fast by', '').strip().strip(')').split()
                     except IndexError:
-                        times = ['-' for x in range(len(pos))]
+                        times = ['-' for i in range(len(pos))]
             else:
                 print(f'ERROR: (winning time) {date} {course_name} {r_time}.')
 
             if winning_time == [] or winning_time == ['standard', 'time']:
-                times = ['-' for x in range(len(pos))]
+                times = ['-' for i in range(len(pos))]
 
             if not times:
                 if len(winning_time) > 1:
@@ -956,8 +959,8 @@ def scrape_races(races, target, years, code):
 
             race_name = race_name.replace("'", '')
 
-            for num, p, pr, dr, bt, ovr_bt, n, nat, sp, dc, time, j, tr, a, s, o, rp, t, w, l, g, com, sire, dam, damsire, owner in \
-                    zip(numbers, pos, prize, draw, btn, ovr_btn, name, nats, sps, dec, times, jock, trainer, age, sex, _or, rpr, ts,
+            for num, p, pr, dr, bt, ovr_bt, name, nat, sp, dc, time, j, tr, a, s, o, rp, t, w, l, g, com, sire, dam, damsire, owner in \
+                    zip(numbers, pos, prize, draw, btn, ovr_btn, names, nats, sps, dec, times, jock, trainer, age, sex, _or, rpr, ts,
                         wgt, lbs, gear, coms, sires, dams, damsires, owners):
                 sire = sire.replace("'", '')
                 dam = dam.replace("'", '')
@@ -1044,10 +1047,10 @@ def parse_args(args=sys.argv):
             else:
                 tracks = [(course_id, course_name(course_id))]
 
-            # races = get_race_urls(tracks, years, code, x_y())
             races = get_race_urls_async(tracks, years, code, x_y())
 
             scrape_races(races, course_name(scrape_target), args[1], code)
+
     else:
         options()
 
@@ -1080,7 +1083,7 @@ def main():
     if settings['auto_update']:
         check_for_update()
 
-    if sys.version_info[0] == 3 and sys.version_info[1] >= 8 and sys.platform.startswith('win'):
+    if sys.version_info[0] == 3 and sys.version_info[1] >= 7 and sys.platform.startswith('win'):
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     if len(sys.argv) > 1:

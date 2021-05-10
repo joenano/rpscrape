@@ -78,6 +78,14 @@ def get_pattern(race_name):
             return 'Grade 2'
         elif 'grade 3' in race_name:
             return 'Grade 3'
+        elif 'grade a' in race_name:
+            return 'Grade A'
+        elif 'grade b' in race_name:
+            return 'Grade B'
+        elif 'grade c' in race_name:
+            return 'Grade C'
+        else:
+            return ''
     elif 'group' in race_name:
         if 'group 1' in race_name:
             return 'Group 1'
@@ -85,8 +93,12 @@ def get_pattern(race_name):
             return 'Group 2'
         elif 'group 3' in race_name:
             return 'Group 3'
+        else:
+            return ''
     elif 'listed' in race_name:
         return 'Listed'
+    else:
+        return ''
 
 
 def get_region(course_id):
