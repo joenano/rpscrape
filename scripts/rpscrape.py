@@ -972,7 +972,7 @@ def scrape_races(races, target, years, code):
                 csv.write((
                     f'{date},{region},{course},{r_time},{race_name},{race_type},{race_class},{pattern},'
                     f'{rating_band},{age_band},{sex_rest},{distance},{dist_y},{dist_m},{dist_f},'
-                    f'{going},{num},{p},{ran},{dr},{bt},{ovr_bt},{n} {nat},{sp},{dc},{a},{s},{w},'
+                    f'{going},{num},{p},{ran},{dr},{bt},{ovr_bt},{name} {nat},{sp},{dc},{a},{s},{w},'
                     f'{l},{g},{time},{j},{tr},{o},{rp},{t},{pr},{sire},{dam},{damsire},{owner},{com}\n'
                 ))
 
