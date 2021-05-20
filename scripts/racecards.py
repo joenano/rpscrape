@@ -50,8 +50,8 @@ async def get_document(url, session):
         return (url, html.fromstring(resp))
 
 
-def get_going_info(session):
-    r = session.get('https://www.racingpost.com/non-runners/')
+def get_going_info(session, date):
+    r = session.get('https://www.racingpost.com/non-runners/' + date)
     doc = html.fromstring(r.content.decode())
 
     json_str = doc.xpath('//body/script')[0].text.replace('var __PRELOADED_STATE__ = ', '').strip().strip(';')
@@ -246,50 +246,19 @@ def get_runners(profile_urls, race_id):
 
 
 def parse_going(going_info):
-    in_places = ''
-    going_stick = ''
-    watered = ''
+    going = going_info
     rail_movements = ''
 
-    going = going_info.split('(')[0].split(',')[0].strip()
-    info = going_info.split(going)[1]
+    if 'Rail movements' in going_info:
+        rail_movements = [x.strip() for x in going_info.split('Rail movements:')[1].strip().strip(')').split(',')]
+        going = going_info.split('(Rail movements:')[0].strip()
 
-    try:
-        going_stick = re.search('\((Going.*?)\)', info).group(0).split(' ')[1].strip(')')
-        going_stick = f' (GS: {going_stick})'
-    except AttributeError:
-        try:
-            going_stick = re.search('\((Watered;.*?)\)', info).group(0).split(' ')[1].strip(')')
-            going_stick = f' (GS: {going_stick})'
-        except AttributeError:
-            pass
+    return going, rail_movements
 
-    if 'watered' in info.lower() or 'watering' in info.lower():
-        watered = ' (Watered)'
-
-    if 'rail movements' in info.lower():
-        rail_movements = [x.strip() for x in info.split('Rail movements:')[1].strip().strip(')').split(',')]
-
-    if 'good to firm' in info.lower():
-        in_places = ' (Good To Firm in places)'
-    elif 'good to soft' in info.lower():
-        in_places = ' (Good To Soft in places)'
-    elif 'soft to heavy' in info.lower():
-        in_places = ' (Soft To Heavy in places)'
-    elif 'heavy' in info.lower():
-        in_places = ' (Heavy in places)'
-    elif 'soft' in info.lower():
-        in_places = ' (Soft in places)'
-    elif 'firm' in info.lower():
-        in_places = ' (Firm in places)'
-    elif 'yielding' in info.lower():
-        in_places = ' (Yielding in places)'
-
-    return going + in_places + watered + going_stick, rail_movements
-
-
-def parse_races(session, race_docs):
+def parse_races(session, race_docs, date):
     races = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
+
+    going_info = get_going_info(session, date)
 
     for race_doc in race_docs:
         url_split = race_doc[0].split('/')
@@ -311,18 +280,22 @@ def parse_races(session, race_docs):
         race['race_class'] = find(doc, 'span', 'RC-header__raceClass')
         race['race_class'] = race['race_class'].strip('()') if race['race_class'] else None
         race['pattern'] = get_pattern(race['race_name'].lower())
-        band = find(doc, 'span', 'RC-header__rpAges').strip('()').split()
-        race['age_band'] = band[0]
-        race['rating_band'] = band[1] if len(band) > 1 else None
+        
+        try:
+            band = find(doc, 'span', 'RC-header__rpAges').strip('()').split()
+            race['age_band'] = band[0]
+            race['rating_band'] = band[1] if len(band) > 1 else None
+        except AttributeError:
+            race['age_band'] = None
+            race['rating_band'] = None
+
         prize = find(doc, 'div', 'RC-headerBox__winner').lower()
         race['prize'] = prize.split('winner:')[1].strip() if 'winner:' in prize else None
         field_size = find(doc, 'div', 'RC-headerBox__runners').lower()
         race['field_size'] = int(field_size.split('runners:')[1].split('(')[0].strip())
 
-        going_info = get_going_info(session)
-
         try:
-            race['going'] = going_info[race['course_id']]['going']
+            race['going_detailed'] = going_info[race['course_id']]['going']
             race['rail_movements'] = going_info[race['course_id']]['rail_movements']
             race['stalls'] = going_info[race['course_id']]['stalls']
             race['weather'] = going_info[race['course_id']]['weather']
@@ -332,9 +305,8 @@ def parse_races(session, race_docs):
             race['stalls'] = None
             race['weather'] = None
 
-        if not race['going']:
-            going = find(doc, 'div', 'RC-headerBox__going').lower()
-            race['going'] = going.split('going:')[1].strip().title() if 'going:' in going else None
+        going = find(doc, 'div', 'RC-headerBox__going').lower()
+        race['going'] = going.split('going:')[1].strip().title() if 'going:' in going else ''
 
         profile_hrefs = doc.xpath("//a[@data-test-selector='RC-cardPage-runnerName']/@href")
         profile_urls = ['https://www.racingpost.com' + a.split('#')[0] + '/form' for a in profile_hrefs]
@@ -414,7 +386,7 @@ def main():
 
     race_docs = asyncio.run(get_documents(race_urls))
 
-    races = parse_races(session, race_docs)
+    races = parse_races(session, race_docs, date)
 
     if not os.path.exists('../racecards'):
         os.makedirs(f'../racecards')
