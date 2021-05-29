@@ -503,7 +503,7 @@ def get_race_urls(tracks, years, code, xy):
                     else:
                         for result in results['data']['principleRaceResults']:
                             url = f'{xy[1]}/{track[0]}/{track[1]}/{result["raceDatetime"][:10]}/{result["raceInstanceUid"]}'
-                            urls.append(url.replace(' ', '-'))
+                            urls.append(url.replace(' ', '-').replace("'", ''))
                 except:
                     pass
             else:
@@ -528,7 +528,7 @@ def get_race_urls_async(tracks, years, code, xy):
         if results:
             for result in results:
                 url = f'{xy[1]}/{race[0][0]}/{race[0][1]}/{result["raceDatetime"][:10]}/{result["raceInstanceUid"]}'
-                urls.append(url.replace(' ', '-'))
+                urls.append(url.replace(' ', '-').replace("'", ''))
 
     return urls
 
@@ -1034,7 +1034,7 @@ def parse_args(args=sys.argv):
                 return
 
             if code == 'jumps':
-                latest_valid_year = current_year - 1 if int(datetime.today().month) < 6 else current_year
+                latest_valid_year = current_year - 1 if int(datetime.today().month) < 5 else current_year
 
                 if int(years[-1]) > latest_valid_year:
                     print(f'\nINVALID YEAR: the latest jump season started in {latest_valid_year}.\n')
