@@ -969,6 +969,12 @@ def scrape_races(races, target, years, code):
                 tr = tr.replace("'", '')
                 com = com.replace('\n', '').strip()
 
+                if not p.isnumeric():
+                    time = '-'
+                    sec = '-'
+                    ovr_bt = '-'
+                    bt = '-'
+
                 csv.write((
                     f'{date},{region},{course},{r_time},{race_name},{race_type},{race_class},{pattern},'
                     f'{rating_band},{age_band},{sex_rest},{distance},{dist_y},{dist_m},{dist_f},'
