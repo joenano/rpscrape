@@ -358,6 +358,11 @@ def parse_races(session, race_docs, date):
 
             runners[horse_id]['form'] = find(horse, 'span', 'RC-cardPage-runnerForm')
 
+            try:
+                runners[horse_id]['trainer_rtf'] = find(horse, 'span', 'RC-cardPage-runnerTrainer-rtf')
+            except TypeError:
+                runners[horse_id]['trainer_rtf'] = None
+
         race['runners'] = [runner for runner in runners.values()]
         races[race['region']][race['course']][race['off_time']] = race
 
