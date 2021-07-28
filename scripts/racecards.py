@@ -118,8 +118,10 @@ def get_race_urls(session, racecard_url):
     race_urls = []
 
     for meeting in doc.xpath("//section[@data-accordion-row]"):
-        for race in meeting.xpath(".//a[@class='RC-meetingItem__link js-navigate-url']"):
-            race_urls.append('https://www.racingpost.com' + race.attrib['href'])
+        course = meeting.xpath(".//span[contains(@class, 'RC-accordion__courseName')]")[0]
+        if valid_course(course.text_content().strip().lower()):
+            for race in meeting.xpath(".//a[@class='RC-meetingItem__link js-navigate-url']"):
+                race_urls.append('https://www.racingpost.com' + race.attrib['href'])
 
     return sorted(list(set(race_urls)))
 
@@ -255,6 +257,7 @@ def parse_going(going_info):
 
     return going, rail_movements
 
+
 def parse_races(session, race_docs, date):
     races = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 
@@ -367,6 +370,11 @@ def parse_races(session, race_docs, date):
         races[race['region']][race['course']][race['off_time']] = race
 
     return races
+
+
+def valid_course(course):
+    invalid = ['free to air', 'worldwide stakes', '(arab)']
+    return all([x not in course for x in invalid])
 
 
 def main():
