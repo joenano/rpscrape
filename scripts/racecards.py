@@ -252,8 +252,9 @@ def parse_going(going_info):
     rail_movements = ''
 
     if 'Rail movements' in going_info:
-        rail_movements = [x.strip() for x in going_info.split('Rail movements:')[1].strip().strip(')').split(',')]
-        going = going_info.split('(Rail movements:')[0].strip()
+        going_info = going_info.replace('movements:', 'movements')
+        rail_movements = [x.strip() for x in going_info.split('Rail movements')[1].strip().strip(')').split(',')]
+        going = going_info.split('(Rail movements')[0].strip()
 
     return going, rail_movements
 
