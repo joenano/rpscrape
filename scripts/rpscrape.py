@@ -853,9 +853,7 @@ def scrape_races(races, target, years, code):
             except IndexError:
                 if possy[0].strip() == 'VOI':
                     continue
-                print(race)
-                print('Failed to find number of runners.')
-                sys.exit()
+                ran = len(numbers)
 
             horse_nat = doc.xpath("//span[@class='rp-horseTable__horse__country']/text()")
             nats = []
