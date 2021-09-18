@@ -780,11 +780,17 @@ def scrape_races(races, target, years, code):
 
             prizes = doc.xpath("//div[@data-test-selector='text-prizeMoney']/text()")
             prize = [p.strip().replace(",", '').replace('£', '') for p in prizes]
+            
             try:
                 del prize[0]
                 [prize.append('') for i in range(len(pos) - len(prize))]
             except IndexError:
                 prize = ['' for i in range(len(pos))]
+
+            for i, p in enumerate(pos):
+                if p == 'DSQ':
+                    prize.insert(i, '')
+                    prize.pop()
 
             draw = clean(doc.xpath("//sup[@class='rp-horseTable__pos__draw']/text()"))
             draw = [d.strip("()") for d in draw]
@@ -967,7 +973,7 @@ def scrape_races(races, target, years, code):
                 tr = tr.replace("'", '')
                 com = com.replace('\n', '').strip()
 
-                if not p.isnumeric():
+                if not p.isnumeric() and p != 'DSQ':
                     time = '-'
                     sec = '-'
                     ovr_bt = '-'
