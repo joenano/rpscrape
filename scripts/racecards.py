@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 import json
 from lxml import html
 import os
-import re
 import requests
 import sys
 
@@ -132,10 +131,18 @@ def get_runners(profile_urls, race_id):
     docs = asyncio.run(get_documents(profile_urls))
 
     for doc in docs:
-        json_str = doc[1].xpath('//body/script')[0].text.split('window.PRELOADED_STATE =')[1].split('})()')[0].strip().strip(';')
-        js = json.loads(json_str)
-
         runner = {}
+        
+        try:
+            json_str = doc[1].xpath('//body/script')[0].text.split('window.PRELOADED_STATE =')[1].split('})()')[0].strip().strip(';')
+            js = json.loads(json_str)
+        except IndexError:
+            split = doc[0].split('/')
+            runner['horse_id'] = int(split[5])
+            runner['name'] = split[6].replace('-', ' ').title()
+            runner['broken_url'] = doc[0]
+            runners[runner['horse_id']] = runner
+            continue
 
         runner['horse_id'] = js['profile']['horseUid']
         runner['name'] = js['profile']['horseName']
@@ -320,6 +327,28 @@ def parse_races(session, race_docs, date):
         for horse in doc.xpath("//div[contains(@class, ' js-PC-runnerRow')]"):
             horse_id = int(find(horse, 'a', 'RC-cardPage-runnerName', attrib='href').split('/')[3])
 
+            if 'broken_url' in runners[horse_id]:
+                sire = find(horse, 'a', 'RC-pedigree__sire').split('(')
+                dam = find(horse, 'a', 'RC-pedigree__dam').split('(')
+                damsire = find(horse, 'a', 'RC-pedigree__damsire').lstrip('(').rstrip(')').split('(')
+                
+                runners[horse_id]['sire'] = sire[0].strip()
+                runners[horse_id]['dam'] = dam[0].strip()
+                runners[horse_id]['damsire'] = damsire[0].strip()
+                
+                runners[horse_id]['sire_region'] = sire[1].replace(')', '').strip()
+                runners[horse_id]['dam_region'] = dam[1].replace(')', '').strip()
+                runners[horse_id]['damsire_region'] = damsire[1].replace(')', '').strip()
+                
+                runners[horse_id]['age'] = find(horse, 'span', 'RC-cardPage-runnerAge', attrib='data-order-age')
+                
+                sex = find(horse, 'span', 'RC-pedigree__color-sex').split()
+                
+                runners[horse_id]['colour'] = sex[0]
+                runners[horse_id]['sex_code'] = sex[1].capitalize()
+                
+                runners[horse_id]['trainer'] = find(horse, 'a', 'RC-cardPage-runnerTrainer-name', attrib='data-order-trainer')
+            
             runners[horse_id]['number'] = int(find(horse, 'span', 'RC-cardPage-runnerNumber-no', attrib='data-order-no'))
             
             try:
