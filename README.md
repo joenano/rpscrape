@@ -23,10 +23,10 @@ The aim of this tool is to provide a way of gathering large amounts of historica
 
 You must have Python 3.7 or greater, and GIT installed. You can download the latest Python release [here](https://www.python.org/downloads/). You can download GIT [here](https://git-scm.com/downloads).
 
-In addition, the [Requests](http://docs.python-requests.org/en/master/), [GitPython](https://gitpython.readthedocs.io/en/stable/), [TOML](https://pypi.org/project/toml/), [AIOHTTP](https://docs.aiohttp.org/en/stable/) and [LXML](https://lxml.de/) python modules are needed, they can be installed using PIP(_included with Python_) with the following command.
+In addition, the [Requests](http://docs.python-requests.org/en/master/), [GitPython](https://gitpython.readthedocs.io/en/stable/), [tomli](https://pypi.org/project/tomli/), [orjson](https://pypi.org/project/orjson/1.3.0/), [AIOHTTP](https://docs.aiohttp.org/en/stable/) and [LXML](https://lxml.de/) python modules are needed, they can be installed using PIP(_included with Python_) with the following command.
 
 ```
-~$ pip3 install requests gitpython lxml toml aiohttp
+~$ pip3 install requests gitpython lxml tomli orjson aiohttp
 ```
 
 ## Install
