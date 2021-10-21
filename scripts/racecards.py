@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
-
 import asyncio
-from collections import defaultdict
-from datetime import datetime, timedelta
-import json
-from lxml import html
 import os
 import requests
 import sys
 
+from collections import defaultdict
+from datetime import datetime, timedelta
+from lxml import html
+from orjson import loads, dumps
+from re import search
+
 from utils.async_funcs import get_documents
 from utils.lxml_funcs import find
+from utils.region import get_region
 
 
 def distance_to_furlongs(distance):
@@ -35,7 +37,7 @@ def get_going_info(session, date):
 
     going_info = defaultdict(dict)
 
-    for course in json.loads(json_str):
+    for course in loads(json_str):
         going, rail_movements = parse_going(course['going'])
         course_id = int(course['raceCardsCourseMeetingsUrl'].split('/')[2])
         going_info[course_id]['course'] = course['courseName']
@@ -48,44 +50,17 @@ def get_going_info(session, date):
 
 
 def get_pattern(race_name):
-    if 'grade' in race_name:
-        if 'grade 1' in race_name:
-            return 'Grade 1'
-        elif 'grade 2' in race_name:
-            return 'Grade 2'
-        elif 'grade 3' in race_name:
-            return 'Grade 3'
-        elif 'grade a' in race_name:
-            return 'Grade A'
-        elif 'grade b' in race_name:
-            return 'Grade B'
-        elif 'grade c' in race_name:
-            return 'Grade C'
-        else:
-            return ''
-    elif 'group' in race_name:
-        if 'group 1' in race_name:
-            return 'Group 1'
-        elif 'group 2' in race_name:
-            return 'Group 2'
-        elif 'group 3' in race_name:
-            return 'Group 3'
-        else:
-            return ''
-    elif 'listed' in race_name:
+    regex_group = '(\(|\s)((G|g)rade|(G|g)roup) (\d|[A-Ca-c]|I*)(\)|\s)'
+    match = search(regex_group, race_name)
+
+    if match:
+        pattern = f'{match.groups()[1]} {match.groups()[4]}'.title()
+        return pattern.title()
+
+    if any(x in race_name.lower() for x in {'listed race', '(listed'}):
         return 'Listed'
-    else:
-        return ''
-
-
-def get_region(course_id):
-    courses = json.load(open('../courses/_courses', 'r'))
-    courses.pop('all')
-
-    for region, course in courses.items():
-        for id in course.keys():
-            if id == course_id:
-                return region.upper()
+    
+    return ''
 
 
 def get_race_urls(session, racecard_url):
@@ -113,7 +88,7 @@ def get_runners(profile_urls, race_id):
         
         try:
             json_str = doc[1].xpath('//body/script')[0].text.split('window.PRELOADED_STATE =')[1].split('})()')[0].strip().strip(';')
-            js = json.loads(json_str)
+            js = loads(json_str)
         except IndexError:
             split = doc[0].split('/')
             runner['horse_id'] = int(split[5])
@@ -413,7 +388,7 @@ def main():
         os.makedirs(f'../racecards')
 
     with open(f'../racecards/{date}.json', 'w') as f:
-        f.write(json.dumps(races))
+        f.write(dumps(races).decode('utf-8'))
 
 
 if __name__ == '__main__':

@@ -13,6 +13,7 @@ from utils.settings import Settings
 
 from utils.async_funcs import get_documents, get_jsons
 from utils.course import course_name, courses
+from utils.lxml_funcs import xpath
 
 
 settings = Settings()
@@ -51,7 +52,7 @@ def get_race_urls_date(dates, region):
     course_ids = {course[0] for course in courses(region)}
     
     for doc in docs:
-        race_links = doc[1].xpath('//a[@data-test-selector="link-listCourseNameLink"]')
+        race_links = xpath(doc[1], 'a', 'link-listCourseNameLink')
 
         for race in race_links:
             if race.attrib['href'].split('/')[2] in course_ids:
@@ -79,7 +80,6 @@ def scrape_races(races, folder_name, file_name, code):
             for row in race.csv_data:
                 csv.write(row + '\n')
                 
-
         print(f'Finished scraping.\n{file_name}.csv saved in rpscrape/data/{folder_name}/{code}')
 
 
