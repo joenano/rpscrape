@@ -10,6 +10,7 @@ from utils.argparser import ArgParser
 from utils.completer import Completer
 from utils.race import Race, VoidRaceError
 from utils.settings import Settings
+from utils.update import Update
 
 from utils.async_funcs import get_documents, get_jsons
 from utils.course import course_name, courses
@@ -17,6 +18,20 @@ from utils.lxml_funcs import xpath
 
 
 settings = Settings()
+
+
+def check_for_update():
+    update = Update()
+    
+    if update.available():
+        x = input('Update available. Do you want to update? Y/N ')
+
+        if x.lower() == 'y':
+            update.pull_latest()
+
+            if update.up_to_date():
+                print('Updated successfully.')
+                sys.exit()
 
 
 def get_race_urls(tracks, years, code):
@@ -81,28 +96,6 @@ def scrape_races(races, folder_name, file_name, code):
                 csv.write(row + '\n')
                 
         print(f'Finished scraping.\n{file_name}.csv saved in rpscrape/data/{folder_name}/{code}')
-
-
-def check_for_update():
-    try:
-        from git import Repo, cmd
-
-        if 'local out of date' in cmd.Git('..').execute(['git', 'remote', 'show', 'origin']).lower():
-            x = input('Update available. Do you want to update? Y/N ')
-
-            if x.lower() == 'y':
-                Repo('..').remote(name='origin').pull()
-
-                if 'up to date' in cmd.Git('..').execute(['git', 'remote', 'show', 'origin']).lower():
-                    print('Updated successfully.')
-                    sys.exit()
-                else:
-                    print('Failed to update.')
-                    sys.exit()
-    except ModuleNotFoundError:
-        print('gitpython module not found.\n\n'
-              'Install: "pip3 install gitpython" or disable auto update in settings.')
-        sys.exit()
 
 
 def main():
