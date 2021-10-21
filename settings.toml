@@ -81,4 +81,4 @@ auto_update = true      # Check for updates to remote repo and automatically pul
     owner = true        # Owner name
     silk_url = false    # Url of owners silks image
 
-    comment = true      # From in running comment
+    comment = true      # Form in running comments
