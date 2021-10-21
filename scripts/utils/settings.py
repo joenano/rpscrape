@@ -71,19 +71,22 @@ class Settings:
         self.toml = self.load_toml()
         self.fields = []
         self.get_fields()
-        self.field_str = ','.join([field for field in self.fields])
+        self.csv_header = ','.join([field for field in self.fields])
 
     def get_fields(self):
         for key in self.toml['fields']:
             for field, value in self.toml['fields'][key].items():
-                if value: self.fields.append(field)
+                if value:
+                    self.fields.append(field)
 
     def load_toml(self):
         try:
             return tomli.load(open('../settings.toml', 'r'))
         except tomli.TOMLDecodeError:
             print('Failed to load settings.toml')
-            choice = input('Do you want to continue with default settings? (Y/N):  ').lower().strip()
-            if choice != 'y':
+            choice = input('Do you want to continue with default settings? (Y/N):  ')
+            
+            if choice.lower().strip() != 'y':
                 return None
+            
             return default_settings

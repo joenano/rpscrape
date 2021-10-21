@@ -66,19 +66,19 @@ def scrape_races(races, folder_name, file_name, code):
 
     with open(f'../data/{folder_name}/{code}/{file_name}.csv', 'w', encoding='utf-8') as csv:
 
-        csv.write(settings.field_str + '\n')
+        csv.write(settings.csv_header + '\n')
 
         docs = asyncio.run(get_documents(races))
 
         for doc in docs:
             try:
                 race = Race(doc, code, settings.fields)
-            
-                for row in race.csv_data:
-                    csv.write(row + '\n')
-                
             except VoidRaceError:
                 continue
+            
+            for row in race.csv_data:
+                csv.write(row + '\n')
+                
 
         print(f'Finished scraping.\n{file_name}.csv saved in rpscrape/data/{folder_name}/{code}')
 
