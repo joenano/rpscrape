@@ -1,8 +1,8 @@
-from json import load
+from orjson import loads
 
 
 def courses(code='all'):
-    courses = load(open('../courses/_courses', 'r'))
+    courses = loads(open('../courses/_courses', 'r').read())
     
     for id, course in courses[code].items():
         yield id, course

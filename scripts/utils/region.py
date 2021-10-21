@@ -1,8 +1,8 @@
-from json import load
+from orjson import loads
 
 
 def get_region(course_id):
-    courses = load(open('../courses/_courses', 'r'))
+    courses = loads(open('../courses/_courses', 'r').read())
     courses.pop('all')
 
     for region, course in courses.items():
@@ -21,7 +21,7 @@ def print_regions():
         
 
 def regions():
-    return load(open('../courses/_regions', 'r'))
+    return loads(open('../courses/_regions', 'r').read())
 
 
 def region_search(term):
