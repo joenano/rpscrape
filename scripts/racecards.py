@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import aiohttp
 import asyncio
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -9,6 +8,9 @@ from lxml import html
 import os
 import requests
 import sys
+
+from utils.async_funcs import get_documents
+from utils.lxml_funcs import find
 
 
 def distance_to_furlongs(distance):
@@ -23,30 +25,6 @@ def distance_to_furlongs(distance):
         dist = dist.strip('f')
 
     return float(dist)
-
-
-def find(doc, tag, value, property='data-test-selector', **kwargs):
-    try:
-        element = doc.find(f'.//{tag}[@{property}="{value}"]')
-        if 'attrib' in kwargs:
-            return element.attrib[kwargs['attrib']]
-        return element.text_content().strip()
-    except AttributeError:
-        return None
-
-
-async def get_documents(urls):
-    session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=30))
-    session.headers.update({'User-Agent': 'Mozilla/5.0'})
-    ret = await asyncio.gather(*[get_document(url, session) for url in urls])
-    await session.close()
-    return ret
-
-
-async def get_document(url, session):
-    async with session.get(url) as response:
-        resp = await response.text()
-        return (url, html.fromstring(resp))
 
 
 def get_going_info(session, date):
@@ -408,7 +386,7 @@ def valid_course(course):
 
 
 def main():
-    if len(sys.argv) != 2 or sys.argv[1].lower() not in ['today', 'tomorrow']:
+    if len(sys.argv) != 2 or sys.argv[1].lower() not in {'today', 'tomorrow'}:
         return print('Usage: ./racecards.py [today|tomorrow]')
     
     if sys.version_info[0] == 3 and sys.version_info[1] >= 7 and sys.platform.startswith('win'):

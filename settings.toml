@@ -1,14 +1,84 @@
-auto_update = true # check git for latest version and automatically pull
+# Settings
 
-# [fields]
+# two options - true/false
 
-# [fields.id]
-#     rp_id_horse = false     # Racing Post Horse ID
-#     rp_id_jockey = false    # Racing Post Jockey ID
-#     rp_id_trainer = false   # Racing Post Trainer ID
-#     rp_id_dam = false       # Racing Post Dam ID
-#     rp_id_sire = false      # Racing Post Sire ID
+# You can order the fields as you like and that will be the order of
+# the columns in the CSV. Just make sure each field name is not changed.
 
+auto_update = true      # Check for updates to remote repo and automatically pull
 
-# [fields.ratings]
-#     top_speed = false
+[fields]
+
+[fields.race_info]
+    date = true         # Date of race
+    region = true       # Region of race
+    course_id = false   # RP Course ID
+    course = true       # Course name
+
+    race_id = false     # RP race ID
+    off = true          # Race off time
+    race_name = true    # Race name
+
+    type = true         # Type of racing (Flat/Hurdle/Chase etc)
+    class = true        # Race class
+    pattern = true      # Race Pattern (Group 1 etc)
+    
+    rating_band = true  # Rating restrictions
+    age_band = true     # Age restrictions
+    sex_rest = true     # Sex restrictions
+    
+    dist = true         # Distance in miles/furlongs/yards
+    dist_f = true       # Distance in furlongs
+    dist_m = true       # Distance in metres
+    dist_y = false      # Distance in yards
+    
+    going = true        # Going description
+    ran = true          # Number of runners in race
+
+[fields.runner_info]
+    num = true          # Racecard number
+    pos = true          # Finishing position
+    draw = true         # Stall number
+    
+    ovr_btn = true      # Total number of lengths beaten
+    btn = true          # Lengths behind nearest horse in front
+    
+    horse_id = false    # RP Horse ID
+    horse = true        # Name of horse
+    age = true          # Age of horse
+    sex = true          # Sex of horse
+    
+    wgt = false         # Weight in stones/pounds
+    lbs = true          # Weight in pounds
+    
+    hg = true           # Headgear
+    
+    time = true         # Time in minutes/seconds
+    secs = true         # Time in seconds
+    
+    sp = false          # fractional odds
+    dec = true          # decimal odds
+    
+    jockey_id = false   # RP Jockey ID
+    jockey = true       # Jockey name
+    trainer_id = false  # RP Trainer ID
+    trainer = true      # Trainer name
+    
+    prize = true        # Prizemoney
+    
+    or = true           # Official rating
+    rpr = true          # RP Rating
+    ts = false          # TS rating
+    
+    sire_id = false     # RP Sire ID
+    sire = true         # Sire name
+    dam_id = false      # RP Dam ID
+    dam = true          # Dam name
+    damsire_id = false  # RP Damsire ID
+    damsire = true      # Damsire name
+    
+    owner_id = false    # RP Owner ID
+    owner = true        # Owner name
+    silk_url = false    # Url of owners silks image
+
+    comment = true      # From in running comment

@@ -1,5 +1,6 @@
 aiohttp
 gitpython
 lxml
+orjson
 requests
-toml
+tomli
