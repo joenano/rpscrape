@@ -5,7 +5,7 @@ from pathlib import Path
 class Update:
     
     def __init__(self):
-        self.root_dir = Path.cwd().split('/utils')[0]
+        self.root_dir = Path.cwd().parent
     
     def available(self):
         if 'local out of date' in self.get_status().lower():
