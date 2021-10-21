@@ -1,11 +1,11 @@
 import tomli
 
 default_settings = {
-	'auto_update': True,
+    'auto_update': True,
 
-	'fields': {
-		'race_info': {
-			'date': True,
+    'fields': {
+        'race_info': {
+            'date': True,
             'region': True,
             'course_id': False,
             'course': True,
@@ -24,8 +24,8 @@ default_settings = {
             'dist_y': False,
             'going': True,
             'ran': True
- 		},
- 		'runner_info': {
+         },
+         'runner_info': {
             'num': True,
             'pos': True,
             'draw': True,
@@ -60,8 +60,8 @@ default_settings = {
             'owner': True,
             'silk_url': False,
             'comment': True
- 		}
-	}
+         }
+    }
 }
 
 
