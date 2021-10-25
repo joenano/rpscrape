@@ -24,14 +24,17 @@ def check_for_update():
     update = Update()
     
     if update.available():
-        x = input('Update available. Do you want to update? Y/N ')
+        choice = input('Update available. Do you want to update? Y/N ')
 
-        if x.lower() == 'y':
+        if choice.lower() == 'y':
             update.pull_latest()
 
             if update.up_to_date():
                 print('Updated successfully.')
-                sys.exit()
+            else:
+                print('Failed to update.')
+            
+            sys.exit()
 
 
 def get_race_urls(tracks, years, code):
@@ -99,7 +102,7 @@ def scrape_races(races, folder_name, file_name, code):
 
 
 def main():
-    if not settings:
+    if settings.toml is None:
         sys.exit()
     
     if settings.toml['auto_update']:
