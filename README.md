@@ -174,7 +174,7 @@ To scrape a particular course or region, use the -c or -r flags with the course 
 You can scrape racecards for today or tomorrow, using racecards.py which saves a file containing a json object of racecard information.
 
 ### Examples
-There are only two parameter options, either 'today' or 'tomorrow'.
+There are only two parameter options, either `today` or `tomorrow`.
 
 ```
 ./racecards.py today
