@@ -4,5 +4,5 @@ racecards/
 .vscode/
 __*/
 
-settings.toml
+settings/user_settings.toml
 
