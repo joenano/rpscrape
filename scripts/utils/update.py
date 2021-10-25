@@ -19,8 +19,8 @@ class Update:
 
     def pull_latest(self):
         commands = (
-            ['git', 'fetch']
-            ['git', 'reset', '--hard', 'HEAD']
+            ['git', 'fetch'],
+            ['git', 'reset', '--hard', 'HEAD'],
             ['git', 'merge', 'origin/master']
         )
         for command in commands:
