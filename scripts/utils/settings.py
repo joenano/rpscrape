@@ -1,92 +1,51 @@
+import os.path
 import tomli
-
-default_settings = {
-    'auto_update': True,
-
-    'fields': {
-        'race_info': {
-            'date': True,
-            'region': True,
-            'course_id': False,
-            'course': True,
-            'race_id': False,
-            'off': True,
-            'race_name': True,
-            'type': True,
-            'class': True,
-            'pattern': True,
-            'rating_band': True,
-            'age_band': True,
-            'sex_rest': True,
-            'dist': True,
-            'dist_f': True,
-            'dist_m': True,
-            'dist_y': False,
-            'going': True,
-            'ran': True
-         },
-         'runner_info': {
-            'num': True,
-            'pos': True,
-            'draw': True,
-            'ovr_btn': True,
-            'btn': True,
-            'horse_id': False,
-            'horse': True,
-            'age': True,
-            'sex': True,
-            'wgt': False,
-            'lbs': True,
-            'hg': True,
-            'time': True,
-            'secs': True,
-            'sp': False,
-            'dec': True,
-            'jockey_id': False,
-            'jockey': True,
-            'trainer_id': False,
-            'trainer': True,
-            'prize': True,
-            'or': True,
-            'rpr': True,
-            'ts': False,
-            'sire_id': False,
-            'sire': True,
-            'dam_id': False,
-            'dam': True,
-            'damsire_id': False,
-            'damsire': True,
-            'owner_id': False,
-            'owner': True,
-            'silk_url': False,
-            'comment': True
-         }
-    }
-}
-
 
 class Settings:
 
     def __init__(self):
         self.toml = self.load_toml()
-        self.fields = []
-        self.get_fields()
+        if self.toml is None: return
+        
+        self.fields = self.get_fields()
         self.csv_header = ','.join([field for field in self.fields])
+        
+    def get_choice(self):
+        choice = input('Do you want to continue with default settings? (y/n):  ')
+        return choice.lower().strip() == 'y'
 
     def get_fields(self):
+        fields = []
         for key in self.toml['fields']:
             for field, value in self.toml['fields'][key].items():
-                if value:
-                    self.fields.append(field)
-
+                if value: fields.append(field)
+        return fields
+    
     def load_toml(self):
-        try:
-            return tomli.load(open('../settings.toml', 'r'))
-        except tomli.TOMLDecodeError:
-            print('Failed to load settings.toml')
-            choice = input('Do you want to continue with default settings? (Y/N):  ')
-            
-            if choice.lower().strip() != 'y':
+        path_default_settings = '../settings/default_settings.toml'
+        path_user_settings = '../settings/user_settings.toml'
+        
+        settings_file = self.open_file(path_user_settings)
+        if settings_file is None:
+            if not self.get_choice():
                 return None
             
-            return default_settings
+            settings_file = self.open_file(path_default_settings)
+            if settings_file is None:
+                return None
+            
+        toml = self.parse_toml(settings_file)
+        return None if toml is None else toml
+            
+    def open_file(self, file_path):
+        if os.path.isfile(file_path):
+            return open(file_path, 'r')
+        print('OpenFileError: ', file_path)
+        return None
+    
+    def parse_toml(self, settings_file):
+        try:
+            return tomli.load(settings_file)
+        except tomli.TOMLDecodeError:
+            print('TomlParseError: ', settings_file.name)
+            return None
