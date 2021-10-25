@@ -24,7 +24,7 @@ class Update:
             ['git', 'merge', 'origin/master']
         )
         for command in commands:
-            subprocess.run(command, cwd=self.root_dir, stdout=subprocess.DEVNULL)
+            result = subprocess.run(command, cwd=self.root_dir, capture_output=True)
 
     def up_to_date(self):
         if 'up-to-date' in self.get_status():
