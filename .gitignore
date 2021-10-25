@@ -3,3 +3,6 @@ racecards/
 .idea/
 .vscode/
 __*/
+
+settings.toml
+
