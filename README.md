@@ -189,7 +189,7 @@ You can see the outer structure of the json and some of the race information bel
 
 ### Settings
 
-The [user_settings.toml](https://github.com/4A47/rpscrape/blob/master/user_settings.toml) file contains all possible data fields that can be scraped. You can turn fields on and off by setting them true or false. The order of fields in that file will be the maintained in the output csv. The [default_settings.toml](https://github.com/4A47/rpscrape/blob/master/default_settings.toml) file should not be edited, its there as a backup and to introduce any new fields without changing user settings.
+The [user_settings.toml](https://github.com/4A47/rpscrape/blob/master/user_settings.toml) file contains the data fields that can be scraped. You can turn fields on and off by setting them true or false. The order of fields in that file will be the maintained in the output csv. The [default_settings.toml](https://github.com/4A47/rpscrape/blob/master/default_settings.toml) file should not be edited, its there as a backup and to introduce any new fields without changing user settings.
 
 ![settings](https://i.postimg.cc/sDhG3SQT/settings.png)
 
