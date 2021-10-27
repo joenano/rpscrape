@@ -1,9 +1,7 @@
-# Settings
+# Default settings
 
-# two options - true/false
-
-# You can order the fields as you like and that will be the order of
-# the columns in the CSV. Just make sure each field name is not changed.
+# This file should not be modified as it will be overwritten on update
+# Intended as a backup only, use user_settings.toml 
 
 auto_update = true      # Check for updates to remote repo and automatically pull
 
