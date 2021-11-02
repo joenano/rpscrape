@@ -5,9 +5,10 @@ from lxml import html
 
 
 async def get_document(url, session):
-    async with session.get(url) as response:
+    async with session.get(url, allow_redirects=False) as response:
         resp = await response.text()
-        return (url, html.fromstring(resp))
+        doc = html.fromstring(resp) if resp else None
+        return (url, doc)
 
 
 async def get_documents(urls):

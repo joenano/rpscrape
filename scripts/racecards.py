@@ -227,13 +227,16 @@ def parse_races(session, race_docs, date):
     for race_doc in race_docs:
         url_split = race_doc[0].split('/')
         doc = race_doc[1]
-
+        if doc is None: continue
+        
         race = {}
 
         race['race_id'] = int(url_split[7])
         race['date'] = url_split[6]
         race['course_id'] = int(url_split[4])
         race['course'] = find(doc, 'h1', 'RC-courseHeader__name')
+        if not race['course']:
+            race['course'] = doc.xpath("//a[contains(@class, 'rp-raceTimeCourseName__name')]")[0].text.split('(')[0].strip()
         race['off_time'] = find(doc, 'span', 'RC-courseHeader__time')
         race['race_name'] = find(doc, 'span', 'RC-header__raceInstanceTitle')
         race['distance_round'] = find(doc, 'strong', 'RC-header__raceDistanceRound')
@@ -256,7 +259,10 @@ def parse_races(session, race_docs, date):
         prize = find(doc, 'div', 'RC-headerBox__winner').lower()
         race['prize'] = prize.split('winner:')[1].strip() if 'winner:' in prize else None
         field_size = find(doc, 'div', 'RC-headerBox__runners').lower()
-        race['field_size'] = int(field_size.split('runners:')[1].split('(')[0].strip())
+        if field_size:
+            race['field_size'] = int(field_size.split('runners:')[1].split('(')[0].strip())
+        else:
+            race['field_size'] = ''
 
         try:
             race['going_detailed'] = going_info[race['course_id']]['going']
