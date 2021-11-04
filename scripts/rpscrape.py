@@ -25,16 +25,14 @@ def check_for_update():
     
     if update.available():
         choice = input('Update available. Do you want to update? Y/N ')
-
-        if choice.lower() == 'y':
-            update.pull_latest()
-
-            if update.up_to_date():
-                print('Updated successfully.')
-            else:
-                print('Failed to update.')
-            
-            sys.exit()
+        if choice.lower() != 'y': return
+        
+        if update.pull_latest():
+            print('Updated successfully.')
+        else:
+            print('Failed to update.')
+        
+        sys.exit()
 
 
 def get_race_urls(tracks, years, code):
@@ -80,11 +78,12 @@ def get_race_urls_date(dates, region):
 
 
 def scrape_races(races, folder_name, file_name, code):
-    if not os.path.exists(f'../data/{folder_name}/{code}'):
-        os.makedirs(f'../data/{folder_name}/{code}')
+    out_dir = f'../data/{folder_name}/{code}'
+    
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
 
-    with open(f'../data/{folder_name}/{code}/{file_name}.csv', 'w', encoding='utf-8') as csv:
-
+    with open(f'{out_dir}/{file_name}.csv', 'w', encoding='utf-8') as csv:
         csv.write(settings.csv_header + '\n')
 
         docs = asyncio.run(get_documents(races))
@@ -98,7 +97,7 @@ def scrape_races(races, folder_name, file_name, code):
             for row in race.csv_data:
                 csv.write(row + '\n')
                 
-        print(f'Finished scraping.\n{file_name}.csv saved in rpscrape/data/{folder_name}/{code}')
+        print(f'Finished scraping.\n{file_name}.csv saved in rpscrape/{out_dir.lstrip("../")}')
 
 
 def main():

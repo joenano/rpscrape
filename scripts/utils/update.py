@@ -25,7 +25,4 @@ class Update:
         )
         for command in commands:
             result = subprocess.run(command, cwd=self.root_dir, capture_output=True)
-
-    def up_to_date(self):
-        if 'up-to-date' in self.get_status():
-            return True
+        return 'up-to-date' in self.get_status()
