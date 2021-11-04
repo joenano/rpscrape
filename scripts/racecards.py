@@ -225,18 +225,17 @@ def parse_races(session, race_docs, date):
     going_info = get_going_info(session, date)
 
     for race_doc in race_docs:
-        url_split = race_doc[0].split('/')
-        doc = race_doc[1]
+        url, doc = race_doc
         if doc is None: continue
         
         race = {}
 
+        url_split = url.split('/')
+        
         race['race_id'] = int(url_split[7])
         race['date'] = url_split[6]
         race['course_id'] = int(url_split[4])
         race['course'] = find(doc, 'h1', 'RC-courseHeader__name')
-        if not race['course']:
-            race['course'] = doc.xpath("//a[contains(@class, 'rp-raceTimeCourseName__name')]")[0].text.split('(')[0].strip()
         race['off_time'] = find(doc, 'span', 'RC-courseHeader__time')
         race['race_name'] = find(doc, 'span', 'RC-header__raceInstanceTitle')
         race['distance_round'] = find(doc, 'strong', 'RC-header__raceDistanceRound')
@@ -250,8 +249,12 @@ def parse_races(session, race_docs, date):
         
         try:
             band = find(doc, 'span', 'RC-header__rpAges').strip('()').split()
-            race['age_band'] = band[0]
-            race['rating_band'] = band[1] if len(band) > 1 else None
+            if band:
+                race['age_band'] = band[0]
+                race['rating_band'] = band[1] if len(band) > 1 else None
+            else:
+                race['age_band'] = None
+                race['rating_band'] = None
         except AttributeError:
             race['age_band'] = None
             race['rating_band'] = None
