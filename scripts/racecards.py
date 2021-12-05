@@ -396,7 +396,7 @@ def main():
     if not os.path.exists('../racecards'):
         os.makedirs(f'../racecards')
 
-    with open(f'../racecards/{date}.json', 'w') as f:
+    with open(f'../racecards/{date}.json', 'w', encoding='utf-8') as f:
         f.write(dumps(races).decode('utf-8'))
 
 

@@ -472,8 +472,12 @@ class Race:
         del positions[1::2]
         positions = [pos.strip() for pos in positions]
         
-        if positions[0] == 'VOI':
-            raise VoidRaceError
+        try:        
+            if positions[0] == 'VOI':
+                raise VoidRaceError
+        except:
+            print(self.url)
+            sys.exit()
 
         return positions
     
