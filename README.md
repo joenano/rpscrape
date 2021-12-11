@@ -213,6 +213,3 @@ q, quit, exit       Quit
 ```
 
 Tab complete for option keywords is available on Linux.
-
-
-[![Stargazers over time](https://starchart.cc/joenano/rpscrape.svg)](https://starchart.cc/joenano/rpscrape)
