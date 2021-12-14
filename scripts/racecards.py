@@ -63,6 +63,31 @@ def get_pattern(race_name):
     return ''
 
 
+def get_race_type(doc, race, distance):
+        race_type = ''
+        fences = find(doc, 'div', 'RC-headerBox__stalls')
+
+        if 'hurdle' in fences.lower():
+            race_type = 'Hurdle'
+        elif 'fence' in fences.lower():
+            race_type = 'Chase'
+        else:
+            if distance >= 12:
+                if any(x in race for x in {'national hunt flat', 'nh flat race', 'mares flat race'}):
+                    race_type = 'NH Flat'
+                if any(x in race for x in {'inh bumper', ' sales bumper', 'kepak flat race', 'i.n.h. flat race'}):
+                    race_type = 'NH Flat'
+                if any(x in race for x in {' hurdle', '(hurdle)'}):
+                    race_type = 'Hurdle'
+                if any(x in race for x in {' chase', '(chase)', 'steeplechase', 'steeple-chase', 'steeplchase', 'steepl-chase'}):
+                    race_type = 'Chase'
+
+        if race_type == '':
+            race_type = 'Flat'
+
+        return race_type
+
+
 def get_race_urls(session, racecard_url):
     r = session.get(racecard_url)
     doc = html.fromstring(r.content)
@@ -246,6 +271,7 @@ def parse_races(session, race_docs, date):
         race['race_class'] = find(doc, 'span', 'RC-header__raceClass')
         race['race_class'] = race['race_class'].strip('()') if race['race_class'] else None
         race['pattern'] = get_pattern(race['race_name'].lower())
+        race['type'] = get_race_type(doc, race['race_name'].lower(), race['distance_f'])
         
         try:
             band = find(doc, 'span', 'RC-header__rpAges').strip('()').split()
