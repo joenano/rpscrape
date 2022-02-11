@@ -39,7 +39,7 @@ class Settings:
             
     def open_file(self, file_path):
         if os.path.isfile(file_path):
-            return open(file_path, 'r')
+            return open(file_path, 'rb')
         print('OpenFileError: ', file_path)
         return None
     
