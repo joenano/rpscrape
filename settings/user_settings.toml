@@ -6,6 +6,7 @@
 # the columns in the CSV. Just make sure each field name is not changed.
 
 auto_update = true      # Check for updates to remote repo and automatically pull
+gzip_output = false     # If false save uncompressed .csv files, if true save compressed .csv.gz files
 
 [fields]
 
