@@ -9,10 +9,6 @@ class Settings:
         
         self.fields = self.get_fields()
         self.csv_header = ','.join([field for field in self.fields])
-        
-    def get_choice(self):
-        choice = input('Do you want to continue with default settings? (y/n):  ')
-        return choice.lower().strip() == 'y'
 
     def get_fields(self):
         fields = []
@@ -27,11 +23,11 @@ class Settings:
         
         settings_file = self.open_file(path_user_settings)
         if settings_file is None:
-            if not self.get_choice():
-                return None
-            
+            print(f'{path_user_settings} does not exist, using {path_default_settings}')
+
             settings_file = self.open_file(path_default_settings)
             if settings_file is None:
+                raise Exception(f'{path_default_settings} does not exist')
                 return None
             
         toml = self.parse_toml(settings_file)
@@ -40,7 +36,6 @@ class Settings:
     def open_file(self, file_path):
         if os.path.isfile(file_path):
             return open(file_path, 'rb')
-        print('OpenFileError: ', file_path)
         return None
     
     def parse_toml(self, settings_file):
