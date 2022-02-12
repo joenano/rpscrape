@@ -32,6 +32,5 @@ async def get_json(course, session):
 
 
 def get_session():
-    session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=50))
-    session.headers.update({'User-Agent': 'Mozilla/5.0'})
+    session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=50), headers={'User-Agent': 'Mozilla/5.0'})
     return session
