@@ -4,5 +4,6 @@ racecards/
 .vscode/
 __*/
 
+.DS_Store
 settings/user_settings.toml
 
