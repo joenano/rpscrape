@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import asyncio
+import gzip
 import os
 import sys
 
@@ -76,14 +77,21 @@ def get_race_urls_date(dates, region):
 
     return sorted(list(urls))
 
+def csv_writer(file_path):
+    return open(file_path, 'w', encoding='utf-8')
 
-def scrape_races(races, folder_name, file_name, code):
+def gzip_writer(file_path):
+    return gzip.open(file_path, 'wt', encoding='utf-8')
+
+def scrape_races(races, folder_name, file_name, file_extension, code, file_writer):
     out_dir = f'../data/{folder_name}/{code}'
     
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    with open(f'{out_dir}/{file_name}.csv', 'w', encoding='utf-8') as csv:
+    file_path = f'{out_dir}/{file_name}.{file_extension}'
+
+    with file_writer(file_path) as csv:
         csv.write(settings.csv_header + '\n')
 
         docs = asyncio.run(get_documents(races))
@@ -97,7 +105,7 @@ def scrape_races(races, folder_name, file_name, code):
             for row in race.csv_data:
                 csv.write(row + '\n')
                 
-        print(f'Finished scraping.\n{file_name}.csv saved in rpscrape/{out_dir.lstrip("../")}')
+        print(f'Finished scraping.\n{file_name}.{file_extension} saved in rpscrape/{out_dir.lstrip("../")}')
 
 
 def main():
@@ -106,7 +114,14 @@ def main():
     
     if settings.toml['auto_update']:
         check_for_update()
-    
+
+    file_extension = 'csv'
+    file_writer = csv_writer
+
+    if settings.toml.get('gzip_output', False):
+        file_extension = 'csv.gz'
+        file_writer = gzip_writer
+
     if sys.version_info[0] == 3 and sys.version_info[1] >= 7 and sys.platform.startswith('win'):
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     
@@ -124,7 +139,7 @@ def main():
             file_name = args.year
             races = get_race_urls(parser.tracks, parser.years, args.type)
 
-        scrape_races(races, folder_name, file_name, args.type)
+        scrape_races(races, folder_name, file_name, file_extension, args.type, file_writer)
     else:
         if sys.platform == 'linux':
             import readline
@@ -142,7 +157,7 @@ def main():
                 else:
                     races = get_race_urls(args['tracks'], args['years'], args['type'])
                     
-                scrape_races(races, args['folder_name'], args['file_name'], args['type'])
+                scrape_races(races, args['folder_name'], args['file_name'], file_extension, args['type'], file_writer)
 
 
 if __name__ == '__main__':
