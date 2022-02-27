@@ -122,7 +122,7 @@ def main():
         file_extension = 'csv.gz'
         file_writer = gzip_writer
 
-    if sys.version_info[0] == 3 and sys.version_info[1] >= 7 and sys.platform.startswith('win'):
+    if sys.version_info.major == 3 and sys.version_info.minor >= 7 and sys.platform.startswith('win'):
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     
     parser = ArgParser()
