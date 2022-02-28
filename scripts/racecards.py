@@ -17,7 +17,7 @@ random_header = RandomHeader()
 
 
 def clean_name(name):
-        return name.strip().replace("'", '').lower().title()
+    return name.strip().replace("'", '').lower().title()
 
 
 def distance_to_furlongs(distance):
@@ -254,7 +254,7 @@ def parse_races(session, race_urls, date):
     races = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 
     going_info = get_going_info(session, date)
-    
+
     for url in race_urls:
         r = session.get(url, headers=random_header.header())
         doc = html.fromstring(r.content)
@@ -278,7 +278,7 @@ def parse_races(session, race_urls, date):
         race['race_class'] = find(doc, 'span', 'RC-header__raceClass')
         race['race_class'] = race['race_class'].strip('()') if race['race_class'] else ''
         race['type'] = get_race_type(doc, race['race_name'].lower(), race['distance_f'])
-        
+
         if not race['race_class']:
             if race['pattern']:
                 race['race_class'] = 'Class 1'
@@ -418,7 +418,6 @@ def main():
         date = (datetime.today() + timedelta(days=1)).strftime('%Y-%m-%d')
 
     session = requests.Session()
-    session.headers.update({'User-Agent': 'Mozilla/5.0'})
 
     race_urls = get_race_urls(session, racecard_url)
     races = parse_races(session, race_urls, date)
