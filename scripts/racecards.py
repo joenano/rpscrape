@@ -9,9 +9,11 @@ from lxml import html
 from orjson import loads, dumps
 from re import search
 
+from utils.going import get_surface
 from utils.header import RandomHeader
 from utils.lxml_funcs import find
 from utils.region import get_region
+
 
 random_header = RandomHeader()
 
@@ -316,6 +318,8 @@ def parse_races(session, race_urls, date):
 
         going = find(doc, 'div', 'RC-headerBox__going').lower()
         race['going'] = going.split('going:')[1].strip().title() if 'going:' in going else ''
+        
+        race['surface'] = get_surface(race['going'])
 
         profile_hrefs = doc.xpath("//a[@data-test-selector='RC-cardPage-runnerName']/@href")
         profile_urls = ['https://www.racingpost.com' + a.split('#')[0] + '/form' for a in profile_hrefs]

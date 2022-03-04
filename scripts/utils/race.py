@@ -5,6 +5,7 @@ from re import search, sub
 from utils.pedigree import Pedigree
 
 from utils.date import convert_date
+from utils.going import get_surface
 from utils.lxml_funcs import find, xpath
 from utils.region import get_region
 
@@ -35,6 +36,7 @@ class Race:
         self.race_info['race_id'] = url_split[7]
 
         self.race_info['going'] = find(self.doc, 'span', 'rp-raceTimeCourseName_condition', property='class')
+        self.race_info['surface'] = get_surface(self.race_info['going'])
         self.race_info['off'] = find(self.doc, 'span', 'text-raceTime')
         self.race_info['race_name'] = find(self.doc, 'h2', 'rp-raceTimeCourseName__title', property='class')
         self.race_info['class'] = find(self.doc, 'span', 'rp-raceTimeCourseName_class', property='class').strip('()')
