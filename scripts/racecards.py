@@ -19,7 +19,10 @@ random_header = RandomHeader()
 
 
 def clean_name(name):
-    return name.strip().replace("'", '').lower().title()
+    if name:
+        return name.strip().replace("'", '').lower().title()
+    else:
+        return ''
 
 
 def distance_to_furlongs(distance):
