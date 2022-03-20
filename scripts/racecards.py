@@ -321,7 +321,7 @@ def parse_races(session, race_urls, date):
 
         going = find(doc, 'div', 'RC-headerBox__going').lower()
         race['going'] = going.split('going:')[1].strip().title() if 'going:' in going else ''
-        
+
         race['surface'] = get_surface(race['going'])
 
         profile_hrefs = doc.xpath("//a[@data-test-selector='RC-cardPage-runnerName']/@href")
@@ -364,7 +364,10 @@ def parse_races(session, race_urls, date):
             runners[horse_id]['headgear'] = find(horse, 'span', 'RC-cardPage-runnerHeadGear')
             runners[horse_id]['headgear_first'] = find(horse, 'span', 'RC-cardPage-runnerHeadGear-first')
 
-            runners[horse_id]['lbs'] = int(find(horse, 'span', 'RC-cardPage-runnerWgt-carried', attrib='data-order-wgt'))
+            try:
+                runners[horse_id]['lbs'] = int(find(horse, 'span', 'RC-cardPage-runnerWgt-carried', attrib='data-order-wgt'))
+            except ValueError:
+                runners[horse_id]['lbs'] = None
 
             try:
                 runners[horse_id]['ofr'] = int(find(horse, 'span', 'RC-cardPage-runnerOr', attrib='data-order-or'))
