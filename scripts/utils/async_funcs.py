@@ -8,7 +8,7 @@ async def get_document(url, session):
     async with session.get(url, allow_redirects=False) as response:
         resp = await response.text()
         doc = html.fromstring(resp) if resp else None
-        return (url, doc)
+        return url, doc
 
 
 async def get_documents(urls):
@@ -28,7 +28,7 @@ async def get_jsons(courses):
 async def get_json(course, session):
     async with session.get(course[1]) as response:
         resp = await response.text()
-        return (course[0], resp)
+        return course[0], resp
 
 
 def get_session():

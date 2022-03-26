@@ -20,9 +20,9 @@ class VoidRaceError(Exception):
 
 class Race:
 
-    def __init__(self, document, code, fields):
-        self.url = document[0]
-        self.doc = document[1]
+    def __init__(self, url, document, code, fields):
+        self.url = url
+        self.doc = document
         self.race_info = {}
         self.runner_info = {}
 
