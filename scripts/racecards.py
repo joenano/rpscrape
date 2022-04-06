@@ -123,13 +123,13 @@ def get_runners(session, profile_urls):
         runner = {}
 
         try:
-            json_str = doc[1].xpath('//body/script')[0].text.split('window.PRELOADED_STATE =')[1].split('})()')[0].strip().strip(';')
+            json_str = doc.xpath('//body/script')[0].text.split('window.PRELOADED_STATE =')[1].split('})()')[0].strip().strip(';')
             js = loads(json_str)
         except IndexError:
-            split = doc[0].split('/')
+            split = url.split('/')
             runner['horse_id'] = int(split[5])
             runner['name'] = split[6].replace('-', ' ').title()
-            runner['broken_url'] = doc[0]
+            runner['broken_url'] = url
             runners[runner['horse_id']] = runner
             continue
 
