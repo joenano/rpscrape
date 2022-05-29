@@ -123,7 +123,7 @@ def get_runners(session, profile_urls):
         runner = {}
 
         try:
-            json_str = doc.xpath('//body/script')[0].text.split('window.PRELOADED_STATE =')[1].split('})()')[0].strip().strip(';')
+            json_str = doc.xpath('//body/script')[0].text.split('window.PRELOADED_STATE =')[1].split('\n')[0].strip().strip(';')
             js = loads(json_str)
         except IndexError:
             split = url.split('/')
