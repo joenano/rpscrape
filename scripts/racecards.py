@@ -49,8 +49,18 @@ def get_going_info(session, date):
 
     for course in loads(json_str):
         going, rail_movements = parse_going(course['going'])
-        course_id = int(course['raceCardsCourseMeetingsUrl'].split('/')[2])
-        going_info[course_id]['course'] = course['courseName']
+
+        course_id = 0
+        course_name = ''
+
+        if course['courseName'] == 'Belmont At The Big A':
+            course_id = 255
+            course_name = 'Aqueduct'
+        else:
+            course_id = int(course['raceCardsCourseMeetingsUrl'].split('/')[2])
+            course_name = course['courseName']
+
+        going_info[course_id]['course'] = course_name
         going_info[course_id]['going'] = going
         going_info[course_id]['stalls'] = course['stallsPosition']
         going_info[course_id]['rail_movements'] = rail_movements
@@ -268,10 +278,16 @@ def parse_races(session, race_urls, date):
 
         url_split = url.split('/')
 
+        race['course'] = find(doc, 'h1', 'RC-courseHeader__name')
+
+        if race['course'] == 'Belmont At The Big A':
+            race['course_id'] = 255
+            race['course'] = 'Aqueduct'
+        else:
+            race['course_id'] = int(url_split[4])
+
         race['race_id'] = int(url_split[7])
         race['date'] = url_split[6]
-        race['course_id'] = int(url_split[4])
-        race['course'] = find(doc, 'h1', 'RC-courseHeader__name')
         race['off_time'] = find(doc, 'span', 'RC-courseHeader__time')
         race['race_name'] = find(doc, 'span', 'RC-header__raceInstanceTitle')
         race['distance_round'] = find(doc, 'strong', 'RC-header__raceDistanceRound')

@@ -6,8 +6,8 @@ def get_region(course_id):
     courses.pop('all')
 
     for region, course in courses.items():
-        for id in course.keys():
-            if id == course_id:
+        for _id in course.keys():
+            if _id == course_id:
                 return region.upper()
 
 
@@ -18,7 +18,7 @@ def print_region(code, region):
 def print_regions():
     for code, region in regions().items():
         print_region(code, region)
-        
+
 
 def regions():
     return loads(open('../courses/_regions', 'r').read())

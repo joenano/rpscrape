@@ -28,13 +28,18 @@ class Race:
 
         url_split = self.url.split('/')
 
+        self.race_info['course'] = self.get_course(url_split[5])
+
+        if self.race_info['course'] == 'Belmont At The Big A':
+            self.race_info['course_id']  = '255'
+            self.race_info['course']  = 'Aqueduct'
+        else:
+            self.race_info['course_id'] = url_split[4]
+
         self.race_info['code'] = code
         self.race_info['date'] = convert_date(url_split[6])
-        self.race_info['course'] = self.get_course(url_split[5])
-        self.race_info['course_id'] = url_split[4]
-        self.race_info['region'] = get_region(url_split[4])
+        self.race_info['region'] = get_region(self.race_info['course_id'])
         self.race_info['race_id'] = url_split[7]
-
         self.race_info['going'] = find(self.doc, 'span', 'rp-raceTimeCourseName_condition', property='class')
         self.race_info['surface'] = get_surface(self.race_info['going'])
         self.race_info['off'] = find(self.doc, 'span', 'text-raceTime')
