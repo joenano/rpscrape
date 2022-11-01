@@ -113,6 +113,13 @@ def scrape_races(races, folder_name, file_name, file_extension, code, file_write
             except VoidRaceError:
                 continue
 
+            if code == 'flat':
+                if race.race_info['type'] != 'Flat':
+                    continue
+            elif code == 'jumps':
+                if race.race_info['type'] not in {'Chase', 'Hurdle', 'NH Flat'}:
+                    continue
+
             for row in race.csv_data:
                 csv.write(row + '\n')
 

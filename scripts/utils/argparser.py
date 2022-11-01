@@ -49,7 +49,6 @@ ERROR = {
     'incompatible': 'Arguments incompatible.\n',
     'incompatible_course': 'Choose course or region, not both.',
     'invalid_c_or_r': 'Invalid course or region',
-    'invalid_code': 'Invalid racing code. -f, flat or -j, jumps.',
     'invalid_course': 'Invalid Course code.\n\nExamples:\n\t\t-c 20\n\t\t-c 1083',
     'invalid_date': 'Invalid date. Format:\n\t\t-d YYYY/MM/DD\n\nExamples:\n\t\t-d 2020/01/19\n\t\t2020/01/19-2020/01/29',
     'invalid_region': 'Invalid Region code. \n\nExamples:\n\t\t-r gb\n\t\t-r ire',
@@ -80,7 +79,7 @@ class ArgParser:
         args = self.parser.parse_args(args=arg_list)
 
         if args.date:
-            if any([args.course, args.year, args.type]):
+            if any([args.course, args.year]):
                 self.parser.error(ERROR['incompatible'])
 
             if not check_date(args.date):
@@ -144,7 +143,7 @@ class ArgParser:
             parsed['type'] = self.get_racing_type(args[2])
 
             if not parsed['type']:
-                print(ERROR['invalid_code'])
+                print(ERROR['invalid_type'])
 
             elif valid_region(args[0]):
                 region = args[0]
@@ -169,6 +168,7 @@ class ArgParser:
             return 'jumps'
         if code in {'f', '-f', 'flat'}:
             return 'flat'
+        return ''
 
     def opts(self, option):
         if option == 'help':
@@ -189,17 +189,20 @@ class ArgParser:
 
         if check_date(args[1]):
             parsed['dates'] = get_dates(args[1])
-            parsed['folder_name'] = 'dates/all'
+            parsed['folder_name'] = 'dates/'
             parsed['file_name'] = args[1].replace('/', '_')
-            parsed['type'] = 'all'
+            parsed['type'] = ''
 
             if len(args) > 2:
                 if valid_region(args[2]):
                     parsed['region'] = args[2]
-                    parsed['folder_name'] = f'dates/{args[2]}'
+                    parsed['folder_name'] += args[2]
                 else:
                     print(ERROR['invalid_region_int'])
                     return {}
+
+            if len(args) > 3:
+                parsed['type'] = self.get_racing_type(args[3])
         else:
             print(ERROR['invalid_date'])
 
