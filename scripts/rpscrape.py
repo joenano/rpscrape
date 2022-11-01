@@ -38,9 +38,7 @@ def check_for_update():
         choice = input('Update available. Do you want to update? Y/N ')
         if choice.lower() != 'y': return
 
-        update.pull_latest()
-
-        if 'up-to-date' in update.get_status():
+        if update.pull_latest():
             print('Updated successfully.')
         else:
             print('Failed to update.')

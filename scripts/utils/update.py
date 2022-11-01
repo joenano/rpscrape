@@ -18,11 +18,10 @@ class Update:
         return status.decode('utf-8')
 
     def pull_latest(self):
-        commands = (
-            ['git', 'fetch'],
-            ['git', 'reset', '--hard', 'HEAD'],
-            ['git', 'merge', 'origin/master']
-        )
+        for command in ['git', 'fetch'], ['git', 'reset', '--hard', 'HEAD']:
+            res = subprocess.run(command, cwd=self.root_dir, stdout=subprocess.DEVNULL)
+            if res.returncode != 0:
+                return False
 
-        for command in commands:
-            subprocess.run(command, cwd=self.root_dir, stdout=subprocess.DEVNULL)
+        res = subprocess.run(['git', 'merge', 'origin/master'], cwd=self.root_dir, capture_output=True)
+        return 'up-to-date' in res.stdout.decode('utf-8')
