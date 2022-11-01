@@ -5,7 +5,7 @@ import sys
 
 from collections import defaultdict
 from datetime import datetime, timedelta
-from lxml import html
+from lxml import etree, html
 from orjson import loads, dumps
 from re import search
 
@@ -271,8 +271,12 @@ def parse_races(session, race_urls, date):
     going_info = get_going_info(session, date)
 
     for url in race_urls:
-        r = session.get(url, headers=random_header.header())
-        doc = html.fromstring(r.content)
+        r = session.get(url, headers=random_header.header(), allow_redirects=False)
+
+        try:
+            doc = html.fromstring(r.content)
+        except etree.ParserError:
+            continue
 
         race = {}
 
