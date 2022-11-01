@@ -61,115 +61,115 @@ ERROR = {
 
 
 class ArgParser:
-    
+
     def __init__(self):
         self.dates = []
         self.tracks = []
         self.years = []
         self.parser = ArgumentParser()
         self.add_arguments()
-        
+
     def add_arguments(self):
         self.parser.add_argument('-d', '--date',    metavar='', type=str, help=INFO['date'])
         self.parser.add_argument('-c', '--course',  metavar='', type=str, help=INFO['course'])
         self.parser.add_argument('-r', '--region',  metavar='', type=str, help=INFO['region'])
         self.parser.add_argument('-y', '--year',    metavar='', type=str, help=INFO['year'])
         self.parser.add_argument('-t', '--type',    metavar='', type=str, help=INFO['type'])
-        
+
     def parse_args(self, arg_list):
         args = self.parser.parse_args(args=arg_list)
-        
+
         if args.date:
             if any([args.course, args.year, args.type]):
-                self.parser.error(ERROR['incompatible'] + ERROR['incompatible_date'])
-            
+                self.parser.error(ERROR['incompatible'])
+
             if not check_date(args.date):
                 self.parser.error(ERROR['invalid_date'])
-                
+
             self.dates = get_dates(args.date)
-            
+
         if args.course and args.region:
             self.parser.error(ERROR['incompatible'] + ERROR['incompatible_course'])
 
         if args.region:
             if not valid_region(args.region):
                 self.parser.error(ERROR['invalid_region'])
-                
+
             self.tracks = [course for course in courses(args.region)]
         else:
             args.region = 'all'
-            
+
         if args.course:
             if not valid_course(args.course):
                 self.parser.error(ERROR['invalid_course'])
-                
+
             self.tracks = [(args.course, course_name(args.course))]
-                    
+
         if args.year:
             self.years = parse_years(args.year)
-            
+
             if not self.years or not valid_years(self.years):
                 self.parser.error(ERROR['invalid_year'])
-                
+
         if args.type and args.type not in {'flat', 'jumps'}:
             self.parser.error(ERROR['invalid_type'])
-        
+
         if not args.type:
             args.type = ''
 
         return args
-    
+
     def parse_args_interactive(self, args):
         if len(args) == 1:
             self.opts(args[0])
             return
-        
+
         if args[0] in {'courses', 'regions'}:
             self.search(args[0], ' '.join(args[1:]), args[1])
             return
-            
+
         parsed = {}
-            
+
         if args[0] in {'-d', 'date', 'dates'}:
             parsed = self.parse_date_request(args)
         else:
             if len(args) > 3:
                 print(ERROR['arg_len'])
-                
+
             if args[0] not in {'courses', 'regions'} and len(args) != 3:
                 return
-            
+
             year = args[1]
             parsed['years'] = self.parse_year(year)
             parsed['type'] = self.get_racing_type(args[2])
-            
+
             if not parsed['type']:
                 print(ERROR['invalid_code'])
-                
+
             elif valid_region(args[0]):
                 region = args[0]
                 parsed['folder_name'] = f'regions/{region}'
                 parsed['file_name'] = year
                 parsed['tracks'] = [course for course in courses(region)]
-                
+
             elif valid_course(args[0]):
                 course_id = args[0]
                 course = course_name(course_id)
                 parsed['folder_name'] = f'courses/{course}'
                 parsed['file_name'] = year
                 parsed['tracks'] = [(course_id, course)]
-                
+
             else:
                 print(ERROR['invalid_c_or_r'])
-            
+
         return parsed
-    
+
     def get_racing_type(self, code):
         if code in {'j', '-j', 'jump', 'jumps'}:
             return 'jumps'
         if code in {'f', '-f', 'flat'}:
             return 'flat'
-            
+
     def opts(self, option):
         if option == 'help':
             print(help)
@@ -183,16 +183,16 @@ class ArgParser:
             print_regions()
         elif option == 'courses':
             print_courses()
-            
+
     def parse_date_request(self, args):
         parsed = {}
-        
+
         if check_date(args[1]):
             parsed['dates'] = get_dates(args[1])
             parsed['folder_name'] = 'dates/all'
             parsed['file_name'] = args[1].replace('/', '_')
             parsed['type'] = 'all'
-            
+
             if len(args) > 2:
                 if valid_region(args[2]):
                     parsed['region'] = args[2]
@@ -202,7 +202,7 @@ class ArgParser:
                     return {}
         else:
             print(ERROR['invalid_date'])
-            
+
         return parsed
 
     def parse_year(self, year):
@@ -211,9 +211,9 @@ class ArgParser:
 
         if not valid_years(years):
             print(ERROR['invalid_year_int'] + current_year)
-        
+
         return years
-            
+
     def search(self, search_type, search_term, region):
         if search_type == 'regions':
             region_search(search_term)
