@@ -417,7 +417,7 @@ def parse_races(session, race_urls, date):
             if jockey is not None:
                 jock = jockey.attrib['data-order-jockey']
                 runners[horse_id]['jockey'] = jock if not claim else jock + f'({claim})'
-                runners[horse_id]['jockey_id'] = jockey.attrib['href'].split('/')[3]
+                runners[horse_id]['jockey_id'] = int(jockey.attrib['href'].split('/')[3])
             else:
                 runners[horse_id]['jockey'] = None
                 runners[horse_id]['jockey_id'] = None
