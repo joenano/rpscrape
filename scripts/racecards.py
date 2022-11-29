@@ -162,6 +162,7 @@ def get_runners(session, profile_urls):
         runner['damsire_region'] = js['profile']['damSireCountryOriginCode']
 
         runner['trainer'] = clean_name(js['profile']['trainerName'])
+        runner['trainer_id'] = js['profile']['trainerUid']
         runner['trainer_location'] = js['profile']['trainerLocation']
         runner['trainer_14_days'] = js['profile']['trainerLast14Days']
 
@@ -272,6 +273,12 @@ def parse_races(session, race_urls, date):
 
     for url in race_urls:
         r = session.get(url, headers=random_header.header(), allow_redirects=False)
+
+        if r.status_code != 200:
+            print('Failed to get racecard.')
+            print(f'URL: {url}')
+            print(f'Response: {r.status_code}')
+            continue
 
         try:
             doc = html.fromstring(r.content)
@@ -405,12 +412,15 @@ def parse_races(session, race_urls, date):
                 runners[horse_id]['ts'] = None
 
             claim = find(horse, 'span', 'RC-cardPage-runnerJockey-allowance')
-            jockey = find(horse, 'a', 'RC-cardPage-runnerJockey-name', attrib='data-order-jockey')
+            jockey = horse.find('.//a[@data-test-selector="RC-cardPage-runnerJockey-name"]')
 
-            if jockey:
-                runners[horse_id]['jockey'] = jockey if not claim else jockey + f'({claim})'
+            if jockey is not None:
+                jock = jockey.attrib['data-order-jockey']
+                runners[horse_id]['jockey'] = jock if not claim else jock + f'({claim})'
+                runners[horse_id]['jockey_id'] = jockey.attrib['href'].split('/')[3]
             else:
                 runners[horse_id]['jockey'] = None
+                runners[horse_id]['jockey_id'] = None
 
             try:
                 runners[horse_id]['last_run'] = find(horse, 'div', 'RC-cardPage-runnerStats-lastRun')
