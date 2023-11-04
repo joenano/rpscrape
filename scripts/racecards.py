@@ -70,7 +70,7 @@ def get_going_info(session, date):
 
 
 def get_pattern(race_name):
-    regex_group = '(\(|\s)((G|g)rade|(G|g)roup) (\d|[A-Ca-c]|I*)(\)|\s)'
+    regex_group = r'(\(|\s)((G|g)rade|(G|g)roup) (\d|[A-Ca-c]|I*)(\)|\s)'
     match = search(regex_group, race_name)
 
     if match:
@@ -143,10 +143,15 @@ def get_runners(session, profile_urls):
             runners[runner['horse_id']] = runner
             continue
 
+        try:
+            runner['age'] = int(js['profile']['age'].split('-')[0])
+        except ValueError:
+            age = js['profile']['age'].replace('Died as a', '')
+            runner['age'] = int(age.split('-')[0])
+
         runner['horse_id'] = js['profile']['horseUid']
         runner['name'] = clean_name(js['profile']['horseName'])
         runner['dob'] = js['profile']['horseDateOfBirth'].split('T')[0]
-        runner['age'] = int(js['profile']['age'].split('-')[0])
         runner['sex'] = js['profile']['horseSex']
         runner['sex_code'] = js['profile']['horseSexCode']
         runner['colour'] = js['profile']['horseColour']
