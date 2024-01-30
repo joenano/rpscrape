@@ -12,7 +12,9 @@ from re import search
 from utils.going import get_surface
 from utils.header import RandomHeader
 from utils.lxml_funcs import find
+from utils.odds import Odds
 from utils.region import get_region
+from utils.stats import Stats
 
 
 random_header = RandomHeader()
@@ -37,6 +39,13 @@ def distance_to_furlongs(distance):
         dist = dist.strip('f')
 
     return float(dist)
+
+
+def get_accordion(session, url):
+    r = session.get(url, headers=random_header.header())
+    doc = html.fromstring(r.content)
+
+    return doc
 
 
 def get_going_info(session, date):
@@ -279,6 +288,13 @@ def parse_races(session, race_urls, date):
     for url in race_urls:
         r = session.get(url, headers=random_header.header(), allow_redirects=False)
 
+        race_id = url.split('/')[-1]
+        url_accordion = f'https://www.racingpost.com/racecards/data/accordion/{race_id}'
+
+        accordion = get_accordion(session, url_accordion)
+
+        stats = Stats(accordion)
+
         if r.status_code != 200:
             print('Failed to get racecard.')
             print(f'URL: {url}')
@@ -384,7 +400,7 @@ def parse_races(session, race_urls, date):
                 runners[horse_id]['colour'] = sex[0]
                 runners[horse_id]['sex_code'] = sex[1].capitalize()
 
-                runners[horse_id]['trainer'] = find(horse, 'a', 'RC-cardPage-runnerTrainer-name', attrib='data-order-trainer')
+                runners[horse_id]['trainer'] = clean_name(find(horse, 'a', 'RC-cardPage-runnerTrainer-name', attrib='data-order-trainer'))
 
             runners[horse_id]['number'] = int(find(horse, 'span', 'RC-cardPage-runnerNumber-no', attrib='data-order-no'))
 
@@ -420,7 +436,7 @@ def parse_races(session, race_urls, date):
             jockey = horse.find('.//a[@data-test-selector="RC-cardPage-runnerJockey-name"]')
 
             if jockey is not None:
-                jock = jockey.attrib['data-order-jockey']
+                jock = clean_name(jockey.attrib['data-order-jockey'])
                 runners[horse_id]['jockey'] = jock if not claim else jock + f'({claim})'
                 runners[horse_id]['jockey_id'] = int(jockey.attrib['href'].split('/')[3])
             else:
@@ -438,6 +454,32 @@ def parse_races(session, race_urls, date):
                 runners[horse_id]['trainer_rtf'] = find(horse, 'span', 'RC-cardPage-runnerTrainer-rtf')
             except TypeError:
                 runners[horse_id]['trainer_rtf'] = None
+
+            if runners[horse_id]['jockey'] is None:
+                runners[horse_id]['stats'] = {}
+                continue
+
+            jockey_name = runners[horse_id]['jockey'].split('(')[0].strip()
+
+            if jockey_name.lower() == 'non-runner':
+                runners[horse_id]['stats'] = {}
+                continue
+
+            try:
+                runner_stats = stats.horses[runners[horse_id]['name']]
+                jockey_stats = stats.jockeys[jockey_name]
+                trainer_stats = stats.trainers[runners[horse_id]['trainer']]
+
+                runners[horse_id]['stats'] = {
+                    'course': runner_stats['course'],
+                    'distance': runner_stats['distance'],
+                    'going': runner_stats['going'],
+                    'jockey': jockey_stats,
+                    'trainer': trainer_stats
+                }
+            except KeyError:
+                runners[horse_id]['stats'] = {}
+
 
         race['runners'] = [runner for runner in runners.values()]
         races[race['region']][race['course']][race['off_time']] = race
