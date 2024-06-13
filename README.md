@@ -27,21 +27,21 @@ You must have Python 3.7 or greater, and GIT installed. You can download the lat
 In addition, the [Requests](http://docs.python-requests.org/en/master/), [tomli](https://pypi.org/project/tomli/), [orjson](https://pypi.org/project/orjson/1.3.0/), [AIOHTTP](https://docs.aiohttp.org/en/stable/) and [LXML](https://lxml.de/) python modules are needed, they can be installed using PIP(_included with Python_) with the following command.
 
 ```
-~$ pip3 install requests tomli orjson aiohttp lxml
+pip3 install requests tomli orjson aiohttp lxml
 ```
 
 ## Install
 
 ```
-~$ git clone https://github.com/joenano/rpscrape.git
+git clone https://github.com/joenano/rpscrape.git
 ```
 
 ## Usage
 
 Run the program from the scripts folder:
 ```
-> cd rpscrape/scripts
-> python3 rpscrape.py
+cd rpscrape/scripts
+python3 rpscrape.py
 ```
 
 To scrape you must provide 3 options in the following format:
@@ -204,7 +204,7 @@ courses             List all courses
 courses [search]    Search for specific course
 courses [region]    List courses in region - e.g courses ire
 
--d, date            Scrape race by date - e.g -d 2019/12/17 gb       
+-d, date            Scrape race by date - e.g -d 2019/12/17 gb
 
 help                Show help
 options             Show options
