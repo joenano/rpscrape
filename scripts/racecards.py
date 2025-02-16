@@ -6,7 +6,7 @@ import sys
 from collections import defaultdict
 from datetime import datetime, timedelta
 from lxml import etree, html
-from orjson import loads, dumps
+from orjson import loads, dumps, OPT_NON_STR_KEYS
 from re import search
 
 from utils.going import get_surface
@@ -557,7 +557,7 @@ def main():
         os.makedirs('../racecards')
 
     with open(f'../racecards/{date}.json', 'w', encoding='utf-8') as f:
-        f.write(dumps(races).decode('utf-8'))
+        f.write(dumps(races, option=OPT_NON_STR_KEYS).decode('utf-8'))
 
 
 if __name__ == '__main__':

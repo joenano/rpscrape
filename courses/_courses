@@ -754,6 +754,7 @@
     "1162": "Bursa",
     "442": "Veliefendi",
     "490": "Abu Dhabi",
+    "1692": "Al Uqda",
     "1303": "Al Ain",
     "763": "Ghantoot",
     "565": "Jebel Ali",
@@ -1836,6 +1837,7 @@
   },
   "uae": {
     "490": "Abu Dhabi",
+    "1692": "Al Uqda",
     "1303": "Al Ain",
     "763": "Ghantoot",
     "565": "Jebel Ali",

@@ -36,7 +36,8 @@ def check_for_update():
 
     if update.available():
         choice = input('Update available. Do you want to update? Y/N ')
-        if choice.lower() != 'y': return
+        if choice.lower() != 'y':
+            return
 
         if update.pull_latest():
             print('Updated successfully.')
@@ -56,7 +57,8 @@ def get_race_urls(tracks, years, code):
 
     for track in tracks:
         for year in years:
-            race_list = RaceList(*track, f'{url_course}/{track[0].lower()}/{year}/{code}/all-races')
+            url = f'{url_course}/{track[0]}/{year}/{code}/all-races'
+            race_list = RaceList(*track, url)
             race_lists.append(race_list)
 
     for race_list in race_lists:
@@ -65,8 +67,8 @@ def get_race_urls(tracks, years, code):
 
         if races:
             for race in races:
-                race_date = race["raceDatetime"][:10]
-                race_id = race["raceInstanceUid"]
+                race_date = race['raceDatetime'][:10]
+                race_id = race['raceInstanceUid']
                 url = f'{url_result}/{race_list.course_id}/{race_list.course_name}/{race_date}/{race_id}'
                 urls.add(url.replace(' ', '-').replace("'", ''))
 
@@ -123,7 +125,9 @@ def scrape_races(races, folder_name, file_name, file_extension, code, file_write
             for row in race.csv_data:
                 csv.write(row + '\n')
 
-        print(f'Finished scraping.\n{file_name}.{file_extension} saved in rpscrape/{out_dir.lstrip("../")}')
+        print(
+            f'Finished scraping.\n{file_name}.{file_extension} saved in rpscrape/{out_dir.lstrip("../")}'
+        )
 
 
 def writer_csv(file_path):
@@ -166,6 +170,7 @@ def main():
     else:
         if sys.platform == 'linux':
             import readline
+
             completions = Completer()
             readline.set_completer(completions.complete)
             readline.parse_and_bind('tab: complete')
@@ -180,7 +185,14 @@ def main():
                 else:
                     races = get_race_urls(args['tracks'], args['years'], args['type'])
 
-                scrape_races(races, args['folder_name'], args['file_name'], file_extension, args['type'], file_writer)
+                scrape_races(
+                    races,
+                    args['folder_name'],
+                    args['file_name'],
+                    file_extension,
+                    args['type'],
+                    file_writer,
+                )
 
 
 if __name__ == '__main__':
