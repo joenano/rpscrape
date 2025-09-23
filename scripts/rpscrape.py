@@ -2,11 +2,11 @@
 
 import gzip
 import requests
-import os
 import sys
 
-from dataclasses import dataclass
-
+from collections.abc import Callable
+from pathlib import Path
+from typing import TextIO
 from lxml import html
 from orjson import loads
 from datetime import date
@@ -25,27 +25,19 @@ settings = Settings()
 random_header = RandomHeader()
 
 
-@dataclass
-class RaceList:
-    course_id: str
-    course_name: str
-    url: str
-
-
-def check_for_update():
+def check_for_update() -> bool:
     update = Update()
 
-    if update.available():
-        choice = input('Update available. Do you want to update? Y/N ')
-        if choice.lower() != 'y':
-            return
+    if not update.available():
+        return False
 
-        if update.pull_latest():
-            print('Updated successfully.')
-        else:
-            print('Failed to update.')
+    choice = input('Update available. Do you want to update? [y/N] ').strip().lower()
+    if choice != 'y':
+        return False
 
-        sys.exit()
+    success = update.pull_latest()
+    print('Updated successfully.' if success else 'Failed to update.')
+    return success
 
 
 def get_race_urls(tracks: list[tuple[str, str]], years: list[str], code: str) -> list[str]:
@@ -56,16 +48,15 @@ def get_race_urls(tracks: list[tuple[str, str]], years: list[str], code: str) ->
     for course_id, course in tracks:
         for year in years:
             race_list_url = f'{url_course_base}/{course_id}/{year}/{code}/all-races'
-            race_list = RaceList(course_id, course, race_list_url)
 
-            response = requests.get(race_list.url, headers=random_header.header())
+            response = requests.get(race_list_url, headers=random_header.header())
             data = loads(response.text).get('data', {})
             races = data.get('principleRaceResults', [])
 
             for race in races:
                 race_date = race['raceDatetime'][:10]
                 race_id = race['raceInstanceUid']
-                race_url = f'{url_result_base}/{race_list.course_id}/{race_list.course_name}/{race_date}/{race_id}'
+                race_url = f'{url_result_base}/{course_id}/{course}/{race_date}/{race_id}'
                 urls.add(race_url.replace(' ', '-').replace("'", ''))
 
     return sorted(urls)
@@ -89,46 +80,48 @@ def get_race_urls_date(dates: list[date], region: str) -> list[str]:
     return sorted(urls)
 
 
-def scrape_races(races, folder_name, file_name, file_extension, code, file_writer):
-    out_dir = f'../data/{folder_name}/{code}'
+def scrape_races(
+    races: list[str],
+    folder_name: str,
+    file_name: str,
+    file_extension: str,
+    code: str,
+    file_writer: Callable[[str], TextIO],
+):
+    out_dir = Path('../data') / folder_name / code
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
+    file_path = out_dir / f'{file_name}.{file_extension}'
 
-    file_path = f'{out_dir}/{file_name}.{file_extension}'
-
-    with file_writer(file_path) as csv:
-        csv.write(settings.csv_header + '\n')
+    with file_writer(str(file_path)) as f:
+        _ = f.write(settings.csv_header + '\n')
 
         for url in races:
-            r = requests.get(url, headers=random_header.header())
-            doc = html.fromstring(r.content)
+            resp = requests.get(url, headers=random_header.header())
+            doc = html.fromstring(resp.content)
 
             try:
                 race = Race(url, doc, code, settings.fields)
             except VoidRaceError:
                 continue
 
-            if code == 'flat':
-                if race.race_info['type'] != 'Flat':
-                    continue
-            elif code == 'jumps':
-                if race.race_info['type'] not in {'Chase', 'Hurdle', 'NH Flat'}:
-                    continue
+            if code == 'flat' and race.race_info['type'] != 'Flat':
+                continue
+            if code == 'jumps' and race.race_info['type'] not in {'Chase', 'Hurdle', 'NH Flat'}:
+                continue
 
             for row in race.csv_data:
-                csv.write(row + '\n')
+                _ = f.write(row + '\n')
 
-        print(
-            f'Finished scraping.\n{file_name}.{file_extension} saved in rpscrape/{out_dir.lstrip("../")}'
-        )
+    rel_path = file_path.relative_to('../')
+    print(f'Finished scraping.\n{file_path.name} saved in rpscrape/{rel_path}')
 
 
-def writer_csv(file_path: str):
+def writer_csv(file_path: str) -> TextIO:
     return open(file_path, 'w', encoding='utf-8')
 
 
-def writer_gzip(file_path: str):
+def writer_gzip(file_path: str) -> TextIO:
     return gzip.open(file_path, 'wt', encoding='utf-8')
 
 
@@ -137,7 +130,7 @@ def main():
         sys.exit()
 
     if settings.toml['auto_update']:
-        check_for_update()
+        _ = check_for_update()
 
     file_extension = 'csv'
     file_writer = writer_csv
@@ -152,11 +145,11 @@ def main():
         args = parser.parse_args(sys.argv[1:])
 
         if args.date and args.region:
-            folder_name = 'dates/' + args.region
+            folder_name = f'dates/{args.region}'
             file_name = args.date.replace('/', '_')
             race_urls = get_race_urls_date(parser.dates, args.region)
         else:
-            folder_name = args.region if args.region else course_name(args.course)
+            folder_name = args.region or course_name(args.course)
             file_name = args.year
             race_urls = get_race_urls(parser.tracks, parser.years, args.type)
 
