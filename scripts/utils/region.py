@@ -1,7 +1,7 @@
 from orjson import loads
 
 
-def get_region(course_id):
+def get_region(course_id: str) -> str | None:
     courses = loads(open('../courses/_courses', 'r').read())
     courses.pop('all')
 
@@ -10,8 +10,10 @@ def get_region(course_id):
             if _id == course_id:
                 return region.upper()
 
+    return None
 
-def print_region(code, region):
+
+def print_region(code: str, region: str):
     print(f'\tCODE: {code: <4} |  {region}')
 
 
@@ -24,11 +26,11 @@ def regions():
     return loads(open('../courses/_regions', 'r').read())
 
 
-def region_search(term):
+def region_search(term: str):
     for code, region in regions().items():
         if term.lower() in region.lower():
             print_region(code, region)
 
 
-def valid_region(code):
+def valid_region(code: str) -> bool:
     return code in regions().keys()

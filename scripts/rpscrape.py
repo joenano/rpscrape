@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 from lxml import html
 from orjson import loads
+from datetime import date
 
 from utils.argparser import ArgParser
 from utils.completer import Completer
@@ -75,7 +76,7 @@ def get_race_urls(tracks, years, code):
     return sorted(list(urls))
 
 
-def get_race_urls_date(dates, region):
+def get_race_urls_date(dates: list[date], region: str) -> list[str]:
     urls = set()
 
     days = [f'https://www.racingpost.com/results/{d}' for d in dates]
@@ -83,8 +84,8 @@ def get_race_urls_date(dates, region):
     course_ids = {course[0] for course in courses(region)}
 
     for day in days:
-        r = requests.get(day, headers=random_header.header())
-        doc = html.fromstring(r.content)
+        response = requests.get(day, headers=random_header.header())
+        doc = html.fromstring(response.content)
 
         races = xpath(doc, 'a', 'link-listCourseNameLink')
 
@@ -130,11 +131,11 @@ def scrape_races(races, folder_name, file_name, file_extension, code, file_write
         )
 
 
-def writer_csv(file_path):
+def writer_csv(file_path: str):
     return open(file_path, 'w', encoding='utf-8')
 
 
-def writer_gzip(file_path):
+def writer_gzip(file_path: str):
     return gzip.open(file_path, 'wt', encoding='utf-8')
 
 
@@ -157,7 +158,7 @@ def main():
     if len(sys.argv) > 1:
         args = parser.parse_args(sys.argv[1:])
 
-        if args.date:
+        if args.date and args.region:
             folder_name = 'dates/' + args.region
             file_name = args.date.replace('/', '_')
             races = get_race_urls_date(parser.dates, args.region)
