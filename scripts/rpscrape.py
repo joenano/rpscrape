@@ -48,52 +48,45 @@ def check_for_update():
         sys.exit()
 
 
-def get_race_urls(tracks, years, code):
-    urls = set()
+def get_race_urls(tracks: list[tuple[str, str]], years: list[str], code: str) -> list[str]:
+    url_course_base = 'https://www.racingpost.com:443/profile/course/filter/results'
+    url_result_base = 'https://www.racingpost.com/results'
+    urls: set[str] = set()
 
-    url_course = 'https://www.racingpost.com:443/profile/course/filter/results'
-    url_result = 'https://www.racingpost.com/results'
-
-    race_lists = []
-
-    for track in tracks:
+    for course_id, course in tracks:
         for year in years:
-            url = f'{url_course}/{track[0]}/{year}/{code}/all-races'
-            race_list = RaceList(*track, url)
-            race_lists.append(race_list)
+            race_list_url = f'{url_course_base}/{course_id}/{year}/{code}/all-races'
+            race_list = RaceList(course_id, course, race_list_url)
 
-    for race_list in race_lists:
-        r = requests.get(race_list.url, headers=random_header.header())
-        races = loads(r.text)['data']['principleRaceResults']
+            response = requests.get(race_list.url, headers=random_header.header())
+            data = loads(response.text).get('data', {})
+            races = data.get('principleRaceResults', [])
 
-        if races:
             for race in races:
                 race_date = race['raceDatetime'][:10]
                 race_id = race['raceInstanceUid']
-                url = f'{url_result}/{race_list.course_id}/{race_list.course_name}/{race_date}/{race_id}'
-                urls.add(url.replace(' ', '-').replace("'", ''))
+                race_url = f'{url_result_base}/{race_list.course_id}/{race_list.course_name}/{race_date}/{race_id}'
+                urls.add(race_url.replace(' ', '-').replace("'", ''))
 
-    return sorted(list(urls))
+    return sorted(urls)
 
 
 def get_race_urls_date(dates: list[date], region: str) -> list[str]:
-    urls = set()
+    urls: set[str] = set()
+    course_ids: set[str] = {course[0] for course in courses(region)}
 
-    days = [f'https://www.racingpost.com/results/{d}' for d in dates]
-
-    course_ids = {course[0] for course in courses(region)}
-
-    for day in days:
-        response = requests.get(day, headers=random_header.header())
+    for race_date in dates:
+        url = f'https://www.racingpost.com/results/{race_date}'
+        response = requests.get(url, headers=random_header.header())
         doc = html.fromstring(response.content)
 
         races = xpath(doc, 'a', 'link-listCourseNameLink')
-
         for race in races:
-            if race.attrib['href'].split('/')[2] in course_ids:
-                urls.add('https://www.racingpost.com' + race.attrib['href'])
+            course_id = race.attrib['href'].split('/')[2]
+            if course_id in course_ids:
+                urls.add(f'https://www.racingpost.com{race.attrib["href"]}')
 
-    return sorted(list(urls))
+    return sorted(urls)
 
 
 def scrape_races(races, folder_name, file_name, file_extension, code, file_writer):
@@ -161,13 +154,13 @@ def main():
         if args.date and args.region:
             folder_name = 'dates/' + args.region
             file_name = args.date.replace('/', '_')
-            races = get_race_urls_date(parser.dates, args.region)
+            race_urls = get_race_urls_date(parser.dates, args.region)
         else:
             folder_name = args.region if args.region else course_name(args.course)
             file_name = args.year
-            races = get_race_urls(parser.tracks, parser.years, args.type)
+            race_urls = get_race_urls(parser.tracks, parser.years, args.type)
 
-        scrape_races(races, folder_name, file_name, file_extension, args.type, file_writer)
+        scrape_races(race_urls, folder_name, file_name, file_extension, args.type, file_writer)
     else:
         if sys.platform == 'linux':
             import readline
@@ -182,12 +175,12 @@ def main():
 
             if args:
                 if 'dates' in args:
-                    races = get_race_urls_date(args['dates'], args['region'])
+                    race_urls = get_race_urls_date(args['dates'], args['region'])
                 else:
-                    races = get_race_urls(args['tracks'], args['years'], args['type'])
+                    race_urls = get_race_urls(args['tracks'], args['years'], args['type'])
 
                 scrape_races(
-                    races,
+                    race_urls,
                     args['folder_name'],
                     args['file_name'],
                     file_extension,
