@@ -26,7 +26,7 @@ You must have Python 3.7 or greater, and GIT installed. You can download the lat
 In addition, the [Requests](http://docs.python-requests.org/en/master/), [tomli](https://pypi.org/project/tomli/), [orjson](https://pypi.org/project/orjson/1.3.0/), [jarowinkler](https://pypi.org/project/jarowinkler/), [AIOHTTP](https://docs.aiohttp.org/en/stable/) and [LXML](https://lxml.de/) python modules are needed, they can be installed using PIP(_included with Python_) with the following command.
 
 ```
-pip3 install requests tomli orjson aiohttp lxml
+pip3 install requests tomli orjson jarowinkler aiohttp lxml
 ```
 
 ## Install
