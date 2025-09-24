@@ -11,6 +11,7 @@ from lxml import html
 from orjson import loads
 from datetime import date
 
+from utils.betfair import Betfair
 from utils.argparser import ArgParser
 from utils.completer import Completer
 from utils.header import RandomHeader
@@ -80,7 +81,7 @@ def get_race_urls_date(dates: list[date], region: str) -> list[str]:
 
 
 def scrape_races(
-    races: list[str],
+    race_urls: list[str],
     folder_name: str,
     file_name: str,
     file_extension: str,
@@ -92,15 +93,26 @@ def scrape_races(
 
     file_path = out_dir / f'{file_name}.{file_extension}'
 
+    betfair: Betfair | None = None
+
+    if settings.toml and settings.toml.get('betfair_data', False):
+        print('Getting Betfair data...')
+        betfair = Betfair(race_urls)
+
+    print('Scraping races...')
+
     with file_writer(str(file_path)) as f:
         _ = f.write(settings.csv_header + '\n')
 
-        for url in races:
+        for url in race_urls:
             resp = requests.get(url, headers=random_header.header())
             doc = html.fromstring(resp.content)
 
             try:
-                race = Race(url, doc, code, settings.fields)
+                if betfair:
+                    race = Race(url, doc, code, settings.fields, betfair.data)
+                else:
+                    race = Race(url, doc, code, settings.fields)
             except VoidRaceError:
                 continue
 

@@ -6,6 +6,8 @@
 auto_update = true      # Check for updates to remote repo and automatically pull
 gzip_output = false     # If false save uncompressed .csv files, if true save compressed .csv.gz files
 
+betfair_data = false     # Get Betfair data
+
 [fields]
 
 [fields.race_info]
@@ -82,3 +84,16 @@ gzip_output = false     # If false save uncompressed .csv files, if true save co
     silk_url = false    # Url of owners silks image
 
     comment = true      # Form in running comments
+
+[fields.betfair]
+    bsp = true          # Betfair Starting Price
+    wap = false         # Weighted Average Price
+    morning_wap = false # Weighted Average Price before 11am
+    pre_min = true      # Minimum price placed before the off
+    pre_max = true      # Maximum price placed before the off
+    ip_min = true       # Minimum price placed in-play
+    ip_max = true       # Maximum price placed in-play
+    morning_vol = false # Amount traded before 11am
+    pre_vol = true      # Amount traded before the off
+    ip_vol = true       # Amount traded in-play
+

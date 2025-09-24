@@ -24,6 +24,8 @@ class Settings:
             return fields
 
         for group in self.toml.get('fields', {}):
+            if group == 'betfair' and self.toml['betfair_data'] is False:
+                continue
             for field, enabled in self.toml['fields'][group].items():
                 if enabled:
                     fields.append(field)

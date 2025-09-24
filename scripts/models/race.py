@@ -66,3 +66,26 @@ class RunnerInfo:
     owner: list[str] = field(default_factory=list)
     silk_url: list[str] = field(default_factory=list)
     comment: list[str] = field(default_factory=list)
+
+    bsp: list[str] = field(default_factory=list)
+    wap: list[str] = field(default_factory=list)
+    morning_wap: list[str] = field(default_factory=list)
+    pre_min: list[str] = field(default_factory=list)
+    pre_max: list[str] = field(default_factory=list)
+    ip_min: list[str] = field(default_factory=list)
+    ip_max: list[str] = field(default_factory=list)
+    morning_vol: list[str] = field(default_factory=list)
+    pre_vol: list[str] = field(default_factory=list)
+    ip_vol: list[str] = field(default_factory=list)
+
+    def set_bsp_list_width(self, n: int):
+        self.bsp = [''] * n
+        self.wap = [''] * n
+        self.morning_wap = [''] * n
+        self.pre_min = [''] * n
+        self.pre_max = [''] * n
+        self.ip_min = [''] * n
+        self.ip_max = [''] * n
+        self.morning_vol = [''] * n
+        self.pre_vol = [''] * n
+        self.ip_vol = [''] * n

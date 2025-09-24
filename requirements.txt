@@ -1,5 +1,6 @@
-aiohttp~=3.8
-lxml~=4.7
-orjson~=3.6
-requests~=2.26
-tomli~=2.0
+aiohttp>=3.8
+jarowinkler>=2.0.1
+lxml>=4.7
+orjson>=3.6
+requests>=2.26
+tomli>=2.0

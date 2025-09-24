@@ -2,12 +2,14 @@ import requests
 import sys
 
 from datetime import datetime
-from re import search, sub
+from jarowinkler import jarowinkler_similarity
 from lxml import html
 from lxml.html import HtmlElement
+from re import search, sub
 
-from utils.header import RandomHeader
+from models.betfair import BSPMap
 from models.race import RaceInfo, RunnerInfo
+from utils.header import RandomHeader
 from utils.pedigree import Pedigree
 
 from utils.date import convert_date
@@ -26,7 +28,14 @@ class VoidRaceError(Exception):
 
 
 class Race:
-    def __init__(self, url: str, document: HtmlElement, code: str, fields: list[str]):
+    def __init__(
+        self,
+        url: str,
+        document: HtmlElement,
+        code: str,
+        fields: list[str],
+        bsp_map: BSPMap | None = None,
+    ):
         self.url: str = url
         self.doc: HtmlElement = document
         self.race_info: RaceInfo = RaceInfo()
@@ -126,6 +135,9 @@ class Race:
         self.runner_info.secs = self.time_to_seconds(self.runner_info.time)
 
         self.clean_non_completions()
+
+        if bsp_map:
+            self.join_betfair_data(bsp_map)
 
         self.csv_data: list[str] = self.create_csv_data(fields)
 
@@ -562,6 +574,28 @@ class Race:
             raise ValueError(f'Invalid winning time in {self.url}: {parts}') from e
 
         return round(total, 2)
+
+    def join_betfair_data(self, bsp_map: BSPMap):
+        key = (self.race_info.region, self.race_info.date, self.race_info.off)
+        bsp = bsp_map.get(key)
+
+        if not bsp:
+            return
+
+        self.runner_info.set_bsp_list_width(len(self.runner_info.horse))
+
+        for i, horse in enumerate(self.runner_info.horse):
+            name = horse.split('(')[0].strip().lower()
+            for row in bsp:
+                if jarowinkler_similarity(name, row.horse) >= 0.77:
+                    self.runner_info.bsp[i] = row.bsp or ''
+                    self.runner_info.pre_min[i] = row.pre_min or ''
+                    self.runner_info.pre_max[i] = row.pre_max or ''
+                    self.runner_info.ip_min[i] = row.ip_min or ''
+                    self.runner_info.ip_max[i] = row.ip_max or ''
+                    self.runner_info.pre_vol[i] = row.pre_vol or ''
+                    self.runner_info.ip_vol[i] = row.ip_vol or ''
+                    break
 
     def parse_race_bands(self) -> tuple[str, str]:
         band = find(self.doc, 'span', 'rp-raceTimeCourseName_ratingBandAndAgesAllowed', property='class')
