@@ -9,14 +9,14 @@ def courses(code: str = 'all') -> Generator[tuple[str, str]]:
         yield id, course
 
 
-def course_name(code: str) -> str | None:
+def course_name(code: str) -> str:
     if code.isalpha():
         return code
     for course in courses():
         if course[0] == code:
             return course[1].replace(' ', '-')
 
-    return None
+    return ''
 
 
 def course_search(term: str):

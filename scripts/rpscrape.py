@@ -19,7 +19,6 @@ from utils.settings import Settings
 from utils.update import Update
 
 from utils.course import course_name, courses
-from utils.lxml_funcs import xpath
 
 settings = Settings()
 random_header = RandomHeader()
@@ -71,7 +70,7 @@ def get_race_urls_date(dates: list[date], region: str) -> list[str]:
         response = requests.get(url, headers=random_header.header())
         doc = html.fromstring(response.content)
 
-        races = xpath(doc, 'a', 'link-listCourseNameLink')
+        races = doc.xpath('//a[@data-test-selector="link-listCourseNameLink"]')
         for race in races:
             course_id = race.attrib['href'].split('/')[2]
             if course_id in course_ids:
@@ -105,16 +104,16 @@ def scrape_races(
             except VoidRaceError:
                 continue
 
-            if code == 'flat' and race.race_info['type'] != 'Flat':
+            if code == 'flat' and race.race_info.r_type != 'Flat':
                 continue
-            if code == 'jumps' and race.race_info['type'] not in {'Chase', 'Hurdle', 'NH Flat'}:
+            if code == 'jumps' and race.race_info.r_type not in {'Chase', 'Hurdle', 'NH Flat'}:
                 continue
 
             for row in race.csv_data:
                 _ = f.write(row + '\n')
 
     rel_path = file_path.relative_to('../')
-    print(f'Finished scraping.\n{file_path.name} saved in rpscrape/{rel_path}')
+    print(f'Finished scraping.\nData path: rpscrape/{rel_path}')
 
 
 def writer_csv(file_path: str) -> TextIO:

@@ -2,10 +2,10 @@ import subprocess
 
 from pathlib import Path
 
-class Update:
 
+class Update:
     def __init__(self):
-        self.root_dir = Path.cwd().parent
+        self.root_dir: Path = Path.cwd().parent
 
     def available(self):
         if 'local out of date' in self.get_status().lower():
