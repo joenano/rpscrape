@@ -6,7 +6,7 @@
 auto_update = true      # Check for updates to remote repo and automatically pull
 gzip_output = false     # If false save uncompressed .csv files, if true save compressed .csv.gz files
 
-betfair_data = false     # Get Betfair data
+betfair_data = false    # Get Betfair data
 
 [fields]
 
@@ -34,7 +34,7 @@ betfair_data = false     # Get Betfair data
     dist_y = false      # Distance in yards
     
     going = true        # Going description
-    surface = true     # Surface Turf/Dirt/AW
+    surface = true      # Surface Turf/Dirt/AW
     ran = true          # Number of runners in race
 
 [fields.runner_info]

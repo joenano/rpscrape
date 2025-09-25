@@ -1,7 +1,9 @@
-from utils.lxml_funcs import find, find_element, xpath
+from lxml.html import HtmlElement
+
+from utils.lxml_funcs import find, find_element
 
 
-def clean_name(name):
+def clean_name(name: str):
     if name:
         return name.strip().replace("'", '').lower().title()
     else:
@@ -9,14 +11,13 @@ def clean_name(name):
 
 
 class Stats:
-
-    def __init__(self, doc):
+    def __init__(self, doc: HtmlElement):
         self.horses = {}
         self.jockeys = {}
         self.trainers = {}
 
         stats = find_element(doc, 'section', 'stats', 'data-accordion-row')
-        tables = xpath(stats, 'table', 'RC-table')
+        tables = doc.xpath("//table[@data-test-selector='RC-table']")
 
         for table in tables:
             rows = table.xpath('.//tr[@class="ui-table__row"]')
@@ -55,7 +56,7 @@ class Stats:
                 'distance': {
                     'runs': distance_runs,
                     'wins': distance_wins,
-                }
+                },
             }
 
     def get_jockey_stats(self, rows):
@@ -83,7 +84,7 @@ class Stats:
                 'ovr_runs': runs_ovr,
                 'ovr_wins': wins_ovr,
                 'ovr_wins_pct': wins_pct_ovr,
-                'ovr_profit': profit_ovr
+                'ovr_profit': profit_ovr,
             }
 
     def get_trainer_stats(self, rows):
@@ -111,5 +112,5 @@ class Stats:
                 'ovr_runs': runs_ovr,
                 'ovr_wins': wins_ovr,
                 'ovr_wins_pct': wins_pct_ovr,
-                'ovr_profit': profit_ovr
+                'ovr_profit': profit_ovr,
             }

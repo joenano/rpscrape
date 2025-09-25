@@ -1,8 +1,6 @@
-import sys
+from lxml.html import HtmlElement
 
-from collections import defaultdict
-
-from utils.lxml_funcs import find, xpath
+from utils.lxml_funcs import find
 
 
 BOOKIES = {
@@ -17,7 +15,7 @@ BOOKIES = {
 }
 
 
-def clean_name(name):
+def clean_name(name: str):
     if name:
         return name.strip().replace("'", '').lower().title()
     else:
@@ -25,10 +23,10 @@ def clean_name(name):
 
 
 class Odds:
-    def __init__(self, doc):
+    def __init__(self, doc: HtmlElement):
         self.horses = {}
 
-        rows = xpath(doc, 'div', 'RC-oddsRunnerContent__runnerRow')
+        rows = doc.xpath("//div[@data-test-selector='RC-oddsRunnerContent__runnerRow']")
 
         for row in rows:
             name = clean_name(find(row, 'a', 'RC-oddsRunnerContent__runnerName'))
