@@ -24,7 +24,7 @@ class Settings:
             return fields
 
         for group in self.toml.get('fields', {}):
-            if group == 'betfair' and self.toml['betfair_data'] is False:
+            if group == 'betfair' and not self.toml.get('betfair_data', False):
                 continue
             for field, enabled in self.toml['fields'][group].items():
                 if enabled:

@@ -536,10 +536,11 @@ class Race:
         stones = self.doc.xpath("//span[@data-ending='st']/text()")
         pounds = self.doc.xpath("//span[@data-ending='lb']/text()")
 
-        formatted_weights = [f'{s}-{p}' for s, p in zip(stones, pounds)]
-        total_pounds = [str(int(s) * 14 + int(p)) for s, p in zip(stones, pounds)]
+        weights = [f'{s}-{p}' for s, p in zip(stones, pounds)]
+        lbs = [str(int(s) * 14 + int(p)) for s, p in zip(stones, pounds)]
+        wgt = [w.strip() for w in weights]
 
-        return formatted_weights, total_pounds
+        return wgt, lbs
 
     def get_winning_time(self) -> float | None:
         items = self.doc.xpath('//div[@class="rp-raceInfo"]/ul/li')
