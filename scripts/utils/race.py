@@ -12,6 +12,7 @@ from models.race import RaceInfo, RunnerInfo
 from utils.header import RandomHeader
 from utils.pedigree import Pedigree
 
+from utils.cleaning import clean_race, clean_string
 from utils.date import convert_date
 from utils.going import get_surface
 from utils.lxml_funcs import find
@@ -73,13 +74,12 @@ class Race:
         self.race_info.r_class = find(
             self.doc, 'span', 'rp-raceTimeCourseName_class', property='class'
         ).strip('()')
-        self.race_info.race_name = clean(self.race_info.race_name)
 
         if self.race_info.r_class == '':
             self.race_info.r_class = self.get_race_class()
 
         self.race_info.pattern = self.get_race_pattern()
-        self.race_info.race_name = self.clean_race_name(self.race_info.race_name)
+        self.race_info.race_name = clean_race(self.race_info.race_name)
         self.race_info.age_band, self.race_info.rating_band = self.parse_race_bands()
 
         self.race_info.sex_rest = self.sex_restricted()
@@ -189,28 +189,6 @@ class Race:
                 self.runner_info.secs[i] = '-'
                 self.runner_info.ovr_btn[i] = '-'
                 self.runner_info.btn[i] = '-'
-
-    def clean_race_name(self, race_name: str) -> str:
-        def clean_name(race: str, x: str):
-            return race.replace(x, '').strip()
-
-        if 'class' in race_name.lower():
-            match = search(regex_class, race_name)
-            if match:
-                return clean_name(race_name, match.group())
-
-        if 'Forte Mile Guaranteed Minimum Value £60000 (Group' in race_name:
-            return 'Sandown Mile'
-
-        if any(x in race_name.lower() for x in {'group', 'grade'}):
-            match = search(regex_group, race_name)
-            if match:
-                return clean_name(race_name, match.group())
-
-        if 'Listed' in race_name:
-            return race_name.replace('Listed Race', '').replace('(Listed)', '')
-
-        return clean(race_name)
 
     def create_csv_data(self, fields: list[str]) -> list[str]:
         field_mapping = {'type': 'r_type', 'class': 'r_class', 'or': 'ofr'}
@@ -353,11 +331,11 @@ class Race:
     def get_names_horse(self) -> list[str]:
         horses = self.doc.xpath("//a[@data-test-selector='link-horseName']/text()")
         nationalities = self.get_nationalities()
-        return [f'{clean(horse)} {nat}' for horse, nat in zip(horses, nationalities)]
+        return [f'{clean_string(horse)} {nat}' for horse, nat in zip(horses, nationalities)]
 
     def get_names_jockey(self) -> list[str]:
         jockeys = self.doc.xpath("//a[@data-test-selector='link-jockeyName']/text()")
-        return [clean(jock.strip()) for jock in jockeys[::3]]
+        return [clean_string(jock.strip()) for jock in jockeys[::3]]
 
     def get_names_owner(self) -> list[str]:
         owners = self.doc.xpath("//a[@data-test-selector='link-silk']/@href")
@@ -365,7 +343,7 @@ class Race:
 
     def get_names_trainer(self) -> list[str]:
         trainers = self.doc.xpath("//a[@data-test-selector='link-trainerName']/text()")
-        return [clean(trainer.strip()) for trainer in trainers[::2][::2]]
+        return [clean_string(trainer.strip()) for trainer in trainers[::2][::2]]
 
     def get_nationalities(self) -> list[str]:
         nats = self.doc.xpath("//span[@class='rp-horseTable__horse__country']/text()")
@@ -649,20 +627,6 @@ class Race:
                 raise ValueError(f"Invalid time format: '{time_str}' from {self.url}")
 
         return [convert_time(t) for t in times]
-
-
-def clean(s: str) -> str:
-    return (
-        s.strip()
-        .replace(',', ' ')
-        .replace('"', '')
-        .replace('\x80', '')
-        .replace('\\x80', '')
-        .replace('  ', ' ')
-        .replace('  ', ' ')
-        .replace("'", '')
-        .replace('((', '(')
-    )
 
 
 def distance_to_decimal(dist: str):

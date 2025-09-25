@@ -3,6 +3,8 @@ from re import search
 from collections.abc import Callable
 from lxml.html import HtmlElement
 
+from utils.cleaning import normalize_name
+
 
 class Pedigree:
     def __init__(self, pedigrees: list[HtmlElement]) -> None:
@@ -16,12 +18,9 @@ class Pedigree:
 
         self.pedigree_info()
 
-    def clean_name(self, name: str) -> str:
-        return name.replace('.', ' ').replace('  ', ' ').replace(',', '').replace("'", '').strip()
-
     def get_dam(self, info_dam: HtmlElement) -> str:
         text: str = info_dam.text or ''
-        dam: str = self.clean_name(text.strip().strip('()'))
+        dam: str = normalize_name(text.strip().strip('()'))
 
         span: HtmlElement | None = info_dam.find('span')
         dam_nat: str | None = span.text if span is not None else None
@@ -31,12 +30,13 @@ class Pedigree:
 
     def get_damsire(self, info_damsire: HtmlElement) -> str:
         text: str = info_damsire.text or ''
-        damsire: str = self.clean_name(text.strip('()'))
+        text = text.strip().strip('()')
+        damsire: str = normalize_name(text)
 
         if damsire == 'Damsire Unregistered':
             return ''
 
-        return damsire.strip('()')
+        return damsire
 
     def get_sire(self, info_sire: HtmlElement) -> str:
         text: str = info_sire.text or ''
@@ -48,7 +48,7 @@ class Pedigree:
         else:
             region_sire = 'GB'
 
-        sire = self.clean_name(sire.split('(')[0])
+        sire = normalize_name(sire.split('(')[0])
 
         return f'{sire} ({region_sire})'
 
