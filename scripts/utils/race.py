@@ -12,7 +12,7 @@ from models.race import RaceInfo, RunnerInfo
 from utils.header import RandomHeader
 from utils.pedigree import Pedigree
 
-from utils.cleaning import clean_race, clean_string
+from utils.cleaning import clean_race, clean_string, strip_row
 from utils.date import convert_date
 from utils.going import get_surface
 from utils.lxml_funcs import find
@@ -125,11 +125,9 @@ class Race:
         self.runner_info.owner_id = self.get_ids_owner()
         self.runner_info.hg = self.get_headgear()
         self.runner_info.wgt, self.runner_info.lbs = self.get_weights()
-        self.runner_info.ofr = self.doc.xpath('//td[@data-ending="OR"]/text()')
-        self.runner_info.ofr = [x.strip() for x in self.runner_info.ofr]
-        self.runner_info.rpr = self.doc.xpath('//td[@data-ending="RPR"]/text()')
-        self.runner_info.rpr = [x.strip() for x in self.runner_info.rpr]
-        self.runner_info.ts = self.doc.xpath('//td[@data-ending="TS"]/text()')
+        self.runner_info.ofr = strip_row(self.doc.xpath('//td[@data-ending="OR"]/text()'))
+        self.runner_info.rpr = strip_row(self.doc.xpath('//td[@data-ending="RPR"]/text()'))
+        self.runner_info.ts = strip_row(self.doc.xpath('//td[@data-ending="TS"]/text()'))
         self.runner_info.silk_url = self.doc.xpath('//img[@class="rp-horseTable__silk"]/@src')
         self.runner_info.time = self.get_finishing_times()
         self.runner_info.secs = self.time_to_seconds(self.runner_info.time)

@@ -53,3 +53,7 @@ def normalize_name(name: str, title_case: bool = True) -> str:
     if title_case:
         name = name.lower().title()
     return name
+
+
+def strip_row(row: list[str]) -> list[str]:
+    return [x.strip() for x in row]
