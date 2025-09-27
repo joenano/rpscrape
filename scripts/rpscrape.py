@@ -53,6 +53,9 @@ def get_race_urls(tracks: list[tuple[str, str]], years: list[str], code: str) ->
             data = loads(response.text).get('data', {})
             races = data.get('principleRaceResults', [])
 
+            if not races:
+                continue
+
             for race in races:
                 race_date = race['raceDatetime'][:10]
                 race_id = race['raceInstanceUid']
