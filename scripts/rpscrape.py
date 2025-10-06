@@ -102,6 +102,18 @@ def scrape_races(
         print('Getting Betfair data...')
         betfair = Betfair(race_urls)
 
+        betfair_dir = Path('../data/betfair') / folder_name / code
+        betfair_dir.mkdir(parents=True, exist_ok=True)
+
+        with file_writer(str(betfair_dir / f'{file_name}.csv')) as f:
+            betfair_fields = settings.toml.get('fields', {}).get('betfair', {})
+
+            header = ','.join(['date', 'region', 'off', 'horse'] + list(betfair_fields.keys()))
+            _ = f.write(header + '\n')
+
+            for row in betfair.rows:
+                _ = f.write(','.join(row.to_dict().values()) + '\n')
+
     print('Scraping races...')
 
     with file_writer(str(file_path)) as f:

@@ -11,6 +11,7 @@ class Betfair:
     def __init__(self, race_urls: list[str]):
         self.urls: list[tuple[str, str]] = create_urls(race_urls)
         self.data: BSPMap = {}
+        self.rows: list[BSP] = []
 
         for url, region in self.urls:
             rows = get_data(url, region)
@@ -18,10 +19,14 @@ class Betfair:
             if not rows:
                 continue
 
+            self.rows.extend(rows)
+
             for row in rows:
                 key = (row.region, row.date, row.off)
+
                 if key not in self.data:
                     self.data[key] = []
+
                 self.data[key].append(row)
 
 

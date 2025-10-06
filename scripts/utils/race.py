@@ -556,10 +556,10 @@ class Race:
         key = (self.race_info.region, self.race_info.date, self.race_info.off)
         bsp = bsp_map.get(key)
 
+        self.runner_info.set_bsp_list_width(len(self.runner_info.horse))
+
         if not bsp:
             return
-
-        self.runner_info.set_bsp_list_width(len(self.runner_info.horse))
 
         for i, horse in enumerate(self.runner_info.horse):
             name = horse.split('(')[0].strip().lower()
