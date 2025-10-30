@@ -112,7 +112,8 @@ def scrape_races(
             _ = f.write(header + '\n')
 
             for row in betfair.rows:
-                _ = f.write(','.join(row.to_dict().values()) + '\n')
+                values = ['' if v is None else str(v) for v in row.to_dict().values()]
+                _ = f.write(','.join(values) + '\n')
 
     print('Scraping races...')
 
