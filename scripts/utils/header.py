@@ -8,7 +8,7 @@ class RandomHeader:
 
     def header(self) -> dict[str, str]:
         return {
-            'Accept': 'text/html,application/xhtml+xml,application/xml',
+            'Accept': '*/*',
             'Accept-Encoding': 'gzip, deflate, br',
             'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
             'Referer': 'https://www.google.com/',

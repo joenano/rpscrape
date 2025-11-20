@@ -53,6 +53,10 @@ def get_odds(session, url):
 
 def get_going_info(session, date):
     r = session.get(f'https://www.racingpost.com/non-runners/{date}', headers=random_header.header())
+
+    while r.status_code == 406:
+        r = session.get(f'https://www.racingpost.com/non-runners/{date}', headers=random_header.header())
+
     doc = html.fromstring(r.content.decode())
 
     json_str = (
@@ -154,6 +158,10 @@ def get_runners(session, profile_urls):
 
     for url in profile_urls:
         r = session.get(url, headers=random_header.header())
+
+        while r.status_code == 406:
+            r = session.get(url, headers=random_header.header())
+
         doc = html.fromstring(r.content)
 
         runner = {}
