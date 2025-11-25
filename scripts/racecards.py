@@ -52,10 +52,11 @@ def get_odds(session, url):
 
 
 def get_going_info(session, date):
-    r = session.get(f'https://www.racingpost.com/non-runners/{date}', headers=random_header.header())
+    url_going_info = f'https://www.racingpost.com/non-runners/{date}'
+    r = session.get(url_going_info, headers=random_header.header())
 
     while r.status_code == 406:
-        r = session.get(f'https://www.racingpost.com/non-runners/{date}', headers=random_header.header())
+        r = session.get(url_going_info, headers=random_header.header())
 
     doc = html.fromstring(r.content.decode())
 
@@ -140,6 +141,10 @@ def get_race_type(doc, race, distance):
 
 def get_race_urls(session, racecard_url):
     r = session.get(racecard_url, headers=random_header.header())
+
+    while r.status_code == 406:
+        r = session.get(racecard_url, headers=random_header.header())
+
     doc = html.fromstring(r.content)
 
     race_urls = []
