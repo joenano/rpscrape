@@ -18,6 +18,21 @@ GOING = {
     ),
 }
 
+FLAT_GROUPS = {
+    6.0: ('good', 'firm', 'standard', 'fast', 'hard', 'slow', 'sloppy'),
+    5.0: (
+        'soft',
+        'heavy',
+        'yielding',
+        'holding',
+    ),
+}
+
+JUMP_GROUPS = {
+    5.0: ('firm', 'standard', 'hard', 'fast', 'good'),
+    4.0: ('soft', 'heavy', 'yielding', 'slow', 'holding'),
+}
+
 
 def get_surface(going: str) -> str:
     if going in GOING['AW']:

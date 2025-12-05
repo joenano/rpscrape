@@ -24,7 +24,7 @@ class Pedigree:
 
         span: HtmlElement | None = info_dam.find('span')
         dam_nat: str | None = span.text if span is not None else None
-        region_dam: str = dam_nat.strip() if dam_nat else 'GB'
+        region_dam: str = dam_nat.strip() if dam_nat else '(GB)'
 
         return f'{dam} {region_dam}'
 

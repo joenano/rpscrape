@@ -15,6 +15,7 @@ from utils.pedigree import Pedigree
 from utils.cleaning import clean_race, clean_string, strip_row
 from utils.date import convert_date
 from utils.going import get_surface
+from utils.lps import get_lps_scale
 from utils.lxml_funcs import find
 from utils.region import get_region
 
@@ -140,34 +141,11 @@ class Race:
         self.csv_data: list[str] = self.create_csv_data(fields)
 
     def calculate_times(
-        self, win_time: float, dist_btn: list[str], going: str, course: str, race_type: str
+        self, win_time: float, dist_btn: list[str], going: str, race_type: str
     ) -> list[str]:
         times: list[str] = []
-        going_lower = going.lower()
-        course_lower = course.lower()
 
-        if race_type.lower() == 'flat':
-            if not going:
-                lps_scale = 6.0
-            elif going_lower in {'firm', 'standard', 'fast', 'hard', 'slow', 'sloppy'}:
-                lps_scale = 5.0 if 'southwell' in course_lower else 6.0
-            elif 'good' in going_lower:
-                lps_scale = 5.5 if going_lower in {'soft', 'yielding'} else 6.0
-            elif going_lower in {'soft', 'heavy', 'yielding', 'holding'}:
-                lps_scale = 5.0
-            else:
-                lps_scale = 5.0
-        else:
-            if not going:
-                lps_scale = 5.0
-            elif going_lower in {'firm', 'standard', 'hard', 'fast'}:
-                lps_scale = 4.0 if 'southwell' in course_lower else 5.0
-            elif 'good' in going_lower:
-                lps_scale = 4.5 if going_lower in {'soft', 'yielding'} else 5.0
-            elif going_lower in {'soft', 'heavy', 'yielding', 'slow', 'holding'}:
-                lps_scale = 4.0
-            else:
-                lps_scale = 5.0
+        lps_scale = get_lps_scale(race_type, going)
 
         for dist in dist_btn:
             try:
@@ -288,7 +266,6 @@ class Race:
             winning_time,
             btn_adj,
             self.race_info.going,
-            self.race_info.course,
             self.race_info.r_type,
         )
 
