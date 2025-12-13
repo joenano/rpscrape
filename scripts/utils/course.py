@@ -36,3 +36,8 @@ def print_courses(code: str = 'all'):
 
 def valid_course(code: str) -> bool:
     return code in {course[0] for course in courses()}
+
+
+def valid_meeting(course: str):
+    invalid = ['free to air', 'worldwide stakes', '(arab)']
+    return all([x not in course for x in invalid])

@@ -1,96 +1,95 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+
+import argparse
+import datetime
 import os
-import requests
+import re
 import sys
 
 from collections import defaultdict
-from datetime import datetime, timedelta
 from lxml import etree, html
-from orjson import loads, dumps, OPT_NON_STR_KEYS
-from re import search
+from typing import Any
+from orjson import dumps, loads
 
 from utils.cleaning import normalize_name
-from utils.going import get_surface
+from utils.course import valid_meeting
 from utils.header import RandomHeader
+from utils.going import get_surface
 from utils.lxml_funcs import find
+from utils.network import Persistent406Error, get_request
+from utils.profiles import get_profiles
 from utils.region import get_region
 from utils.stats import Stats
-# from utils.odds import Odds
 
+from models.racecard import Racecard, Runner
 
 random_header = RandomHeader()
 
-
-def distance_to_furlongs(distance):
-    dist = distance.strip().replace('¼', '.25').replace('½', '.5').replace('¾', '.75')
-
-    if 'm' in dist:
-        if len(dist) > 2:
-            dist = int(dist.split('m')[0]) * 8 + float(dist.split('m')[1].strip('f'))
-        else:
-            dist = int(dist.split('m')[0]) * 8
-    else:
-        dist = dist.strip('f')
-
-    return float(dist)
+RACE_TYPE = {
+    'X': 'Flat',
+    'C': 'Chase',
+    'H': 'Hurdle',
+    'B': 'NH Flat',
+}
 
 
-def get_accordion(session, url):
-    race_id = url.split('/')[-1]
-    url = f'https://www.racingpost.com/racecards/data/accordion/{race_id}'
-    r = session.get(url, headers=random_header.header())
-    doc = html.fromstring(r.content)
-
-    return doc
+class LegacyKeywordError(Exception):
+    def __init__(self, keyword: str) -> None:
+        self.keyword: str = keyword
+        super().__init__()
 
 
-def get_odds(session, url):
-    r = session.get(url + '/odds-comparison', headers=random_header.header())
-    doc = html.fromstring(r.content.decode('utf-8'))
-
-    return doc
-
-
-def get_going_info(session, date):
-    url_going_info = f'https://www.racingpost.com/non-runners/{date}'
-    r = session.get(url_going_info, headers=random_header.header())
-
-    while r.status_code == 406:
-        r = session.get(url_going_info, headers=random_header.header())
-
-    doc = html.fromstring(r.content.decode())
-
-    json_str = (
-        doc.xpath('//body/script')[0].text.replace('var __PRELOADED_STATE__ = ', '').strip().strip(';')
-    )
-
-    going_info = defaultdict(dict)
-
-    for course in loads(json_str):
-        going, rail_movements = parse_going(course['going'])
-
-        course_id = 0
-        course_name = ''
-
-        if course['courseName'] == 'Belmont At The Big A':
-            course_id = 255
-            course_name = 'Aqueduct'
-        else:
-            course_id = int(course['raceCardsCourseMeetingsUrl'].split('/')[2])
-            course_name = course['courseName']
-
-        going_info[course_id]['course'] = course_name
-        going_info[course_id]['going'] = going
-        going_info[course_id]['stalls'] = course['stallsPosition']
-        going_info[course_id]['rail_movements'] = rail_movements
-        going_info[course_id]['weather'] = course['weather']
-
-    return going_info
+def check_legacy_keywords(value: str) -> str:
+    if value.lower() in ('today', 'tomorrow'):
+        raise LegacyKeywordError(value)
+    return value
 
 
-def get_pattern(race_name):
+def handle_legacy_error(keyword: str):
+    print('\nError: The API has changed.')
+    print(f"The positional keyword '{keyword}' is no longer supported.")
+    print('Use --day N or --days N instead.\n')
+    print('./rpscrape.py today -> ./rpscrape.py --day 1')
+    print('./rpscrape.py tomorrow -> ./rpscrape.py --day 2')
+    print('today and tomorrow -> ./rpscrape.py --days 2')
+
+
+def validate_days_range(value: str) -> int:
+    try:
+        days = int(value)
+        if 1 <= days <= 6:
+            return days
+        raise argparse.ArgumentTypeError(f'Value must be an integer between 1 and 6. Got: {days}')
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"Invalid value: '{value}'. Expected an integer.")
+
+
+def get_race_urls(dates: list[str]) -> dict[str, list[tuple[str, str]]]:
+    race_urls: defaultdict[str, list[tuple[str, str]]] = defaultdict(list)
+
+    for date in dates:
+        url = f'https://www.racingpost.com/racecards/{date}'
+        try:
+            _, response = get_request(url)
+        except Persistent406Error as err:
+            print('Failed to get race urls.')
+            print(err)
+            sys.exit(1)
+
+        doc = html.fromstring(response.content)
+
+        for meeting in doc.xpath('//section[@data-accordion-row]'):
+            course = meeting.xpath(".//span[contains(@class, 'RC-accordion__courseName')]")[0]
+            if valid_meeting(course.text_content().strip().lower()):
+                for race in meeting.xpath(".//a[@class='RC-meetingItem__link js-navigate-url']"):
+                    race_urls[date].append((race.attrib['data-race-id'], race.attrib['href']))
+
+    return dict(race_urls)
+
+
+def get_pattern(race_name: str):
     regex_group = r'(\(|\s)((G|g)rade|(G|g)roup) (\d|[A-Ca-c]|I*)(\)|\s)'
-    match = search(regex_group, race_name)
+    match = re.search(regex_group, race_name)
 
     if match:
         pattern = f'{match.groups()[1]} {match.groups()[4]}'.title()
@@ -102,469 +101,320 @@ def get_pattern(race_name):
     return ''
 
 
-def get_race_type(doc, race, distance):
-    race_type = ''
-    fences = find(doc, 'div', 'RC-headerBox__stalls')
+def parse_age_and_rating(doc: html.HtmlElement) -> tuple[str | None, str | None]:
+    raw = find(doc, 'span', 'RC-header__rpAges')
+    parts = raw.strip('()').split()
+    age = parts[0] if len(parts) > 0 else None
+    rating = parts[1] if len(parts) > 1 else None
+    return age, rating
 
-    if 'hurdle' in fences.lower():
-        race_type = 'Hurdle'
-    elif 'fence' in fences.lower():
-        race_type = 'Chase'
-    else:
-        if distance >= 12:
-            if any(x in race for x in {'national hunt flat', 'nh flat race', 'mares flat race'}):
-                race_type = 'NH Flat'
-            if any(
-                x in race for x in {'inh bumper', ' sales bumper', 'kepak flat race', 'i.n.h. flat race'}
-            ):
-                race_type = 'NH Flat'
-            if any(x in race for x in {' hurdle', '(hurdle)'}):
-                race_type = 'Hurdle'
-            if any(
-                x in race
-                for x in {
-                    ' chase',
-                    '(chase)',
-                    'steeplechase',
-                    'steeple-chase',
-                    'steeplchase',
-                    'steepl-chase',
+
+def parse_field_size(doc: html.HtmlElement) -> int | None:
+    raw = find(doc, 'div', 'RC-headerBox__runners').lower()
+    if 'runners:' in raw:
+        segment = raw.split('runners:', 1)[1]
+        return int(segment.split('(')[0].strip())
+    return None
+
+
+def parse_going(doc: html.HtmlElement) -> str:
+    raw = find(doc, 'div', 'RC-headerBox__going').lower()
+    going = raw.split('going:', 1)[1].strip().title() if 'going:' in raw else ''
+    return going
+
+
+def parse_prize(doc: html.HtmlElement) -> str | None:
+    raw = find(doc, 'div', 'RC-headerBox__winner').lower()
+    if 'winner:' in raw:
+        return raw.split('winner:', 1)[1].strip()
+    return None
+
+
+def parse_runners(
+    stats: Stats,
+    runners_json: list[dict[str, Any]],
+    profiles: dict[str, dict[str, Any]],
+) -> list[Runner]:
+    runners: list[Runner] = []
+
+    for runner_json in runners_json:
+        profile = profiles[runner_json['horseUid']]
+
+        runner = Runner()
+        runners.append(runner)
+
+        runner.age = runner_json['horseAge']
+        runner.breeder = normalize_name(runner_json['breederName'])
+        runner.breeder_id = runner_json['breederUid']
+        runner.claim = runner_json['weightAllowanceLbs']
+        runner.colour = runner_json['horseColourCode']
+        runner.comment = runner_json['diomed']
+        runner.dam = normalize_name(runner_json['damName'])
+        runner.dam_id = runner_json['damId']
+        runner.dam_region = runner_json['damCountry']
+        runner.damsire = normalize_name(runner_json['damsireName'])
+        runner.damsire_id = runner_json['damsireId']
+        runner.damsire_region = runner_json['damsireCountry']
+        runner.dob = runner_json['horseDateOfBirth'].split('T')[0]
+        runner.draw = runner_json['draw'] if runner_json['draw'] else None
+        runner.form = (
+            ''.join(f['formFigure'] for f in runner_json['figuresCalculated'])[::-1]
+            if runner_json['figuresCalculated']
+            else ''
+        )
+        runner.headgear = runner_json['rpHorseHeadGearCode']
+        runner.headgear_first = runner_json['firstTime']
+        runner.horse_id = runner_json['horseUid']
+        runner.jockey = normalize_name(runner_json['jockeyName'])
+        runner.jockey_allowance = runner_json['weightAllowanceLbs']
+        runner.jockey_id = runner_json['jockeyUid']
+        runner.last_run = runner_json['daysSinceLastRun']
+        runner.lbs = runner_json['weightCarriedLbs']
+        runner.name = normalize_name(runner_json['horseName'])
+        runner.non_runner = runner_json['nonRunner']
+        runner.number = runner_json['startNumber']
+        runner.ofr = runner_json['officialRatingToday'] if runner_json['officialRatingToday'] else None
+        runner.owner = normalize_name(runner_json['ownerName'])
+        runner.owner_id = runner_json['ownerUid']
+        runner.profile = profile['profile']
+        runner.region = runner_json['countryOriginCode']
+        runner.reserve = runner_json['irishReserve']
+        runner.rpr = runner_json['rpPostmark'] if runner_json['rpPostmark'] else None
+        runner.sex = profile['horseSex']
+        runner.sex_code = runner_json['horseSexCode']
+        runner.silk_path = runner_json['silkImagePath']
+        runner.silk_url = f'https://www.rp-assets.com/svg/{runner.silk_path}.svg'
+        runner.sire = normalize_name(runner_json['sireName'])
+        runner.sire_id = runner_json['sireId']
+        runner.sire_region = runner_json['sireCountry']
+        runner.spotlight = runner_json['spotlight']
+        runner.trainer = normalize_name(runner_json['trainerStylename'])
+        runner.trainer_14_days = profile['trainerLast14Days']
+        runner.trainer_id = runner_json['trainerId']
+        runner.trainer_location = profile['trainerLocation']
+        runner.trainer_rtf = runner_json['trainerRtf']
+        runner.ts = runner_json['rpTopspeed'] if runner_json['rpTopspeed'] else None
+        runner.wind_surgery_first = runner_json['windSurgeryFirstTime']
+        runner.wind_surgery_second = runner_json['windSurgerySecondTime']
+
+        horse_stats = stats.horses[str(runner.horse_id)]
+        jockey_stats = stats.jockeys[str(runner.jockey_id)]
+        trainer_stats = stats.trainers[str(runner.trainer_id)]
+
+        runner.stats = {
+            'horse': horse_stats.to_dict(),
+            'jockey': jockey_stats.to_dict(),
+            'trainer': trainer_stats.to_dict(),
+        }
+
+        if profile['previousTrainers']:
+            runner.prev_trainers = [
+                {
+                    'trainer': normalize_name(trainer['trainerStyleName']),
+                    'trainer_id': trainer['trainerUid'],
+                    'change_date': trainer['trainerChangeDate'].split('T')[0],
                 }
-            ):
-                race_type = 'Chase'
+                for trainer in profile['previousTrainers']
+            ]
 
-    if race_type == '':
-        race_type = 'Flat'
+        if profile['previousOwners']:
+            runner.prev_owners = [
+                {
+                    'owner': normalize_name(owner['ownerStyleName']),
+                    'owner_id': owner['ownerUid'],
+                    'change_date': owner['ownerChangeDate'].split('T')[0],
+                }
+                for owner in profile['previousOwners']
+            ]
 
-    return race_type
+        if profile['medical']:
+            runner.medical = [
+                {'date': med['medicalDate'].split('T')[0], 'type': med['medicalType']}
+                for med in profile['medical']
+            ]
 
+        if profile['quotes']:
+            runner.quotes = [
+                {
+                    'date': q['raceDate'].split('T')[0],
+                    'horse': normalize_name(q['horseStyleName']),
+                    'horse_id': q['horseUid'],
+                    'race': q['raceTitle'],
+                    'race_id': q['raceId'],
+                    'course': q['courseStyleName'],
+                    'course_id': q['courseUid'],
+                    'distance_f': q['distanceFurlong'],
+                    'distance_y': q['distanceYard'],
+                    'quote': q['notes'],
+                }
+                for q in profile['quotes']
+            ]
 
-def get_race_urls(session, racecard_url):
-    r = session.get(racecard_url, headers=random_header.header())
-
-    while r.status_code == 406:
-        r = session.get(racecard_url, headers=random_header.header())
-
-    doc = html.fromstring(r.content)
-
-    race_urls = []
-
-    for meeting in doc.xpath('//section[@data-accordion-row]'):
-        course = meeting.xpath(".//span[contains(@class, 'RC-accordion__courseName')]")[0]
-        if valid_course(course.text_content().strip().lower()):
-            for race in meeting.xpath(".//a[@class='RC-meetingItem__link js-navigate-url']"):
-                race_urls.append('https://www.racingpost.com' + race.attrib['href'])
-
-    return sorted(list(set(race_urls)))
-
-
-def get_runners(session, profile_urls):
-    runners = {}
-
-    for url in profile_urls:
-        r = session.get(url, headers=random_header.header())
-
-        while r.status_code == 406:
-            r = session.get(url, headers=random_header.header())
-
-        doc = html.fromstring(r.content)
-
-        runner = {}
-
-        try:
-            json_str = (
-                doc.xpath('//body/script')[0]
-                .text.split('window.PRELOADED_STATE =')[1]
-                .split('\n')[0]
-                .strip()
-                .strip(';')
-            )
-            js = loads(json_str)
-        except IndexError:
-            split = url.split('/')
-            runner['horse_id'] = int(split[5])
-            runner['name'] = split[6].replace('-', ' ').title()
-            runner['broken_url'] = url
-            runners[runner['horse_id']] = runner
-            continue
-
-        try:
-            runner['age'] = int(js['profile']['age'].split('-')[0])
-        except ValueError:
-            age = js['profile']['age'].replace('Died as a', '')
-            runner['age'] = int(age.split('-')[0])
-
-        runner['horse_id'] = js['profile']['horseUid']
-        runner['name'] = normalize_name(js['profile']['horseName'])
-        runner['dob'] = js['profile']['horseDateOfBirth'].split('T')[0]
-        runner['sex'] = js['profile']['horseSex']
-        runner['sex_code'] = js['profile']['horseSexCode']
-        runner['colour'] = js['profile']['horseColour']
-        runner['region'] = js['profile']['horseCountryOriginCode']
-
-        runner['breeder'] = js['profile']['breederName']
-        runner['dam'] = normalize_name(js['profile']['damHorseName'])
-        runner['dam_region'] = js['profile']['damCountryOriginCode']
-        runner['sire'] = normalize_name(js['profile']['sireHorseName'])
-        runner['sire_region'] = js['profile']['sireCountryOriginCode']
-        runner['grandsire'] = normalize_name(js['profile']['siresSireName'])
-        runner['damsire'] = normalize_name(js['profile']['damSireHorseName'])
-        runner['damsire_region'] = js['profile']['damSireCountryOriginCode']
-
-        runner['trainer'] = normalize_name(js['profile']['trainerName'])
-        runner['trainer_id'] = js['profile']['trainerUid']
-        runner['trainer_location'] = js['profile']['trainerLocation']
-        runner['trainer_14_days'] = js['profile']['trainerLast14Days']
-
-        runner['owner'] = normalize_name(js['profile']['ownerName'])
-
-        runner['prev_trainers'] = js['profile']['previousTrainers']
-
-        if runner['prev_trainers']:
-            prev_trainers = []
-
-            for trainer in runner['prev_trainers']:
-                prev_trainer = {}
-                prev_trainer['trainer'] = trainer['trainerStyleName']
-                prev_trainer['trainer_id'] = trainer['trainerUid']
-                prev_trainer['change_date'] = trainer['trainerChangeDate'].split('T')[0]
-                prev_trainers.append(prev_trainer)
-
-            runner['prev_trainers'] = prev_trainers
-
-        runner['prev_owners'] = js['profile']['previousOwners']
-
-        if runner['prev_owners']:
-            prev_owners = []
-
-            for owner in runner['prev_owners']:
-                prev_owner = {}
-                prev_owner['owner'] = owner['ownerStyleName']
-                prev_owner['owner_id'] = owner['ownerUid']
-                prev_owner['change_date'] = owner['ownerChangeDate'].split('T')[0]
-                prev_owners.append(prev_owner)
-
-            runner['prev_owners'] = prev_owners
-
-        if js['profile']['comments']:
-            runner['comment'] = js['profile']['comments'][0]['individualComment']
-            runner['spotlight'] = js['profile']['comments'][0]['individualSpotlight']
-        else:
-            runner['comment'] = None
-            runner['spotlight'] = None
-
-        if js['profile']['medical']:
-            medicals = []
-
-            for med in js['profile']['medical']:
-                medical = {}
-                medical['date'] = med['medicalDate'].split('T')[0]
-                medical['type'] = med['medicalType']
-                medicals.append(medical)
-
-            runner['medical'] = medicals
-
-        runner['quotes'] = None
-
-        if js['quotes']:
-            quotes = []
-
-            for q in js['quotes']:
-                quote = {}
-                quote['date'] = q['raceDate'].split('T')[0]
-                quote['horse'] = q['horseStyleName']
-                quote['horse_id'] = q['horseUid']
-                quote['race'] = q['raceTitle']
-                quote['race_id'] = q['raceId']
-                quote['course'] = q['courseStyleName']
-                quote['course_id'] = q['courseUid']
-                quote['distance_f'] = q['distanceFurlong']
-                quote['distance_y'] = q['distanceYard']
-                quote['quote'] = q['notes']
-                quotes.append(quote)
-
-            runner['quotes'] = quotes
-
-        runner['stable_tour'] = None
-
-        if js['stableTourQuotes']:
-            quotes = []
-
-            for q in js['stableTourQuotes']:
-                quote = {}
-                quote['horse'] = q['horseName']
-                quote['horse_id'] = q['horseUid']
-                quote['quote'] = q['notes']
-                quotes.append(quote)
-
-            runner['stable_tour'] = quotes
-
-        runners[runner['horse_id']] = runner
+        if profile['stable_quotes']:
+            runner.stable_tour = [
+                {'horse': normalize_name(q['horseName']), 'horse_id': q['horseUid'], 'quote': q['notes']}
+                for q in profile['stable_quotes']
+            ]
 
     return runners
 
 
-def parse_going(going_info):
-    going = going_info
-    rail_movements = ''
+def scrape_racecards(
+    race_urls: dict[str, list[tuple[str, str]]],
+) -> defaultdict[str, defaultdict[str, defaultdict[str, defaultdict[str, dict[str, Any]]]]]:
+    races: defaultdict[str, defaultdict[str, defaultdict[str, defaultdict[str, dict[str, Any]]]]] = (
+        defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+    )
 
-    if 'Rail movements' in going_info:
-        going_info = going_info.replace('movements:', 'movements')
-        rail_movements = [
-            x.strip() for x in going_info.split('Rail movements')[1].strip().strip(')').split(',')
-        ]
-        going = going_info.split('(Rail movements')[0].strip()
-
-    return going, rail_movements
-
-
-def parse_races(session, race_urls, date):
-    races = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
-
-    going_info = get_going_info(session, date)
-
-    for url in race_urls:
-        r = session.get(url, headers=random_header.header(), allow_redirects=False)
-
-        accordion = get_accordion(session, url)
-        stats = Stats(accordion)
-
-        if r.status_code != 200:
-            print('Failed to get racecard.')
-            print(f'URL: {url}')
-            print(f'Response: {r.status_code}')
-            continue
-
-        try:
-            doc = html.fromstring(r.content)
-        except etree.ParserError:
-            continue
-
-        race = {}
-
-        url_split = url.split('/')
-
-        race['course'] = find(doc, 'h1', 'RC-courseHeader__name')
-
-        if race['course'] == 'Belmont At The Big A':
-            race['course_id'] = 255
-            race['course'] = 'Aqueduct'
-        else:
-            race['course_id'] = int(url_split[4])
-
-        race['race_id'] = int(url_split[7])
-        race['date'] = url_split[6]
-        race['off_time'] = find(doc, 'span', 'RC-courseHeader__time')
-        race['race_name'] = find(doc, 'span', 'RC-header__raceInstanceTitle')
-        race['distance_round'] = find(doc, 'strong', 'RC-header__raceDistanceRound')
-        race['distance'] = find(doc, 'span', 'RC-header__raceDistance')
-        race['distance'] = (
-            race['distance_round'] if not race['distance'] else race['distance'].strip('()')
-        )
-        race['distance_f'] = distance_to_furlongs(race['distance_round'])
-        race['region'] = get_region(str(race['course_id']))
-        race['pattern'] = get_pattern(race['race_name'].lower())
-        race['race_class'] = find(doc, 'span', 'RC-header__raceClass')
-        race['race_class'] = race['race_class'].strip('()') if race['race_class'] else ''
-        race['type'] = get_race_type(doc, race['race_name'].lower(), race['distance_f'])
-
-        if not race['race_class']:
-            if race['pattern']:
-                race['race_class'] = 'Class 1'
-
-        try:
-            band = find(doc, 'span', 'RC-header__rpAges').strip('()').split()
-            if band:
-                race['age_band'] = band[0]
-                race['rating_band'] = band[1] if len(band) > 1 else None
-            else:
-                race['age_band'] = None
-                race['rating_band'] = None
-        except AttributeError:
-            race['age_band'] = None
-            race['rating_band'] = None
-
-        prize = find(doc, 'div', 'RC-headerBox__winner').lower()
-        race['prize'] = prize.split('winner:')[1].strip() if 'winner:' in prize else None
-        field_size = find(doc, 'div', 'RC-headerBox__runners').lower()
-        if field_size:
-            race['field_size'] = int(field_size.split('runners:')[1].split('(')[0].strip())
-        else:
-            race['field_size'] = ''
-
-        try:
-            race['going_detailed'] = going_info[race['course_id']]['going']
-            race['rail_movements'] = going_info[race['course_id']]['rail_movements']
-            race['stalls'] = going_info[race['course_id']]['stalls']
-            race['weather'] = going_info[race['course_id']]['weather']
-        except KeyError:
-            race['going'] = None
-            race['rail_movements'] = None
-            race['stalls'] = None
-            race['weather'] = None
-
-        going = find(doc, 'div', 'RC-headerBox__going').lower()
-        race['going'] = going.split('going:')[1].strip().title() if 'going:' in going else ''
-
-        race['surface'] = get_surface(race['going'])
-
-        profile_hrefs = doc.xpath("//a[@data-test-selector='RC-cardPage-runnerName']/@href")
-        profile_urls = ['https://www.racingpost.com' + a.split('#')[0] + '/form' for a in profile_hrefs]
-
-        runners = get_runners(session, profile_urls)
-
-        for horse in doc.xpath("//div[contains(@class, ' js-PC-runnerRow')]"):
-            horse_id = int(find(horse, 'a', 'RC-cardPage-runnerName', attrib='href').split('/')[3])
-
-            if 'broken_url' in runners[horse_id]:
-                sire = find(horse, 'a', 'RC-pedigree__sire').split('(')
-                dam = find(horse, 'a', 'RC-pedigree__dam').split('(')
-                damsire = find(horse, 'a', 'RC-pedigree__damsire').lstrip('(').rstrip(')').split('(')
-
-                runners[horse_id]['sire'] = normalize_name(sire[0])
-                runners[horse_id]['dam'] = normalize_name(dam[0])
-                runners[horse_id]['damsire'] = normalize_name(damsire[0])
-
-                runners[horse_id]['sire_region'] = sire[1].replace(')', '').strip()
-                runners[horse_id]['dam_region'] = dam[1].replace(')', '').strip()
-                runners[horse_id]['damsire_region'] = damsire[1].replace(')', '').strip()
-
-                runners[horse_id]['age'] = find(
-                    horse, 'span', 'RC-cardPage-runnerAge', attrib='data-order-age'
-                )
-
-                sex = find(horse, 'span', 'RC-pedigree__color-sex').split()
-
-                runners[horse_id]['colour'] = sex[0]
-                runners[horse_id]['sex_code'] = sex[1].capitalize()
-
-                runners[horse_id]['trainer'] = normalize_name(
-                    find(horse, 'a', 'RC-cardPage-runnerTrainer-name', attrib='data-order-trainer')
-                )
-
-            runners[horse_id]['number'] = int(
-                find(horse, 'span', 'RC-cardPage-runnerNumber-no', attrib='data-order-no')
-            )
+    for date in race_urls:
+        for race_id, href in race_urls[date]:
+            url_base = 'https://www.racingpost.com'
+            url_racecard = f'{url_base}{href}'
+            url_runners = f'{url_base}/profile/horse/data/cardrunners/{race_id}.json'
+            url_accordion = f'{url_base}/racecards/data/accordion/{race_id}'
 
             try:
-                runners[horse_id]['draw'] = int(
-                    find(horse, 'span', 'RC-cardPage-runnerNumber-draw', attrib='data-order-draw')
-                )
-            except ValueError:
-                runners[horse_id]['draw'] = None
+                status_racecard, resp_racecard = get_request(url_racecard)
+                status_runners, resp_runners = get_request(url_runners)
+                status_accordion, resp_accordion = get_request(url_accordion)
+            except Persistent406Error as err:
+                print(err)
+                sys.exit(1)
 
-            runners[horse_id]['headgear'] = find(horse, 'span', 'RC-cardPage-runnerHeadGear')
-            runners[horse_id]['headgear_first'] = find(horse, 'span', 'RC-cardPage-runnerHeadGear-first')
-
-            try:
-                runners[horse_id]['lbs'] = int(
-                    find(horse, 'span', 'RC-cardPage-runnerWgt-carried', attrib='data-order-wgt')
-                )
-            except ValueError:
-                runners[horse_id]['lbs'] = None
-
-            try:
-                runners[horse_id]['ofr'] = int(
-                    find(horse, 'span', 'RC-cardPage-runnerOr', attrib='data-order-or')
-                )
-            except ValueError:
-                runners[horse_id]['ofr'] = None
-
-            try:
-                runners[horse_id]['rpr'] = int(
-                    find(horse, 'span', 'RC-cardPage-runnerRpr', attrib='data-order-rpr')
-                )
-            except ValueError:
-                runners[horse_id]['rpr'] = None
-
-            try:
-                runners[horse_id]['ts'] = int(
-                    find(horse, 'span', 'RC-cardPage-runnerTs', attrib='data-order-ts')
-                )
-            except ValueError:
-                runners[horse_id]['ts'] = None
-
-            claim = find(horse, 'span', 'RC-cardPage-runnerJockey-allowance')
-            jockey = horse.find('.//a[@data-test-selector="RC-cardPage-runnerJockey-name"]')
-
-            if jockey is not None:
-                jock = normalize_name(jockey.attrib['data-order-jockey'])
-                runners[horse_id]['jockey'] = jock if not claim else jock + f'({claim})'
-                runners[horse_id]['jockey_id'] = int(jockey.attrib['href'].split('/')[3])
-            else:
-                runners[horse_id]['jockey'] = None
-                runners[horse_id]['jockey_id'] = None
-
-            try:
-                runners[horse_id]['last_run'] = find(horse, 'div', 'RC-cardPage-runnerStats-lastRun')
-            except TypeError:
-                runners[horse_id]['last_run'] = None
-
-            runners[horse_id]['form'] = find(horse, 'span', 'RC-cardPage-runnerForm')
-
-            try:
-                runners[horse_id]['trainer_rtf'] = find(horse, 'span', 'RC-cardPage-runnerTrainer-rtf')
-            except TypeError:
-                runners[horse_id]['trainer_rtf'] = None
-
-            if runners[horse_id]['jockey'] is None:
-                runners[horse_id]['stats'] = {}
-                continue
-
-            jockey_name = runners[horse_id]['jockey'].split('(')[0].strip()
-
-            if jockey_name.lower() == 'non-runner':
-                runners[horse_id]['stats'] = {}
+            if any(status != 200 for status in (status_racecard, status_runners, status_accordion)):
+                print('Failed to get racecard data.')
+                print(f'status: {status_racecard} url: {url_racecard}')
+                print(f'status: {status_runners} url: {url_runners}')
+                print(f'status: {status_accordion} url: {url_accordion}')
                 continue
 
             try:
-                runner_stats = stats.horses[runners[horse_id]['name']]
-                jockey_stats = stats.jockeys[jockey_name]
-                trainer_stats = stats.trainers[runners[horse_id]['trainer']]
+                doc = html.fromstring(resp_racecard.content)
+                doc_accordion = html.fromstring(resp_accordion.content)
+            except etree.ParserError:
+                print('Failed to parse HTML for racecard.')
+                print(f'url: {url_racecard}')
+                print(f'url: {url_accordion}')
+                continue
 
-                runners[horse_id]['stats'] = {
-                    'course': runner_stats['course'],
-                    'distance': runner_stats['distance'],
-                    'going': runner_stats['going'],
-                    'jockey': jockey_stats,
-                    'trainer': trainer_stats,
-                }
+            try:
+                runners = resp_runners.json()['runners']
+                runners = [r for r in runners.values()]
+                runner = runners[0]
             except KeyError:
-                runners[horse_id]['stats'] = {}
+                print('Failed to parse JSON for runners.')
+                print(f'url: {url_runners}')
+                continue
 
-        race['runners'] = [runner for runner in runners.values()]
-        races[race['region']][race['course']][race['off_time']] = race
+            profile_hrefs = doc.xpath("//a[@data-test-selector='RC-cardPage-runnerName']/@href")
+            profile_urls = [url_base + a.split('#')[0] + '/form' for a in profile_hrefs]
+
+            profiles = get_profiles(profile_urls)
+
+            race: Racecard = Racecard()
+
+            race.href = url_racecard
+            race.race_id = int(race_id)
+
+            race.date = date
+            date_str = runner['raceDatetime']
+            race.off_time = datetime.datetime.fromisoformat(date_str).strftime('%H:%M')
+
+            race.course_id = runner['courseUid']
+            race.course = find(doc, 'h1', 'RC-courseHeader__name')
+
+            if race.course == 'Belmont At The Big A':
+                race.course_id = 255
+                race.course = 'Aqueduct'
+
+            race.region = get_region(str(race.course_id))
+
+            race.race_name = find(doc, 'span', 'RC-header__raceInstanceTitle')
+            race.race_type = RACE_TYPE[runner['raceTypeCode']]
+
+            race.distance_f = runner['distanceFurlongRounded']
+            race.distance_y = runner['distanceYard']
+            race.distance_round = find(doc, 'strong', 'RC-header__raceDistanceRound')
+            race.distance = find(doc, 'span', 'RC-header__raceDistance')
+            race.distance = race.distance_round if not race.distance else race.distance.strip('()')
+
+            race.pattern = get_pattern(race.race_name.lower())
+            race.race_class = find(doc, 'span', 'RC-header__raceClass')
+            race.race_class = race.race_class.replace('Class', '').strip('()').strip()
+            race.race_class = int(race.race_class) if race.race_class.isdigit() else None
+            race.race_class = 1 if not race.race_class and race.pattern else race.race_class
+
+            race.age_band, race.rating_band = parse_age_and_rating(doc)
+            race.prize = parse_prize(doc)
+            race.field_size = parse_field_size(doc)
+
+            race.handicap = race.rating_band is not None or 'handicap' in race.race_name.lower()
+
+            race.going = parse_going(doc)
+            race.surface = get_surface(race.going)
+
+            stats = Stats(doc_accordion)
+
+            race.runners = parse_runners(stats, runners, profiles)
+
+            races[date][race.region][race.course][race.off_time] = race.to_dict()
 
     return races
 
 
-def valid_course(course):
-    invalid = ['free to air', 'worldwide stakes', '(arab)']
-    return all([x not in course for x in invalid])
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description='Scrape racecards for a single day or a range of days.',
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
 
+    flag_group = parser.add_mutually_exclusive_group()
 
-def main():
-    if len(sys.argv) != 2 or sys.argv[1].lower() not in {'today', 'tomorrow'}:
-        return print('Usage: ./racecards.py [today|tomorrow]')
+    _ = flag_group.add_argument(
+        '--day',
+        type=validate_days_range,
+        help="Scrape a single specific day (N). E.g., '--day 5' scrapes the 5th day.",
+        metavar='N',
+    )
+    _ = flag_group.add_argument(
+        '--days',
+        type=validate_days_range,
+        help="Scrape a range of days (N total). E.g., '--days 5' scrapes 5 days.",
+        metavar='N',
+    )
 
-    racecard_url = 'https://www.racingpost.com/racecards'
+    _ = parser.add_argument(
+        'legacy_input', nargs='?', type=check_legacy_keywords, help=argparse.SUPPRESS
+    )
 
-    date = datetime.today().strftime('%Y-%m-%d')
+    try:
+        args = parser.parse_args()
+    except LegacyKeywordError as e:
+        handle_legacy_error(e.keyword)
+        sys.exit(2)
 
-    if sys.argv[1].lower() == 'tomorrow':
-        racecard_url += '/tomorrow'
-        date = (datetime.today() + timedelta(days=1)).strftime('%Y-%m-%d')
+    dates: list[str] = [
+        (datetime.date.today() + datetime.timedelta(days=i)).isoformat() for i in range(6)
+    ]
 
-    session = requests.Session()
+    if args.day:
+        dates = [dates[args.day - 1]]
+    elif args.days:
+        dates = dates[: args.days]
+    else:
+        parser.print_usage(sys.stderr)
+        print('\nError: Must specify a a day or days (1-6) to scrape using either --day or --days.')
+        sys.exit(1)
 
-    race_urls = get_race_urls(session, racecard_url)
-    races = parse_races(session, race_urls, date)
+    race_urls = get_race_urls(dates)
+    racecards = scrape_racecards(race_urls)
 
     if not os.path.exists('../racecards'):
         os.makedirs('../racecards')
 
-    with open(f'../racecards/{date}.json', 'w', encoding='utf-8') as f:
-        f.write(dumps(races, option=OPT_NON_STR_KEYS).decode('utf-8'))
+    for date, regions in racecards.items():
+        with open(f'../racecards/{date}.json', 'w', encoding='utf-8') as f:
+            _ = f.write(dumps(regions).decode('utf-8'))
 
 
 if __name__ == '__main__':

@@ -23,10 +23,10 @@ The aim of this tool is to provide a way of gathering large amounts of historica
 
 You must have Python 3.13 or greater, and GIT installed. You can download the latest Python release [here](https://www.python.org/downloads/). You can download GIT [here](https://git-scm.com/downloads).
 
-In addition, the [Requests](http://docs.python-requests.org/en/master/), [tomli](https://pypi.org/project/tomli/), [orjson](https://pypi.org/project/orjson/1.3.0/), [jarowinkler](https://pypi.org/project/jarowinkler/), [AIOHTTP](https://docs.aiohttp.org/en/stable/) and [LXML](https://lxml.de/) python modules are needed, they can be installed using PIP(_included with Python_) with the following command.
+In addition, the [Requests](http://docs.python-requests.org/en/master/), [tomli](https://pypi.org/project/tomli/), [orjson](https://pypi.org/project/orjson/1.3.0/), [jarowinkler](https://pypi.org/project/jarowinkler/), [AIOHTTP](https://docs.aiohttp.org/en/stable/), [curl_cffi](https://pypi.org/project/curl-cffi/) and [LXML](https://lxml.de/) python modules are needed, they can be installed using PIP(_included with Python_) with the following command.
 
 ```
-pip3 install requests tomli orjson jarowinkler aiohttp lxml
+pip3 install requests tomli orjson jarowinkler aiohttp lxml curl_cffi
 ```
 
 ## Install
@@ -187,12 +187,26 @@ To scrape a particular course or region, use the -c or -r flags with the course 
 
 You can scrape racecards using racecards.py which saves a file containing a json object of racecard information.
 
+There are only two parameter options, --day N and --days N where N is a number 1-6.
+
 ### Examples
 
-There are only two parameter options, either `today` or `tomorrow`.
+Scrape todays racecards.
 
 ```
-./racecards.py today
+./racecards.py --day 1
+```
+
+Scrape todays and tomorrows racecards.
+
+```
+./racecards.py --days 2
+```
+
+Scrape the third day from todays racecards.
+
+```
+./racecards.py --day 3
 ```
 
 You can see the structure of the json and some of the race information below.

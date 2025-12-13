@@ -1,39 +1,91 @@
+from dataclasses import asdict, dataclass
 from lxml.html import HtmlElement
 
-from utils.lxml_funcs import find, find_element
+from utils.lxml_funcs import find
 
 
-def clean_name(name: str):
-    if name:
-        return name.strip().replace("'", '').lower().title()
-    else:
-        return ''
+@dataclass
+class CourseStats:
+    runs: str
+    wins: str
+
+
+@dataclass
+class DistanceStats:
+    runs: str
+    wins: str
+
+
+@dataclass
+class GoingStats:
+    runs: str
+    wins: str
+
+
+@dataclass
+class HorseStats:
+    course: CourseStats
+    distance: DistanceStats
+    going: GoingStats
+
+    def to_dict(self):
+        return asdict(self)
+
+
+@dataclass
+class JockeyTrainerStats:
+    last_14_profit: str
+    last_14_runs: str
+    last_14_wins: str
+    last_14_wins_pct: str
+    ovr_profit: str
+    ovr_runs: str
+    ovr_wins: str
+    ovr_wins_pct: str
+
+    def to_dict(self):
+        return asdict(self)
+
+
+TRAINER_ROW = 'RC-trainerName__row'
+JOCKEY_ROW = 'RC-jockeyName__row'
+HORSE_ROW = 'RC-horseName__row'
 
 
 class Stats:
     def __init__(self, doc: HtmlElement):
-        self.horses = {}
-        self.jockeys = {}
-        self.trainers = {}
+        self.horses: dict[str, HorseStats] = {}
+        self.jockeys: dict[str, JockeyTrainerStats] = {}
+        self.trainers: dict[str, JockeyTrainerStats] = {}
 
-        stats = find_element(doc, 'section', 'stats', 'data-accordion-row')
         tables = doc.xpath("//table[@data-test-selector='RC-table']")
 
         for table in tables:
             rows = table.xpath('.//tr[@class="ui-table__row"]')
-            row_type = rows[0].find('td').attrib['data-test-selector']
+            if not rows:
+                continue
 
-            if 'horse' in row_type:
-                self.get_horse_stats(rows)
-            elif 'jockey' in row_type:
-                self.get_jockey_stats(rows)
-            elif 'trainer' in row_type:
-                self.get_trainer_stats(rows)
+            first_cell = rows[0].find('td')
+            if first_cell is None:
+                continue
 
-    def get_horse_stats(self, rows):
+            row_type = first_cell.attrib.get('data-test-selector', '')
+
+            if row_type == HORSE_ROW:
+                self._get_horse_stats(rows)
+            elif row_type == JOCKEY_ROW:
+                self._get_jockey_trainer_stats(rows, self.jockeys)
+            elif row_type == TRAINER_ROW:
+                self._get_jockey_trainer_stats(rows, self.trainers)
+
+    def _get_horse_stats(self, rows: list[HtmlElement]) -> None:
         for row in rows:
-            name = find(row, 'td', 'RC-horseName__row')
-            name = clean_name(name)
+            a = row.find('.//a')
+            href = a.attrib.get('href') if a is not None else None
+            horse_id = href.split('/')[3] if href is not None else None
+
+            if horse_id is None:
+                continue
 
             going_wins_runs = find(row, 'td', 'RC-goingWinsRuns__row')
             going_wins, going_runs = [x.strip() for x in going_wins_runs.split('-')]
@@ -44,25 +96,22 @@ class Stats:
             course_wins_runs = find(row, 'td', 'RC-courseWinsRuns__row')
             course_wins, course_runs = [x.strip() for x in course_wins_runs.split('-')]
 
-            self.horses[name] = {
-                'course': {
-                    'runs': course_runs,
-                    'wins': course_wins,
-                },
-                'going': {
-                    'runs': going_runs,
-                    'wins': going_wins,
-                },
-                'distance': {
-                    'runs': distance_runs,
-                    'wins': distance_wins,
-                },
-            }
+            self.horses[horse_id] = HorseStats(
+                course=CourseStats(runs=course_runs, wins=course_wins),
+                distance=DistanceStats(runs=distance_runs, wins=distance_wins),
+                going=GoingStats(runs=going_runs, wins=going_wins),
+            )
 
-    def get_jockey_stats(self, rows):
+    def _get_jockey_trainer_stats(
+        self, rows: list[HtmlElement], target: dict[str, JockeyTrainerStats]
+    ) -> None:
         for row in rows:
-            name = find(row, 'td', 'RC-jockeyName__row')
-            name = clean_name(name)
+            a = row.find('.//a')
+            href = a.attrib.get('href') if a is not None else None
+            jockey_trainer_id = href.split('/')[3] if href is not None else None
+
+            if jockey_trainer_id is None:
+                continue
 
             wins_runs = find(row, 'td', 'RC-lastWinsRuns__row')
             wins_runs_ovr = find(row, 'td', 'RC-overallWinsRuns__row')
@@ -76,41 +125,13 @@ class Stats:
             profit = find(row, 'td', 'RC-lastProfit__row')
             profit_ovr = find(row, 'td', 'RC-overallProfit__row')
 
-            self.jockeys[name] = {
-                'last_14_runs': runs,
-                'last_14_wins': wins,
-                'last_14_wins_pct': wins_pct,
-                'last_14_profit': profit,
-                'ovr_runs': runs_ovr,
-                'ovr_wins': wins_ovr,
-                'ovr_wins_pct': wins_pct_ovr,
-                'ovr_profit': profit_ovr,
-            }
-
-    def get_trainer_stats(self, rows):
-        for row in rows:
-            name = find(row, 'td', 'RC-trainerName__row')
-            name = clean_name(name)
-
-            wins_runs = find(row, 'td', 'RC-lastWinsRuns__row')
-            wins_runs_ovr = find(row, 'td', 'RC-overallWinsRuns__row')
-
-            wins, runs = [x.strip() for x in wins_runs.split('-')]
-            wins_ovr, runs_ovr = [x.strip() for x in wins_runs_ovr.split('-')]
-
-            wins_pct = find(row, 'td', 'RC-lastPercent__row')
-            wins_pct_ovr = find(row, 'td', 'RC-overallPercent__row')
-
-            profit = find(row, 'td', 'RC-lastProfit__row')
-            profit_ovr = find(row, 'td', 'RC-overallProfit__row')
-
-            self.trainers[name] = {
-                'last_14_runs': runs,
-                'last_14_wins': wins,
-                'last_14_wins_pct': wins_pct,
-                'last_14_profit': profit,
-                'ovr_runs': runs_ovr,
-                'ovr_wins': wins_ovr,
-                'ovr_wins_pct': wins_pct_ovr,
-                'ovr_profit': profit_ovr,
-            }
+            target[jockey_trainer_id] = JockeyTrainerStats(
+                last_14_runs=runs,
+                last_14_wins=wins,
+                last_14_wins_pct=wins_pct,
+                last_14_profit=profit,
+                ovr_runs=runs_ovr,
+                ovr_wins=wins_ovr,
+                ovr_wins_pct=wins_pct_ovr,
+                ovr_profit=profit_ovr,
+            )
