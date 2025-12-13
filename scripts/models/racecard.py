@@ -51,7 +51,7 @@ class Runner:
     sire_region: str | None = None
     spotlight: str | None = None
     stable_tour: list[dict[str, Any]] | None = field(default_factory=list)
-    stats: dict[str, dict[str, Any]] | None = None
+    stats: dict[str, dict[str, Any] | None] | None = None
     trainer: str | None = None
     trainer_14_days: dict[str, Any] | None = None
     trainer_id: int | None = None

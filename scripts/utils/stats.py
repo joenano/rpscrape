@@ -1,4 +1,5 @@
 from dataclasses import asdict, dataclass
+from typing import Any
 from lxml.html import HtmlElement
 
 from utils.lxml_funcs import find
@@ -32,21 +33,6 @@ class HorseStats:
         return asdict(self)
 
 
-@dataclass
-class JockeyTrainerStats:
-    last_14_profit: str
-    last_14_runs: str
-    last_14_wins: str
-    last_14_wins_pct: str
-    ovr_profit: str
-    ovr_runs: str
-    ovr_wins: str
-    ovr_wins_pct: str
-
-    def to_dict(self):
-        return asdict(self)
-
-
 TRAINER_ROW = 'RC-trainerName__row'
 JOCKEY_ROW = 'RC-jockeyName__row'
 HORSE_ROW = 'RC-horseName__row'
@@ -55,8 +41,8 @@ HORSE_ROW = 'RC-horseName__row'
 class Stats:
     def __init__(self, doc: HtmlElement):
         self.horses: dict[str, HorseStats] = {}
-        self.jockeys: dict[str, JockeyTrainerStats] = {}
-        self.trainers: dict[str, JockeyTrainerStats] = {}
+        self.jockeys: dict[str, dict[str, Any]] = {}
+        self.trainers: dict[str, dict[str, Any]] = {}
 
         tables = doc.xpath("//table[@data-test-selector='RC-table']")
 
@@ -103,7 +89,7 @@ class Stats:
             )
 
     def _get_jockey_trainer_stats(
-        self, rows: list[HtmlElement], target: dict[str, JockeyTrainerStats]
+        self, rows: list[HtmlElement], target: dict[str, dict[str, str]]
     ) -> None:
         for row in rows:
             a = row.find('.//a')
@@ -125,13 +111,13 @@ class Stats:
             profit = find(row, 'td', 'RC-lastProfit__row')
             profit_ovr = find(row, 'td', 'RC-overallProfit__row')
 
-            target[jockey_trainer_id] = JockeyTrainerStats(
-                last_14_runs=runs,
-                last_14_wins=wins,
-                last_14_wins_pct=wins_pct,
-                last_14_profit=profit,
-                ovr_runs=runs_ovr,
-                ovr_wins=wins_ovr,
-                ovr_wins_pct=wins_pct_ovr,
-                ovr_profit=profit_ovr,
-            )
+            target[jockey_trainer_id] = {
+                'last_14_runs': runs,
+                'last_14_wins': wins,
+                'last_14_wins_pct': wins_pct,
+                'last_14_profit': profit,
+                'ovr_runs': runs_ovr,
+                'ovr_wins': wins_ovr,
+                'ovr_wins_pct': wins_pct_ovr,
+                'ovr_profit': profit_ovr,
+            }

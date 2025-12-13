@@ -5,3 +5,4 @@ lxml>=4.7
 orjson>=3.6
 requests>=2.26
 tomli>=2.0
+tqdm>=4.67
