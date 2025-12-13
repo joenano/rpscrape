@@ -10,7 +10,7 @@ from collections import defaultdict
 from lxml import etree, html
 from tqdm import tqdm
 from typing import Any
-from orjson import OPT_NON_STR_KEYS, dumps
+from orjson import dumps
 
 from utils.cleaning import normalize_name
 from utils.course import valid_meeting
@@ -27,6 +27,8 @@ from models.racecard import Racecard, Runner
 random_header = RandomHeader()
 
 RACE_TYPE = {'X': 'Flat', 'C': 'Chase', 'H': 'Hurdle', 'B': 'NH Flat', 'F': 'Flat'}
+
+type Racecards = defaultdict[str, defaultdict[str, defaultdict[str, dict[str, Any]]]]
 
 
 class LegacyKeywordError(Exception):
@@ -263,12 +265,8 @@ def parse_runners(
     return runners
 
 
-def scrape_racecards(
-    race_urls: dict[str, list[tuple[str, str]]], date: str
-) -> defaultdict[str, defaultdict[str, defaultdict[str, dict[str, Any]]]]:
-    races: defaultdict[str, defaultdict[str, defaultdict[str, dict[str, Any]]]] = defaultdict(
-        lambda: defaultdict(lambda: defaultdict(dict))
-    )
+def scrape_racecards(race_urls: dict[str, list[tuple[str, str]]], date: str) -> Racecards:
+    races: Racecards = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 
     for race_id, href in tqdm(
         race_urls[date],
@@ -339,10 +337,6 @@ def scrape_racecards(
 
         race.race_name = find(doc, 'span', 'RC-header__raceInstanceTitle')
 
-        if runner['raceTypeCode'] not in RACE_TYPE:
-            print(runner['raceTypeCode'])
-            print(race)
-            sys.exit()
         race.race_type = RACE_TYPE[runner['raceTypeCode']]
 
         race.distance_f = runner['distanceFurlongRounded']

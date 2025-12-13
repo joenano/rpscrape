@@ -1,6 +1,8 @@
+import sys
+
 from dataclasses import asdict, dataclass
-from typing import Any
 from lxml.html import HtmlElement
+from typing import Any
 
 from utils.lxml_funcs import find
 
@@ -38,31 +40,44 @@ JOCKEY_ROW = 'RC-jockeyName__row'
 HORSE_ROW = 'RC-horseName__row'
 
 
+def get_table_rows(doc: HtmlElement) -> dict[str, list[HtmlElement]]:
+    table_rows: dict[str, list[HtmlElement]] = {}
+
+    tables = doc.xpath("//tbody[@class='RC-stats__tableBody']")
+
+    for table in tables:
+        rows = table.xpath('.//tr')
+
+        if not rows:
+            continue
+
+        first_cell = rows[0].find('td')
+        if first_cell is None:
+            continue
+
+        row_type = first_cell.attrib.get('data-test-selector', '')
+
+        if row_type == HORSE_ROW:
+            table_rows[HORSE_ROW] = rows
+        elif row_type == JOCKEY_ROW:
+            table_rows[JOCKEY_ROW] = rows
+        elif row_type == TRAINER_ROW:
+            table_rows[TRAINER_ROW] = rows
+
+    return table_rows
+
+
 class Stats:
     def __init__(self, doc: HtmlElement):
         self.horses: dict[str, HorseStats] = {}
         self.jockeys: dict[str, dict[str, Any]] = {}
         self.trainers: dict[str, dict[str, Any]] = {}
 
-        tables = doc.xpath("//table[@data-test-selector='RC-table']")
+        rows = get_table_rows(doc)
 
-        for table in tables:
-            rows = table.xpath('.//tr[@class="ui-table__row"]')
-            if not rows:
-                continue
-
-            first_cell = rows[0].find('td')
-            if first_cell is None:
-                continue
-
-            row_type = first_cell.attrib.get('data-test-selector', '')
-
-            if row_type == HORSE_ROW:
-                self._get_horse_stats(rows)
-            elif row_type == JOCKEY_ROW:
-                self._get_jockey_trainer_stats(rows, self.jockeys)
-            elif row_type == TRAINER_ROW:
-                self._get_jockey_trainer_stats(rows, self.trainers)
+        self._get_horse_stats(rows[HORSE_ROW])
+        self._get_jockey_trainer_stats(rows[JOCKEY_ROW], self.jockeys)
+        self._get_jockey_trainer_stats(rows[TRAINER_ROW], self.trainers)
 
     def _get_horse_stats(self, rows: list[HtmlElement]) -> None:
         for row in rows:
