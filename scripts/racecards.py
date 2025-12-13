@@ -160,6 +160,7 @@ def parse_runners(
             if runner_json['figuresCalculated']
             else ''
         )
+        runner.gelding_first_time = runner_json['geldingFirstTime']
         runner.headgear = runner_json['rpHorseHeadGearCode']
         runner.headgear_first = runner_json['firstTime']
         runner.horse_id = runner_json['horseUid']

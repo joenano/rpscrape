@@ -20,8 +20,9 @@ class Runner:
     dob: str | None = None
     draw: int | None = None
     form: str | None = None
+    gelding_first_time: bool = False
     headgear: str | None = None
-    headgear_first: bool | None = None
+    headgear_first: bool = False
     horse_id: int | None = None
     jockey: str | None = None
     jockey_allowance: int | None = None
@@ -30,7 +31,7 @@ class Runner:
     lbs: int | None = None
     medical: list[dict[str, Any]] | None = field(default_factory=list)
     name: str | None = None
-    non_runner: bool | None = None
+    non_runner: bool = False
     number: int | None = None
     ofr: int | None = None
     owner: str | None = None
@@ -40,7 +41,7 @@ class Runner:
     profile: str | None = None
     quotes: list[dict[str, Any]] = field(default_factory=list)
     region: str | None = None
-    reserve: bool | None = None
+    reserve: bool = False
     rpr: int | None = None
     sex: str | None = None
     sex_code: str | None = None
@@ -58,8 +59,8 @@ class Runner:
     trainer_location: str | None = None
     trainer_rtf: str | None = None
     ts: int | None = None
-    wind_surgery_first: bool | None = None
-    wind_surgery_second: bool | None = None
+    wind_surgery_first: bool = False
+    wind_surgery_second: bool = False
 
 
 @dataclass
@@ -74,7 +75,7 @@ class Racecard:
     distance_round: str | None = None
     field_size: int | None = None
     going: str | None = None
-    handicap: bool | None = None
+    handicap: bool = False
     href: str | None = None
     off_time: str | None = None
     pattern: str | None = None
