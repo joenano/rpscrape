@@ -68,6 +68,7 @@ class Racecard:
     age_band: str | None = None
     course: str | None = None
     course_id: int | None = None
+    course_detail: str | None = None
     date: str | None = None
     distance: str | None = None
     distance_f: float | None = None

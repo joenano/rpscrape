@@ -7,6 +7,7 @@ class RaceInfo:
     region: str = ''
     course_id: str = ''
     course: str = ''
+    course_detail: str | None = None
 
     race_id: str = ''
     off: str = ''

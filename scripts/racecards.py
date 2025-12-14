@@ -26,38 +26,21 @@ from models.racecard import Racecard, Runner
 
 random_header = RandomHeader()
 
+MAX_DAYS = 2
+
 RACE_TYPE = {'X': 'Flat', 'C': 'Chase', 'H': 'Hurdle', 'B': 'NH Flat', 'F': 'Flat'}
 
 type Racecards = defaultdict[str, defaultdict[str, defaultdict[str, dict[str, Any]]]]
 
 
-class LegacyKeywordError(Exception):
-    def __init__(self, keyword: str) -> None:
-        self.keyword: str = keyword
-        super().__init__()
-
-
-def check_legacy_keywords(value: str) -> str:
-    if value.lower() in ('today', 'tomorrow'):
-        raise LegacyKeywordError(value)
-    return value
-
-
-def handle_legacy_error(keyword: str):
-    print('\nError: The API has changed.')
-    print(f"The positional keyword '{keyword}' is no longer supported.")
-    print('Use --day N or --days N instead.\n')
-    print('./rpscrape.py today -> ./rpscrape.py --day 1')
-    print('./rpscrape.py tomorrow -> ./rpscrape.py --day 2')
-    print('today and tomorrow -> ./rpscrape.py --days 2')
-
-
 def validate_days_range(value: str) -> int:
     try:
         days = int(value)
-        if 1 <= days <= 2:
+        if 1 <= days <= MAX_DAYS:
             return days
-        raise argparse.ArgumentTypeError(f'Value must be an integer between 1 and 2. Got: {days}')
+        raise argparse.ArgumentTypeError(
+            f'Value must be an integer between 1 and {MAX_DAYS}. Got: {days}'
+        )
     except ValueError:
         raise argparse.ArgumentTypeError(f"Invalid value: '{value}'. Expected an integer.")
 
@@ -330,6 +313,8 @@ def scrape_racecards(race_urls: dict[str, list[tuple[str, str]]], date: str) -> 
         race.course_id = runner['courseUid']
         race.course = find(doc, 'h1', 'RC-courseHeader__name')
 
+        race.course_detail = find(doc, 'span', 'RC-header__straightRoundJubilee').strip('()')
+
         if race.course == 'Belmont At The Big A':
             race.course_id = 255
             race.course = 'Aqueduct'
@@ -343,8 +328,8 @@ def scrape_racecards(race_urls: dict[str, list[tuple[str, str]]], date: str) -> 
         race.distance_f = runner['distanceFurlongRounded']
         race.distance_y = runner['distanceYard']
         race.distance_round = find(doc, 'strong', 'RC-header__raceDistanceRound')
-        race.distance = find(doc, 'span', 'RC-header__raceDistance')
-        race.distance = race.distance_round if not race.distance else race.distance.strip('()')
+        race.distance = find(doc, 'span', 'RC-header__raceDistance').strip('()')
+        race.distance = race.distance or race.distance_round
 
         race.pattern = get_pattern(race.race_name.lower())
         race.race_class = find(doc, 'span', 'RC-header__raceClass')
@@ -391,18 +376,10 @@ def main() -> None:
         metavar='N',
     )
 
-    _ = parser.add_argument(
-        'legacy_input', nargs='?', type=check_legacy_keywords, help=argparse.SUPPRESS
-    )
-
-    try:
-        args = parser.parse_args()
-    except LegacyKeywordError as e:
-        handle_legacy_error(e.keyword)
-        sys.exit(2)
+    args = parser.parse_args()
 
     dates: list[str] = [
-        (datetime.date.today() + datetime.timedelta(days=i)).isoformat() for i in range(2)
+        (datetime.date.today() + datetime.timedelta(days=i)).isoformat() for i in range(MAX_DAYS)
     ]
 
     if args.day:
@@ -411,7 +388,7 @@ def main() -> None:
         dates = dates[: args.days]
     else:
         parser.print_usage(sys.stderr)
-        print('\nError: Must specify a day or days (1-2) to scrape using either --day or --days.')
+        print(f'\nError: Must specify a day (--day) or days (--days) (1-{MAX_DAYS})')
         sys.exit(1)
 
     if not os.path.exists('../racecards'):

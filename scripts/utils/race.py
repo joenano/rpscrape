@@ -61,6 +61,10 @@ class Race:
         else:
             self.race_info.course_id = url_split[4]
 
+        self.race_info.course_detail = find(
+            self.doc, 'span', 'rp-raceTimeCourseName_distanceDetail', property='class'
+        )
+
         date_time = date_time_info.attrib['data-analytics-race-date-time']
         self.race_info.off = parse_time(date_time)
 
