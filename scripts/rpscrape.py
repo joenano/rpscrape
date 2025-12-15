@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import gzip
-import requests
 import sys
 
 from collections.abc import Callable
@@ -15,6 +14,7 @@ from utils.betfair import Betfair
 from utils.argparser import ArgParser
 from utils.completer import Completer
 from utils.header import RandomHeader
+from utils.network import Persistent406Error, get_request
 from utils.race import Race, VoidRaceError
 from utils.settings import Settings
 from utils.update import Update
@@ -49,7 +49,17 @@ def get_race_urls(tracks: list[tuple[str, str]], years: list[str], code: str) ->
         for year in years:
             race_list_url = f'{url_course_base}/{course_id}/{year}/{code}/all-races'
 
-            response = requests.get(race_list_url, headers=random_header.header())
+            try:
+                status, response = get_request(race_list_url)
+            except Persistent406Error as err:
+                print('Failed to get race urls.')
+                print(err)
+                sys.exit(1)
+
+            if status != 200:
+                print(f'Failed to get race urls.\nStatus: {status}, URL: {race_list_url}')
+                sys.exit(1)
+
             data = loads(response.text).get('data', {})
             races = data.get('principleRaceResults', [])
 
@@ -71,7 +81,18 @@ def get_race_urls_date(dates: list[date], region: str) -> list[str]:
 
     for race_date in dates:
         url = f'https://www.racingpost.com/results/{race_date}'
-        response = requests.get(url, headers=random_header.header())
+
+        try:
+            status, response = get_request(url)
+        except Persistent406Error as err:
+            print('Failed to get race urls.')
+            print(err)
+            sys.exit(1)
+
+        if status != 200:
+            print(f'Failed to get race urls.\nStatus: {status}, URL: {url}')
+            sys.exit(1)
+
         doc = html.fromstring(response.content)
 
         races = doc.xpath('//a[@data-test-selector="link-listCourseNameLink"]')
@@ -121,8 +142,14 @@ def scrape_races(
         _ = f.write(settings.csv_header + '\n')
 
         for url in race_urls:
-            resp = requests.get(url, headers=random_header.header())
-            doc = html.fromstring(resp.content)
+            try:
+                _, response = get_request(url)
+            except Persistent406Error as err:
+                print('Failed to get race.')
+                print(err)
+                sys.exit(1)
+
+            doc = html.fromstring(response.content)
 
             try:
                 if betfair:

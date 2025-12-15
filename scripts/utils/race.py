@@ -1,4 +1,3 @@
-import requests
 import sys
 
 from datetime import datetime
@@ -17,6 +16,7 @@ from utils.date import convert_date
 from utils.going import get_surface
 from utils.lps import get_lps_scale
 from utils.lxml_funcs import find
+from utils.network import Persistent406Error, get_request
 from utils.region import get_region
 
 rh = RandomHeader()
@@ -48,8 +48,14 @@ class Race:
         date_time_info = self.doc.find('.//main[@data-analytics-race-date-time]')
 
         while date_time_info is None:
-            r = requests.get(self.url, headers=rh.header())
-            doc = html.fromstring(r.content)
+            try:
+                _, response = get_request(self.url)
+            except Persistent406Error as err:
+                print('Failed to get date time info.')
+                print(err)
+                sys.exit(1)
+
+            doc = html.fromstring(response.content)
             date_time_info = doc.find('.//main[@data-analytics-race-date-time]')
             self.doc = doc
 
