@@ -72,7 +72,7 @@ def get_race_urls(tracks: list[tuple[str, str]], years: list[str], code: str) ->
                 race_url = f'{url_result_base}/{course_id}/{course}/{race_date}/{race_id}'
                 urls.add(race_url.replace(' ', '-').replace("'", ''))
 
-    return sorted(urls)
+    return sorted(urls, key=lambda u: (u.split('/')[6], u.split('/')[5]))
 
 
 def get_race_urls_date(dates: list[date], region: str) -> list[str]:
@@ -101,7 +101,7 @@ def get_race_urls_date(dates: list[date], region: str) -> list[str]:
             if course_id in course_ids:
                 urls.add(f'https://www.racingpost.com{race.attrib["href"]}')
 
-    return sorted(urls)
+    return sorted(urls, key=lambda u: (u.split('/')[6], u.split('/')[5]))
 
 
 def scrape_races(
