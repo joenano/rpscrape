@@ -28,7 +28,14 @@ random_header = RandomHeader()
 
 MAX_DAYS = 2
 
-RACE_TYPE = {'X': 'Flat', 'C': 'Chase', 'H': 'Hurdle', 'B': 'NH Flat', 'F': 'Flat'}
+RACE_TYPE = {
+    'F': 'Flat',
+    'X': 'Flat',
+    'C': 'Chase',
+    'H': 'Hurdle',
+    'B': 'NH Flat',
+    'W': 'NH Flat',
+}
 
 type Racecards = defaultdict[str, defaultdict[str, defaultdict[str, dict[str, Any]]]]
 
