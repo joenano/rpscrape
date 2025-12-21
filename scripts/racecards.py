@@ -17,7 +17,7 @@ from utils.course import valid_meeting
 from utils.header import RandomHeader
 from utils.going import get_surface
 from utils.lxml_funcs import find
-from utils.network import Persistent406Error, get_request
+from utils.network import get_request
 from utils.profiles import get_profiles
 from utils.region import get_region
 from utils.stats import Stats
@@ -57,12 +57,7 @@ def get_race_urls(dates: list[str]) -> dict[str, list[tuple[str, str]]]:
 
     for date in dates:
         url = f'https://www.racingpost.com/racecards/{date}'
-        try:
-            _, response = get_request(url)
-        except Persistent406Error as err:
-            print('Failed to get race urls.')
-            print(err)
-            sys.exit(1)
+        _, response = get_request(url)
 
         doc = html.fromstring(response.content)
 
@@ -126,7 +121,12 @@ def parse_runners(
     runners: list[Runner] = []
 
     for runner_json in runners_json:
-        profile = profiles[runner_json['horseUid']]
+        try:
+            profile = profiles[runner_json['horseUid']]
+        except KeyError:
+            print(f'Failed to find profile: {runner_json["horseUid"]} - {runner_json["horseName"]}')
+            print(dumps(runner_json).decode('utf-8'))
+            sys.exit(1)
 
         runner = Runner()
         runners.append(runner)
@@ -270,13 +270,9 @@ def scrape_racecards(race_urls: dict[str, list[tuple[str, str]]], date: str) -> 
         url_runners = f'{url_base}/profile/horse/data/cardrunners/{race_id}.json'
         url_accordion = f'{url_base}/racecards/data/accordion/{race_id}'
 
-        try:
-            status_racecard, resp_racecard = get_request(url_racecard)
-            status_runners, resp_runners = get_request(url_runners)
-            status_accordion, resp_accordion = get_request(url_accordion)
-        except Persistent406Error as err:
-            print(err)
-            sys.exit(1)
+        status_racecard, resp_racecard = get_request(url_racecard)
+        status_runners, resp_runners = get_request(url_runners)
+        status_accordion, resp_accordion = get_request(url_accordion)
 
         if any(status != 200 for status in (status_racecard, status_runners, status_accordion)):
             print('Failed to get racecard data.')
