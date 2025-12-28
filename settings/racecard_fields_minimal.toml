@@ -1,0 +1,37 @@
+# MINIMAL PRESET - Only essential race information
+# Fastest scraping, smallest file sizes
+# Skips: profiles, stats, quotes, medical, history, breeding details
+
+[preset]
+mode = "minimal"
+
+[data_collection]
+fetch_profiles = false
+fetch_stats = false
+fetch_quotes = false
+fetch_medical = false
+fetch_history = false
+
+[runner_fields]
+# Core identification
+name = true
+horse_id = true
+number = true
+draw = true
+
+# Basic info
+age = true
+jockey = true
+jockey_id = true
+trainer = true
+trainer_id = true
+
+# Performance
+lbs = true
+form = true
+rpr = true
+ofr = true
+ts = true
+
+# Status
+non_runner = true

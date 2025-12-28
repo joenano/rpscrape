@@ -1,0 +1,70 @@
+# STANDARD PRESET - Good balance of data and performance
+# Includes profiles and stats but skips bulky historical data
+# Skips: quotes, medical history, previous owners/trainers
+
+[preset]
+mode = "standard"
+
+[data_collection]
+fetch_profiles = true
+fetch_stats = true
+fetch_quotes = false
+fetch_medical = false
+fetch_history = false
+
+[runner_fields]
+# All essential fields
+name = true
+horse_id = true
+number = true
+draw = true
+age = true
+sex = true
+colour = true
+region = true
+
+# Performance
+form = true
+rpr = true
+ts = true
+ofr = true
+last_run = true
+
+# Jockey/Trainer
+jockey = true
+jockey_id = true
+jockey_allowance = true
+trainer = true
+trainer_id = true
+trainer_location = true
+trainer_14_days = true
+trainer_rtf = true
+
+# Weight
+lbs = true
+claim = true
+
+# Equipment
+headgear = true
+headgear_first = true
+
+# Breeding (basic)
+sire = true
+sire_id = true
+dam = true
+dam_id = true
+
+# Ownership
+owner = true
+owner_id = true
+
+# Comments
+comment = true
+spotlight = true
+
+# Flags
+non_runner = true
+
+# Profile data
+profile = true
+stats = true
