@@ -46,26 +46,23 @@ def load_field_config() -> dict[str, Any]:
     """Load field configuration from settings/user_racecard_settings.toml or default_racecard_settings.toml"""
     user_config_path = Path('../settings/user_racecard_settings.toml')
     default_config_path = Path('../settings/default_racecard_settings.toml')
-    
+
     # Try user config first, fallback to default
     config_path = user_config_path if user_config_path.exists() else default_config_path
-    
+
     if not config_path.exists():
         # Return default config (everything enabled)
         return {
             'data_collection': {
-                'fetch_profiles': True,
-                'fetch_stats': True,
-                'fetch_quotes': True,
-                'fetch_medical': True,
-                'fetch_history': True,
+                'fetch_profiles': False,
+                'fetch_stats': False,
             },
             'field_groups': {},  # Empty means all groups enabled
         }
-    
+
     with open(config_path, 'rb') as f:
         config = tomli.load(f)
-    
+
     return config
 
 
@@ -151,13 +148,17 @@ def parse_runners(
     runners: list[Runner] = []
     field_groups = config.get('field_groups', {})
     data_opts = config.get('data_collection', {})
-    
+
     # If field_groups is empty, include all groups
     include_all_groups = not field_groups
 
     # Helper to check if a group should be included
     def should_include_group(group: str) -> bool:
-        return include_all_groups or field_groups.get(group, False)
+        if include_all_groups:
+            return True
+        if group not in field_groups:
+            raise KeyError(f'Unknown field group: {group}')
+        return field_groups[group] is True
 
     for runner_json in runners_json:
         profile = None
@@ -198,7 +199,9 @@ def parse_runners(
             )
             runner.rpr = runner_json['rpPostmark'] if runner_json['rpPostmark'] else None
             runner.ts = runner_json['rpTopspeed'] if runner_json['rpTopspeed'] else None
-            runner.ofr = runner_json['officialRatingToday'] if runner_json['officialRatingToday'] else None
+            runner.ofr = (
+                runner_json['officialRatingToday'] if runner_json['officialRatingToday'] else None
+            )
             runner.last_run = runner_json['daysSinceLastRun']
 
         # Jockey fields
@@ -270,13 +273,17 @@ def parse_runners(
         # Stats data
         if should_include_group('stats') and stats:
             horse_stats = (
-                stats.horses[str(runner.horse_id)].to_dict() if str(runner.horse_id) in stats.horses else {}
+                stats.horses[str(runner.horse_id)].to_dict()
+                if str(runner.horse_id) in stats.horses
+                else {}
             )
             jockey_stats = (
                 stats.jockeys[str(runner.jockey_id)] if str(runner.jockey_id) in stats.jockeys else {}
             )
             trainer_stats = (
-                stats.trainers[str(runner.trainer_id)] if str(runner.trainer_id) in stats.trainers else {}
+                stats.trainers[str(runner.trainer_id)]
+                if str(runner.trainer_id) in stats.trainers
+                else {}
             )
             runner.stats = {
                 'horse': horse_stats,
@@ -285,7 +292,7 @@ def parse_runners(
             }
 
         # History data
-        if should_include_group('history') and data_opts.get('fetch_history', True) and profile:
+        if should_include_group('history') and profile:
             if profile.get('previousTrainers'):
                 runner.prev_trainers = [
                     {
@@ -306,14 +313,14 @@ def parse_runners(
                 ]
 
         # Medical data
-        if should_include_group('medical') and data_opts.get('fetch_medical', True) and profile and profile.get('medical'):
+        if should_include_group('medical') and profile and profile.get('medical'):
             runner.medical = [
                 {'date': med['medicalDate'].split('T')[0], 'type': med['medicalType']}
                 for med in profile['medical']
             ]
 
         # Quotes data
-        if should_include_group('quotes') and data_opts.get('fetch_quotes', True) and profile:
+        if should_include_group('quotes') and profile:
             if profile.get('quotes'):
                 runner.quotes = [
                     {
@@ -332,19 +339,27 @@ def parse_runners(
                 ]
             if profile.get('stable_quotes'):
                 runner.stable_tour = [
-                    {'horse': normalize_name(q['horseName']), 'horse_id': q['horseUid'], 'quote': q['notes']}
+                    {
+                        'horse': normalize_name(q['horseName']),
+                        'horse_id': q['horseUid'],
+                        'quote': q['notes'],
+                    }
                     for q in profile['stable_quotes']
                 ]
 
     return runners
 
 
-def scrape_racecards(race_urls: dict[str, list[tuple[str, str]]], date: str, config: dict[str, Any]) -> Racecards:
+def scrape_racecards(
+    race_urls: dict[str, list[tuple[str, str]]],
+    date: str,
+    config: dict[str, Any],
+) -> Racecards:
     races: Racecards = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
-    
+
     data_opts = config.get('data_collection', {})
-    fetch_profiles = data_opts.get('fetch_profiles', True)
-    fetch_stats = data_opts.get('fetch_stats', True)
+    fetch_profiles = data_opts.get('fetch_profiles', False)
+    fetch_stats = data_opts.get('fetch_stats', False)
 
     for race_id, href in tqdm(
         race_urls[date],
@@ -359,44 +374,43 @@ def scrape_racecards(race_urls: dict[str, list[tuple[str, str]]], date: str, con
         status_racecard, resp_racecard = get_request(url_racecard)
         status_runners, resp_runners = get_request(url_runners)
 
-        # Only fetch stats if configured to do so
-        status_accordion = None
-        resp_accordion = None
-        if fetch_stats:
-            url_accordion = f'{url_base}/racecards/data/accordion/{race_id}'
-            status_accordion, resp_accordion = get_request(url_accordion)
-
-        # Check required requests
         if status_racecard != 200 or status_runners != 200:
             print('Failed to get racecard data.')
             print(f'status: {status_racecard} url: {url_racecard}')
             print(f'status: {status_runners} url: {url_runners}')
             continue
 
-        # Check optional stats request
-        if fetch_stats and status_accordion != 200:
-            print('Failed to get stats accordion data.')
-            print(f'status: {status_accordion} url: {url_accordion}')
-            continue
+        # Optional stats request
+        status_accordion = None
+        resp_accordion = None
+        if fetch_stats:
+            url_accordion = f'{url_base}/racecards/data/accordion/{race_id}'
+            status_accordion, resp_accordion = get_request(url_accordion)
 
         try:
             doc = html.fromstring(resp_racecard.content)
-            doc_accordion = html.fromstring(resp_accordion.content) if fetch_stats else None
         except etree.ParserError:
             print('Failed to parse HTML for racecard.')
             print(f'url: {url_racecard}')
             continue
 
+        doc_accordion = None
+        if fetch_stats and status_accordion == 200 and resp_accordion is not None:
+            try:
+                doc_accordion = html.fromstring(resp_accordion.content)
+            except etree.ParserError:
+                doc_accordion = None
+
         try:
-            runners = resp_runners.json()['runners']
-            runners = [r for r in runners.values()]
-            runner = runners[0]
-        except KeyError:
+            runners_map = resp_runners.json()['runners']
+            runners = list(runners_map.values())
+            race_meta = runners[0]
+        except (KeyError, IndexError, ValueError):
             print('Failed to parse JSON for runners.')
             print(f'url: {url_runners}')
             continue
 
-        profiles = {}
+        profiles: dict[str, dict[str, Any]] = {}
         if fetch_profiles:
             profile_hrefs = doc.xpath("//a[@data-test-selector='RC-cardPage-runnerName']/@href")
             profile_urls = [url_base + a.split('#')[0] + '/form' for a in profile_hrefs]
@@ -406,14 +420,12 @@ def scrape_racecards(race_urls: dict[str, list[tuple[str, str]]], date: str, con
 
         race.href = url_racecard
         race.race_id = int(race_id)
-
         race.date = date
-        date_str = runner['raceDatetime']
-        race.off_time = datetime.datetime.fromisoformat(date_str).strftime('%H:%M')
 
-        race.course_id = runner['courseUid']
+        race.off_time = datetime.datetime.fromisoformat(race_meta['raceDatetime']).strftime('%H:%M')
+
+        race.course_id = race_meta['courseUid']
         race.course = find(doc, 'h1', 'RC-courseHeader__name')
-
         race.course_detail = find(doc, 'span', 'RC-header__straightRoundJubilee').strip('()')
 
         if race.course == 'Belmont At The Big A':
@@ -421,13 +433,11 @@ def scrape_racecards(race_urls: dict[str, list[tuple[str, str]]], date: str, con
             race.course = 'Aqueduct'
 
         race.region = get_region(str(race.course_id))
-
         race.race_name = find(doc, 'span', 'RC-header__raceInstanceTitle')
+        race.race_type = RACE_TYPE[race_meta['raceTypeCode']]
 
-        race.race_type = RACE_TYPE[runner['raceTypeCode']]
-
-        race.distance_f = runner['distanceFurlongRounded']
-        race.distance_y = runner['distanceYard']
+        race.distance_f = race_meta['distanceFurlongRounded']
+        race.distance_y = race_meta['distanceYard']
         race.distance_round = find(doc, 'strong', 'RC-header__raceDistanceRound')
         race.distance = find(doc, 'span', 'RC-header__raceDistance').strip('()')
         race.distance = race.distance or race.distance_round
@@ -443,11 +453,10 @@ def scrape_racecards(race_urls: dict[str, list[tuple[str, str]]], date: str, con
         race.field_size = parse_field_size(doc)
 
         race.handicap = race.rating_band is not None or 'handicap' in race.race_name.lower()
-
         race.going = parse_going(doc)
         race.surface = get_surface(race.going)
 
-        stats = Stats(doc_accordion) if fetch_stats and doc_accordion else None
+        stats = Stats(doc_accordion) if doc_accordion is not None else None
 
         race.runners = parse_runners(stats, runners, profiles, config)
 
@@ -496,7 +505,7 @@ def main() -> None:
         os.makedirs('../racecards')
 
     race_urls = get_race_urls(dates)
-    
+
     config = load_field_config()
 
     for date in race_urls:

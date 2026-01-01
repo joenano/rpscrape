@@ -3,24 +3,11 @@
 
 [data_collection]
 # Fetch stats from the accordion (jockey/trainer/horse stats)
-# This is the most expensive request - disabling saves significant time
-fetch_stats = true
+fetch_stats = false
 
-# Fetch detailed horse profiles (includes breeding, trainer location, sex, etc.)
+# Fetch detailed horse profiles 
 # Required for: profile, sex, trainer_14_days, trainer_location, prev_trainers, prev_owners, medical, quotes, stable_tour
-fetch_profiles = true
-
-# Fetch medical history data from profiles
-# Only applies if fetch_profiles = true
-fetch_medical = true
-
-# Fetch quotes and stable tour data from profiles
-# Only applies if fetch_profiles = true
-fetch_quotes = true
-
-# Fetch ownership/trainer history from profiles
-# Only applies if fetch_profiles = true
-fetch_history = true
+fetch_profiles = false
 
 [field_groups]
 # Core identification fields: name, horse_id, number, draw
