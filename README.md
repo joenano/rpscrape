@@ -214,14 +214,15 @@ Scrape today's and tomorrow's racecards.
 You can customize which data is included in racecards using the settings file. The scraper uses `settings/user_racecard_settings.toml` if it exists, otherwise falls back to `settings/default_racecard_settings.toml`.
 
 To customize:
+
 1. Copy `default_racecard_settings.toml` to `user_racecard_settings.toml`
 2. Edit the settings to enable/disable field groups and data collection options
 
 The settings file lets you control:
-- **Data Collection**: Whether to fetch stats, profiles, medical data, quotes, and history
+
+- **Data Collection**: Whether to fetch stats and profiles
 - **Field Groups**: Which groups of runner fields to include (core, basic_info, performance, jockey, trainer, etc.)
 
-Disabling `fetch_stats` provides the most significant time savings as it skips the expensive stats accordion API call.
 Scrape today's and tomorrow's racecards by region.
 
 ```
