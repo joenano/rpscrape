@@ -72,7 +72,6 @@ def get_race_urls(dates: list[str], region: str | None = None) -> dict[str, list
                     race_id = race.attrib['data-race-id']
                     href = race.attrib['href']
 
-                    # If a region filter is provided, extract course_id from href and filter by region
                     if region:
                         course_id = href.split('/')[2]
                         if get_region(course_id) != region.upper():
@@ -417,13 +416,11 @@ def main() -> None:
     if not os.path.exists('../racecards'):
         os.makedirs('../racecards')
 
-    # Validate and pass optional region filter
-    region: str | None = None
-    if hasattr(args, 'region') and args.region:
-        region = args.region.lower()
-        if not valid_region(region):
-            print(f'Invalid region: {args.region}')
-            sys.exit(1)
+    region = args.region.lower() if args.region else None
+
+    if region and not valid_region(region):
+        print(f'Invalid region: {args.region}')
+        sys.exit(1)
 
     race_urls = get_race_urls(dates, region)
 
