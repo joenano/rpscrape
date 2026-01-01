@@ -21,7 +21,7 @@ from utils.going import get_surface
 from utils.lxml_funcs import find
 from utils.network import get_request
 from utils.profiles import get_profiles
-from utils.region import get_region
+from utils.region import get_region, valid_region
 from utils.stats import Stats
 
 from models.racecard import Racecard, Runner
@@ -78,12 +78,16 @@ def validate_days_range(value: str) -> int:
         raise argparse.ArgumentTypeError(f"Invalid value: '{value}'. Expected an integer.")
 
 
-def get_race_urls(dates: list[str]) -> dict[str, list[tuple[str, str]]]:
+def get_race_urls(dates: list[str], region: str | None = None) -> dict[str, list[tuple[str, str]]]:
     race_urls: defaultdict[str, list[tuple[str, str]]] = defaultdict(list)
 
     for date in dates:
         url = f'https://www.racingpost.com/racecards/{date}'
-        _, response = get_request(url)
+        status, response = get_request(url)
+
+        if status != 200 or not response.content:
+            print(f'Failed to get racecards for {date} (status: {status})')
+            continue
 
         doc = html.fromstring(response.content)
 
@@ -91,7 +95,15 @@ def get_race_urls(dates: list[str]) -> dict[str, list[tuple[str, str]]]:
             course = meeting.xpath(".//span[contains(@class, 'RC-accordion__courseName')]")[0]
             if valid_meeting(course.text_content().strip().lower()):
                 for race in meeting.xpath(".//a[@class='RC-meetingItem__link js-navigate-url']"):
-                    race_urls[date].append((race.attrib['data-race-id'], race.attrib['href']))
+                    race_id = race.attrib['data-race-id']
+                    href = race.attrib['href']
+
+                    if region:
+                        course_id = href.split('/')[2]
+                        if get_region(course_id) != region.upper():
+                            continue
+
+                    race_urls[date].append((race_id, href))
 
     return dict(race_urls)
 
@@ -486,6 +498,13 @@ def main() -> None:
         metavar='N',
     )
 
+    _ = parser.add_argument(
+        '--region',
+        type=str,
+        help="Region code to filter by (e.g., 'gb', 'ire').",
+        metavar='CODE',
+    )
+
     args = parser.parse_args()
 
     dates: list[str] = [
@@ -504,7 +523,13 @@ def main() -> None:
     if not os.path.exists('../racecards'):
         os.makedirs('../racecards')
 
-    race_urls = get_race_urls(dates)
+    region = args.region.lower() if args.region else None
+
+    if region and not valid_region(region):
+        print(f'Invalid region: {args.region}')
+        sys.exit(1)
+
+    race_urls = get_race_urls(dates, region)
 
     config = load_field_config()
 

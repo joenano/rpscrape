@@ -187,23 +187,23 @@ To scrape a particular course or region, use the -c or -r flags with the course 
 
 You can scrape racecards using racecards.py which saves a file containing a json object of racecard information.
 
-There are only two parameter options, --day N and --days N where N is a number 1-2.
+There are only three parameter options, --day N, --days N where N is a number 1-2, and --region N where N is a region (gb, ire, etc).
 
 ### Examples
 
-Scrape todays racecards.
+Scrape today's racecards.
 
 ```
 ./racecards.py --day 1
 ```
 
-Scrape tomorrows racecards.
+Scrape tomorrow's racecards.
 
 ```
 ./racecards.py --day 2
 ```
 
-Scrape todays and tomorrows racecards.
+Scrape today's and tomorrow's racecards.
 
 ```
 ./racecards.py --days 2
@@ -222,6 +222,11 @@ The settings file lets you control:
 - **Field Groups**: Which groups of runner fields to include (core, basic_info, performance, jockey, trainer, etc.)
 
 Disabling `fetch_stats` provides the most significant time savings as it skips the expensive stats accordion API call.
+Scrape today's and tomorrow's racecards by region.
+
+```
+./racecards.py --days 2 --region gb
+```
 
 You can see the structure of the json and some of the race information below.
 
