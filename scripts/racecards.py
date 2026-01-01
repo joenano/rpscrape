@@ -57,7 +57,11 @@ def get_race_urls(dates: list[str], region: str | None = None) -> dict[str, list
 
     for date in dates:
         url = f'https://www.racingpost.com/racecards/{date}'
-        _, response = get_request(url)
+        status, response = get_request(url)
+
+        if status != 200 or not response.content:
+            print(f'Failed to get racecards for {date} (status: {status})')
+            continue
 
         doc = html.fromstring(response.content)
 
