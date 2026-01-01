@@ -1,0 +1,62 @@
+# Default racecard scraping settings
+# To customize, copy this file to user_racecard_settings.toml and modify as needed
+
+[data_collection]
+# Fetch stats from the accordion (jockey/trainer/horse stats)
+fetch_stats = false
+
+# Fetch detailed horse profiles 
+# Required for: profile, sex, trainer_14_days, trainer_location, prev_trainers, prev_owners, medical, quotes, stable_tour
+fetch_profiles = false
+
+[field_groups]
+# Core identification fields: name, horse_id, number, draw
+core = true
+
+# Basic info: age, sex, colour, region, dob, sex_code
+basic_info = true
+
+# Performance: form, rpr, ts, ofr, last_run
+performance = true
+
+# Jockey fields: jockey, jockey_id, jockey_allowance, claim
+jockey = true
+
+# Trainer fields: trainer, trainer_id, trainer_location, trainer_14_days, trainer_rtf
+trainer = true
+
+# Weight: lbs
+weight = true
+
+# Equipment: headgear, headgear_first, gelding_first_time, wind_surgery_first, wind_surgery_second
+equipment = true
+
+# Breeding: sire, sire_id, sire_region, dam, dam_id, dam_region, damsire, damsire_id, damsire_region, breeder, breeder_id
+breeding = true
+
+# Ownership: owner, owner_id
+ownership = true
+
+# Comments: comment, spotlight
+comments = true
+
+# Status: non_runner, reserve
+status = true
+
+# Silk: silk_path, silk_url
+silk = true
+
+# Profile data (from profile fetch): profile
+profile = true
+
+# Stats data (from stats fetch): stats
+stats = true
+
+# History data (from profile fetch): prev_trainers, prev_owners
+history = true
+
+# Medical data (from profile fetch): medical
+medical = true
+
+# Quotes data (from profile fetch): quotes, stable_tour
+quotes = true
