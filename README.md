@@ -209,6 +209,20 @@ Scrape todays and tomorrows racecards.
 ./racecards.py --days 2
 ```
 
+### Racecard Settings
+
+You can customize which data is included in racecards using the settings file. The scraper uses `settings/user_racecard_settings.toml` if it exists, otherwise falls back to `settings/default_racecard_settings.toml`.
+
+To customize:
+1. Copy `default_racecard_settings.toml` to `user_racecard_settings.toml`
+2. Edit the settings to enable/disable field groups and data collection options
+
+The settings file lets you control:
+- **Data Collection**: Whether to fetch stats, profiles, medical data, quotes, and history
+- **Field Groups**: Which groups of runner fields to include (core, basic_info, performance, jockey, trainer, etc.)
+
+Disabling `fetch_stats` provides the most significant time savings as it skips the expensive stats accordion API call.
+
 You can see the structure of the json and some of the race information below.
 
 ![json1](https://i.postimg.cc/Y2ZNmLh5/json.png)

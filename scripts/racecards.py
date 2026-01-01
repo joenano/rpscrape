@@ -8,9 +8,11 @@ import sys
 
 from collections import defaultdict
 from lxml import etree, html
+from pathlib import Path
 from tqdm import tqdm
 from typing import Any
 from orjson import dumps
+import tomli
 
 from utils.cleaning import normalize_name
 from utils.course import valid_meeting
@@ -38,6 +40,33 @@ RACE_TYPE = {
 }
 
 type Racecards = defaultdict[str, defaultdict[str, defaultdict[str, dict[str, Any]]]]
+
+
+def load_field_config() -> dict[str, Any]:
+    """Load field configuration from settings/user_racecard_settings.toml or default_racecard_settings.toml"""
+    user_config_path = Path('../settings/user_racecard_settings.toml')
+    default_config_path = Path('../settings/default_racecard_settings.toml')
+    
+    # Try user config first, fallback to default
+    config_path = user_config_path if user_config_path.exists() else default_config_path
+    
+    if not config_path.exists():
+        # Return default config (everything enabled)
+        return {
+            'data_collection': {
+                'fetch_profiles': True,
+                'fetch_stats': True,
+                'fetch_quotes': True,
+                'fetch_medical': True,
+                'fetch_history': True,
+            },
+            'field_groups': {},  # Empty means all groups enabled
+        }
+    
+    with open(config_path, 'rb') as f:
+        config = tomli.load(f)
+    
+    return config
 
 
 def validate_days_range(value: str) -> int:
@@ -114,150 +143,208 @@ def parse_prize(doc: html.HtmlElement) -> str | None:
 
 
 def parse_runners(
-    stats: Stats,
+    stats: Stats | None,
     runners_json: list[dict[str, Any]],
     profiles: dict[str, dict[str, Any]],
+    config: dict[str, Any],
 ) -> list[Runner]:
     runners: list[Runner] = []
+    field_groups = config.get('field_groups', {})
+    data_opts = config.get('data_collection', {})
+    
+    # If field_groups is empty, include all groups
+    include_all_groups = not field_groups
+
+    # Helper to check if a group should be included
+    def should_include_group(group: str) -> bool:
+        return include_all_groups or field_groups.get(group, False)
 
     for runner_json in runners_json:
-        try:
-            profile = profiles[runner_json['horseUid']]
-        except KeyError:
-            print(f'Failed to find profile: {runner_json["horseUid"]} - {runner_json["horseName"]}')
-            print(dumps(runner_json).decode('utf-8'))
-            sys.exit(1)
+        profile = None
+        if data_opts.get('fetch_profiles', True):
+            try:
+                profile = profiles[runner_json['horseUid']]
+            except KeyError:
+                print(f'Failed to find profile: {runner_json["horseUid"]} - {runner_json["horseName"]}')
+                print(dumps(runner_json).decode('utf-8'))
+                sys.exit(1)
 
         runner = Runner()
         runners.append(runner)
 
-        runner.age = runner_json['horseAge']
-        runner.breeder = normalize_name(runner_json['breederName'])
-        runner.breeder_id = runner_json['breederUid']
-        runner.claim = runner_json['weightAllowanceLbs']
-        runner.colour = runner_json['horseColourCode']
-        runner.comment = runner_json['diomed']
-        runner.dam = normalize_name(runner_json['damName'])
-        runner.dam_id = runner_json['damId']
-        runner.dam_region = runner_json['damCountry']
-        runner.damsire = normalize_name(runner_json['damsireName'])
-        runner.damsire_id = runner_json['damsireId']
-        runner.damsire_region = runner_json['damsireCountry']
-        runner.dob = runner_json['horseDateOfBirth'].split('T')[0]
-        runner.draw = runner_json['draw'] if runner_json['draw'] else None
-        runner.form = (
-            ''.join(f['formFigure'] for f in runner_json['figuresCalculated'])[::-1]
-            if runner_json['figuresCalculated']
-            else ''
-        )
-        runner.gelding_first_time = runner_json['geldingFirstTime']
-        runner.headgear = runner_json['rpHorseHeadGearCode']
-        runner.headgear_first = runner_json['firstTime']
-        runner.horse_id = runner_json['horseUid']
-        runner.jockey = normalize_name(runner_json['jockeyName'])
-        runner.jockey_allowance = runner_json['weightAllowanceLbs']
-        runner.jockey_id = runner_json['jockeyUid']
-        runner.last_run = runner_json['daysSinceLastRun']
-        runner.lbs = runner_json['weightCarriedLbs']
-        runner.name = normalize_name(runner_json['horseName'])
-        runner.non_runner = runner_json['nonRunner']
-        runner.number = runner_json['startNumber']
-        runner.ofr = runner_json['officialRatingToday'] if runner_json['officialRatingToday'] else None
-        runner.owner = normalize_name(runner_json['ownerName'])
-        runner.owner_id = runner_json['ownerUid']
-        runner.profile = profile['profile']
-        runner.region = runner_json['countryOriginCode']
-        runner.reserve = runner_json['irishReserve']
-        runner.rpr = runner_json['rpPostmark'] if runner_json['rpPostmark'] else None
-        runner.sex = profile['horseSex']
-        runner.sex_code = runner_json['horseSexCode']
-        runner.silk_path = runner_json['silkImagePath']
-        runner.silk_url = f'https://www.rp-assets.com/svg/{runner.silk_path}.svg'
-        runner.sire = normalize_name(runner_json['sireName'])
-        runner.sire_id = runner_json['sireId']
-        runner.sire_region = runner_json['sireCountry']
-        runner.spotlight = runner_json['spotlight']
-        runner.trainer = normalize_name(runner_json['trainerStylename'])
-        runner.trainer_14_days = profile['trainerLast14Days']
-        runner.trainer_id = runner_json['trainerId']
-        runner.trainer_location = profile['trainerLocation']
-        runner.trainer_rtf = runner_json['trainerRtf']
-        runner.ts = runner_json['rpTopspeed'] if runner_json['rpTopspeed'] else None
-        runner.wind_surgery_first = runner_json['windSurgeryFirstTime']
-        runner.wind_surgery_second = runner_json['windSurgerySecondTime']
+        # Core identification fields
+        if should_include_group('core'):
+            runner.name = normalize_name(runner_json['horseName'])
+            runner.horse_id = runner_json['horseUid']
+            runner.number = runner_json['startNumber']
+            runner.draw = runner_json['draw'] if runner_json['draw'] else None
 
-        horse_stats = (
-            stats.horses[str(runner.horse_id)].to_dict() if str(runner.horse_id) in stats.horses else {}
-        )
+        # Basic info
+        if should_include_group('basic_info'):
+            runner.age = runner_json['horseAge']
+            runner.colour = runner_json['horseColourCode']
+            runner.region = runner_json['countryOriginCode']
+            runner.dob = runner_json['horseDateOfBirth'].split('T')[0]
+            runner.sex_code = runner_json['horseSexCode']
+            if profile:
+                runner.sex = profile['horseSex']
 
-        jockey_stats = (
-            stats.jockeys[str(runner.jockey_id)] if str(runner.jockey_id) in stats.jockeys else {}
-        )
+        # Performance
+        if should_include_group('performance'):
+            runner.form = (
+                ''.join(f['formFigure'] for f in runner_json['figuresCalculated'])[::-1]
+                if runner_json['figuresCalculated']
+                else ''
+            )
+            runner.rpr = runner_json['rpPostmark'] if runner_json['rpPostmark'] else None
+            runner.ts = runner_json['rpTopspeed'] if runner_json['rpTopspeed'] else None
+            runner.ofr = runner_json['officialRatingToday'] if runner_json['officialRatingToday'] else None
+            runner.last_run = runner_json['daysSinceLastRun']
 
-        trainer_stats = (
-            stats.trainers[str(runner.trainer_id)] if str(runner.trainer_id) in stats.trainers else {}
-        )
+        # Jockey fields
+        if should_include_group('jockey'):
+            runner.jockey = normalize_name(runner_json['jockeyName'])
+            runner.jockey_id = runner_json['jockeyUid']
+            runner.jockey_allowance = runner_json['weightAllowanceLbs']
+            runner.claim = runner_json['weightAllowanceLbs']
 
-        runner.stats = {
-            'horse': horse_stats,
-            'jockey': jockey_stats,
-            'trainer': trainer_stats,
-        }
+        # Trainer fields
+        if should_include_group('trainer'):
+            runner.trainer = normalize_name(runner_json['trainerStylename'])
+            runner.trainer_id = runner_json['trainerId']
+            runner.trainer_rtf = runner_json['trainerRtf']
+            if profile:
+                runner.trainer_location = profile['trainerLocation']
+                runner.trainer_14_days = profile['trainerLast14Days']
 
-        if profile['previousTrainers']:
-            runner.prev_trainers = [
-                {
-                    'trainer': normalize_name(trainer['trainerStyleName']),
-                    'trainer_id': trainer['trainerUid'],
-                    'change_date': trainer['trainerChangeDate'].split('T')[0],
-                }
-                for trainer in profile['previousTrainers']
-            ]
+        # Weight
+        if should_include_group('weight'):
+            runner.lbs = runner_json['weightCarriedLbs']
 
-        if profile['previousOwners']:
-            runner.prev_owners = [
-                {
-                    'owner': normalize_name(owner['ownerStyleName']),
-                    'owner_id': owner['ownerUid'],
-                    'change_date': owner['ownerChangeDate'].split('T')[0],
-                }
-                for owner in profile['previousOwners']
-            ]
+        # Equipment
+        if should_include_group('equipment'):
+            runner.headgear = runner_json['rpHorseHeadGearCode']
+            runner.headgear_first = runner_json['firstTime']
+            runner.gelding_first_time = runner_json['geldingFirstTime']
+            runner.wind_surgery_first = runner_json['windSurgeryFirstTime']
+            runner.wind_surgery_second = runner_json['windSurgerySecondTime']
 
-        if profile['medical']:
+        # Breeding
+        if should_include_group('breeding'):
+            runner.sire = normalize_name(runner_json['sireName'])
+            runner.sire_id = runner_json['sireId']
+            runner.sire_region = runner_json['sireCountry']
+            runner.dam = normalize_name(runner_json['damName'])
+            runner.dam_id = runner_json['damId']
+            runner.dam_region = runner_json['damCountry']
+            runner.damsire = normalize_name(runner_json['damsireName'])
+            runner.damsire_id = runner_json['damsireId']
+            runner.damsire_region = runner_json['damsireCountry']
+            runner.breeder = normalize_name(runner_json['breederName'])
+            runner.breeder_id = runner_json['breederUid']
+
+        # Ownership
+        if should_include_group('ownership'):
+            runner.owner = normalize_name(runner_json['ownerName'])
+            runner.owner_id = runner_json['ownerUid']
+
+        # Comments
+        if should_include_group('comments'):
+            runner.comment = runner_json['diomed']
+            runner.spotlight = runner_json['spotlight']
+
+        # Status
+        if should_include_group('status'):
+            runner.non_runner = runner_json['nonRunner']
+            runner.reserve = runner_json['irishReserve']
+
+        # Silk
+        if should_include_group('silk'):
+            runner.silk_path = runner_json['silkImagePath']
+            runner.silk_url = f'https://www.rp-assets.com/svg/{runner_json["silkImagePath"]}.svg'
+
+        # Profile data
+        if should_include_group('profile') and profile:
+            runner.profile = profile['profile']
+
+        # Stats data
+        if should_include_group('stats') and stats:
+            horse_stats = (
+                stats.horses[str(runner.horse_id)].to_dict() if str(runner.horse_id) in stats.horses else {}
+            )
+            jockey_stats = (
+                stats.jockeys[str(runner.jockey_id)] if str(runner.jockey_id) in stats.jockeys else {}
+            )
+            trainer_stats = (
+                stats.trainers[str(runner.trainer_id)] if str(runner.trainer_id) in stats.trainers else {}
+            )
+            runner.stats = {
+                'horse': horse_stats,
+                'jockey': jockey_stats,
+                'trainer': trainer_stats,
+            }
+
+        # History data
+        if should_include_group('history') and data_opts.get('fetch_history', True) and profile:
+            if profile.get('previousTrainers'):
+                runner.prev_trainers = [
+                    {
+                        'trainer': normalize_name(trainer['trainerStyleName']),
+                        'trainer_id': trainer['trainerUid'],
+                        'change_date': trainer['trainerChangeDate'].split('T')[0],
+                    }
+                    for trainer in profile['previousTrainers']
+                ]
+            if profile.get('previousOwners'):
+                runner.prev_owners = [
+                    {
+                        'owner': normalize_name(owner['ownerStyleName']),
+                        'owner_id': owner['ownerUid'],
+                        'change_date': owner['ownerChangeDate'].split('T')[0],
+                    }
+                    for owner in profile['previousOwners']
+                ]
+
+        # Medical data
+        if should_include_group('medical') and data_opts.get('fetch_medical', True) and profile and profile.get('medical'):
             runner.medical = [
                 {'date': med['medicalDate'].split('T')[0], 'type': med['medicalType']}
                 for med in profile['medical']
             ]
 
-        if profile['quotes']:
-            runner.quotes = [
-                {
-                    'date': q['raceDate'].split('T')[0],
-                    'horse': normalize_name(q['horseStyleName']),
-                    'horse_id': q['horseUid'],
-                    'race': q['raceTitle'],
-                    'race_id': q['raceId'],
-                    'course': q['courseStyleName'],
-                    'course_id': q['courseUid'],
-                    'distance_f': q['distanceFurlong'],
-                    'distance_y': q['distanceYard'],
-                    'quote': q['notes'],
-                }
-                for q in profile['quotes']
-            ]
-
-        if profile['stable_quotes']:
-            runner.stable_tour = [
-                {'horse': normalize_name(q['horseName']), 'horse_id': q['horseUid'], 'quote': q['notes']}
-                for q in profile['stable_quotes']
-            ]
+        # Quotes data
+        if should_include_group('quotes') and data_opts.get('fetch_quotes', True) and profile:
+            if profile.get('quotes'):
+                runner.quotes = [
+                    {
+                        'date': q['raceDate'].split('T')[0],
+                        'horse': normalize_name(q['horseStyleName']),
+                        'horse_id': q['horseUid'],
+                        'race': q['raceTitle'],
+                        'race_id': q['raceId'],
+                        'course': q['courseStyleName'],
+                        'course_id': q['courseUid'],
+                        'distance_f': q['distanceFurlong'],
+                        'distance_y': q['distanceYard'],
+                        'quote': q['notes'],
+                    }
+                    for q in profile['quotes']
+                ]
+            if profile.get('stable_quotes'):
+                runner.stable_tour = [
+                    {'horse': normalize_name(q['horseName']), 'horse_id': q['horseUid'], 'quote': q['notes']}
+                    for q in profile['stable_quotes']
+                ]
 
     return runners
 
 
-def scrape_racecards(race_urls: dict[str, list[tuple[str, str]]], date: str) -> Racecards:
+def scrape_racecards(race_urls: dict[str, list[tuple[str, str]]], date: str, config: dict[str, Any]) -> Racecards:
     races: Racecards = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
+    
+    data_opts = config.get('data_collection', {})
+    fetch_profiles = data_opts.get('fetch_profiles', True)
+    fetch_stats = data_opts.get('fetch_stats', True)
 
     for race_id, href in tqdm(
         race_urls[date],
@@ -268,26 +355,36 @@ def scrape_racecards(race_urls: dict[str, list[tuple[str, str]]], date: str) -> 
         url_base = 'https://www.racingpost.com'
         url_racecard = f'{url_base}{href}'
         url_runners = f'{url_base}/profile/horse/data/cardrunners/{race_id}.json'
-        url_accordion = f'{url_base}/racecards/data/accordion/{race_id}'
 
         status_racecard, resp_racecard = get_request(url_racecard)
         status_runners, resp_runners = get_request(url_runners)
-        status_accordion, resp_accordion = get_request(url_accordion)
 
-        if any(status != 200 for status in (status_racecard, status_runners, status_accordion)):
+        # Only fetch stats if configured to do so
+        status_accordion = None
+        resp_accordion = None
+        if fetch_stats:
+            url_accordion = f'{url_base}/racecards/data/accordion/{race_id}'
+            status_accordion, resp_accordion = get_request(url_accordion)
+
+        # Check required requests
+        if status_racecard != 200 or status_runners != 200:
             print('Failed to get racecard data.')
             print(f'status: {status_racecard} url: {url_racecard}')
             print(f'status: {status_runners} url: {url_runners}')
+            continue
+
+        # Check optional stats request
+        if fetch_stats and status_accordion != 200:
+            print('Failed to get stats accordion data.')
             print(f'status: {status_accordion} url: {url_accordion}')
             continue
 
         try:
             doc = html.fromstring(resp_racecard.content)
-            doc_accordion = html.fromstring(resp_accordion.content)
+            doc_accordion = html.fromstring(resp_accordion.content) if fetch_stats else None
         except etree.ParserError:
             print('Failed to parse HTML for racecard.')
             print(f'url: {url_racecard}')
-            print(f'url: {url_accordion}')
             continue
 
         try:
@@ -299,10 +396,11 @@ def scrape_racecards(race_urls: dict[str, list[tuple[str, str]]], date: str) -> 
             print(f'url: {url_runners}')
             continue
 
-        profile_hrefs = doc.xpath("//a[@data-test-selector='RC-cardPage-runnerName']/@href")
-        profile_urls = [url_base + a.split('#')[0] + '/form' for a in profile_hrefs]
-
-        profiles = get_profiles(profile_urls)
+        profiles = {}
+        if fetch_profiles:
+            profile_hrefs = doc.xpath("//a[@data-test-selector='RC-cardPage-runnerName']/@href")
+            profile_urls = [url_base + a.split('#')[0] + '/form' for a in profile_hrefs]
+            profiles = get_profiles(profile_urls)
 
         race: Racecard = Racecard()
 
@@ -349,9 +447,9 @@ def scrape_racecards(race_urls: dict[str, list[tuple[str, str]]], date: str) -> 
         race.going = parse_going(doc)
         race.surface = get_surface(race.going)
 
-        stats = Stats(doc_accordion)
+        stats = Stats(doc_accordion) if fetch_stats and doc_accordion else None
 
-        race.runners = parse_runners(stats, runners, profiles)
+        race.runners = parse_runners(stats, runners, profiles, config)
 
         races[race.region][race.course][race.off_time] = race.to_dict()
 
@@ -398,9 +496,11 @@ def main() -> None:
         os.makedirs('../racecards')
 
     race_urls = get_race_urls(dates)
+    
+    config = load_field_config()
 
     for date in race_urls:
-        racecards = scrape_racecards(race_urls, date)
+        racecards = scrape_racecards(race_urls, date, config)
 
         with open(f'../racecards/{date}.json', 'w', encoding='utf-8') as f:
             _ = f.write(dumps(racecards).decode('utf-8'))
