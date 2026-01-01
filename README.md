@@ -209,6 +209,12 @@ Scrape today's and tomorrow's racecards.
 ./racecards.py --days 2
 ```
 
+Scrape today's and tomorrow's racecards by region.
+
+```
+./racecards.py --days 2 --region gb
+```
+
 ### Racecard Settings
 
 You can customize which data is included in racecards using the settings file. The scraper uses `settings/user_racecard_settings.toml` if it exists, otherwise falls back to `settings/default_racecard_settings.toml`.
@@ -222,12 +228,6 @@ The settings file lets you control:
 
 - **Data Collection**: Whether to fetch stats and profiles
 - **Field Groups**: Which groups of runner fields to include (core, basic_info, performance, jockey, trainer, etc.)
-
-Scrape today's and tomorrow's racecards by region.
-
-```
-./racecards.py --days 2 --region gb
-```
 
 You can see the structure of the json and some of the race information below.
 
