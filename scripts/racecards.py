@@ -81,14 +81,16 @@ def validate_days_range(value: str) -> int:
 def get_race_urls(dates: list[str], region: str | None = None) -> dict[str, list[tuple[str, str]]]:
     race_urls: defaultdict[str, list[tuple[str, str]]] = defaultdict(list)
 
-    for i, date in enumerate(dates):
+    for date in dates:
         url = f'https://www.racingpost.com/racecards/{date}'
         status, response = get_request(url)
 
         # If we get a 302 for tomorrow's date, try using "tomorrow" as fallback
-        if status == 302 and i == 1:
-            url = 'https://www.racingpost.com/racecards/tomorrow'
-            status, response = get_request(url)
+        if status == 302:
+            tomorrow_iso = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
+            if date == tomorrow_iso:
+                url = 'https://www.racingpost.com/racecards/tomorrow'
+                status, response = get_request(url)
 
         if status != 200 or not response.content:
             print(f'Failed to get racecards for {date} (status: {status})')
