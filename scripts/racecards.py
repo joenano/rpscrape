@@ -14,7 +14,7 @@ from typing import Any
 from orjson import dumps
 import tomli
 
-from utils.cleaning import normalize_name
+from utils.cleaning import clean_string
 from utils.course import valid_meeting
 from utils.header import RandomHeader
 from utils.going import get_surface
@@ -189,7 +189,7 @@ def parse_runners(
 
         # Core identification fields
         if should_include_group('core'):
-            runner.name = normalize_name(runner_json['horseName'])
+            runner.name = clean_string(runner_json['horseName'])
             runner.horse_id = runner_json['horseUid']
             runner.number = runner_json['startNumber']
             runner.draw = runner_json['draw'] if runner_json['draw'] else None
@@ -220,14 +220,14 @@ def parse_runners(
 
         # Jockey fields
         if should_include_group('jockey'):
-            runner.jockey = normalize_name(runner_json['jockeyName'])
+            runner.jockey = clean_string(runner_json['jockeyName'])
             runner.jockey_id = runner_json['jockeyUid']
             runner.jockey_allowance = runner_json['weightAllowanceLbs']
             runner.claim = runner_json['weightAllowanceLbs']
 
         # Trainer fields
         if should_include_group('trainer'):
-            runner.trainer = normalize_name(runner_json['trainerStylename'])
+            runner.trainer = clean_string(runner_json['trainerStylename'])
             runner.trainer_id = runner_json['trainerId']
             runner.trainer_rtf = runner_json['trainerRtf']
             if profile:
@@ -248,21 +248,21 @@ def parse_runners(
 
         # Breeding
         if should_include_group('breeding'):
-            runner.sire = normalize_name(runner_json['sireName'])
+            runner.sire = clean_string(runner_json['sireName'])
             runner.sire_id = runner_json['sireId']
             runner.sire_region = runner_json['sireCountry']
-            runner.dam = normalize_name(runner_json['damName'])
+            runner.dam = clean_string(runner_json['damName'])
             runner.dam_id = runner_json['damId']
             runner.dam_region = runner_json['damCountry']
-            runner.damsire = normalize_name(runner_json['damsireName'])
+            runner.damsire = clean_string(runner_json['damsireName'])
             runner.damsire_id = runner_json['damsireId']
             runner.damsire_region = runner_json['damsireCountry']
-            runner.breeder = normalize_name(runner_json['breederName'])
+            runner.breeder = clean_string(runner_json['breederName'])
             runner.breeder_id = runner_json['breederUid']
 
         # Ownership
         if should_include_group('ownership'):
-            runner.owner = normalize_name(runner_json['ownerName'])
+            runner.owner = clean_string(runner_json['ownerName'])
             runner.owner_id = runner_json['ownerUid']
 
         # Comments
@@ -310,7 +310,7 @@ def parse_runners(
             if profile.get('previousTrainers'):
                 runner.prev_trainers = [
                     {
-                        'trainer': normalize_name(trainer['trainerStyleName']),
+                        'trainer': clean_string(trainer['trainerStyleName']),
                         'trainer_id': trainer['trainerUid'],
                         'change_date': trainer['trainerChangeDate'].split('T')[0],
                     }
@@ -319,7 +319,7 @@ def parse_runners(
             if profile.get('previousOwners'):
                 runner.prev_owners = [
                     {
-                        'owner': normalize_name(owner['ownerStyleName']),
+                        'owner': clean_string(owner['ownerStyleName']),
                         'owner_id': owner['ownerUid'],
                         'change_date': owner['ownerChangeDate'].split('T')[0],
                     }
@@ -339,7 +339,7 @@ def parse_runners(
                 runner.quotes = [
                     {
                         'date': q['raceDate'].split('T')[0],
-                        'horse': normalize_name(q['horseStyleName']),
+                        'horse': clean_string(q['horseStyleName']),
                         'horse_id': q['horseUid'],
                         'race': q['raceTitle'],
                         'race_id': q['raceId'],
@@ -354,7 +354,7 @@ def parse_runners(
             if profile.get('stable_quotes'):
                 runner.stable_tour = [
                     {
-                        'horse': normalize_name(q['horseName']),
+                        'horse': clean_string(q['horseName']),
                         'horse_id': q['horseUid'],
                         'quote': q['notes'],
                     }
