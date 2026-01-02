@@ -1,24 +1,47 @@
-import curl_cffi
-import time
+from time import sleep
+from random import choice
+from collections.abc import Sequence
+from curl_cffi import Session, Response, BrowserTypeLiteral
 
 
 class Persistent406Error(Exception):
     pass
 
 
-def get_request(
-    url: str,
-    retries: int = 21,
-    delay: float = 1.0,
-    timeout: int = 10,
-) -> tuple[int, curl_cffi.Response]:
-    for attempt in range(retries):
-        response = curl_cffi.get(url, impersonate='chrome', allow_redirects=False, timeout=timeout)
+browsers: Sequence[BrowserTypeLiteral] = (
+    'edge',
+    'chrome',
+    'firefox',
+    'safari',
+)
 
-        if response.status_code != 406:
-            return response.status_code, response
 
-        if attempt < retries:
-            time.sleep(delay)
+class NetworkClient:
+    def __init__(
+        self,
+        timeout: int = 14,
+    ) -> None:
+        self.session: Session = Session(impersonate=choice(browsers))
+        self.timeout: int = timeout
 
-    raise Persistent406Error(f'received 406 for {retries} attempts on {url}')
+    def get(
+        self,
+        url: str,
+        allow_redirects: bool = True,
+        retries: int = 7,
+        delay: float = 1.4,
+    ) -> tuple[int, Response]:
+        for attempt in range(1, retries):
+            response = self.session.get(
+                url,
+                allow_redirects=allow_redirects,
+                timeout=self.timeout,
+            )
+
+            if response.status_code != 406:
+                return response.status_code, response
+
+            if attempt < retries:
+                sleep(delay)
+
+        raise Persistent406Error(f'received 406 for {retries} attempts on {url}')

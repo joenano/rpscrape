@@ -19,7 +19,7 @@ from utils.course import valid_meeting
 from utils.header import RandomHeader
 from utils.going import get_surface
 from utils.lxml_funcs import find
-from utils.network import get_request
+from utils.network import NetworkClient
 from utils.profiles import get_profiles
 from utils.region import get_region, valid_region
 from utils.stats import Stats
@@ -78,12 +78,14 @@ def validate_days_range(value: str) -> int:
         raise argparse.ArgumentTypeError(f"Invalid value: '{value}'. Expected an integer.")
 
 
-def get_race_urls(dates: list[str], region: str | None = None) -> dict[str, list[tuple[str, str]]]:
+def get_race_urls(
+    client: NetworkClient, dates: list[str], region: str | None = None
+) -> dict[str, list[tuple[str, str]]]:
     race_urls: defaultdict[str, list[tuple[str, str]]] = defaultdict(list)
 
     for date in dates:
         url = f'https://www.racingpost.com/racecards/{date}'
-        status, response = get_request(url)
+        status, response = client.get(url)
 
         if status != 200 or not response.content:
             print(f'Failed to get racecards for {date} (status: {status})')
@@ -366,6 +368,7 @@ def scrape_racecards(
     race_urls: dict[str, list[tuple[str, str]]],
     date: str,
     config: dict[str, Any],
+    client: NetworkClient,
 ) -> Racecards:
     races: Racecards = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 
@@ -383,8 +386,8 @@ def scrape_racecards(
         url_racecard = f'{url_base}{href}'
         url_runners = f'{url_base}/profile/horse/data/cardrunners/{race_id}.json'
 
-        status_racecard, resp_racecard = get_request(url_racecard)
-        status_runners, resp_runners = get_request(url_runners)
+        status_racecard, resp_racecard = client.get(url_racecard)
+        status_runners, resp_runners = client.get(url_runners)
 
         if status_racecard != 200 or status_runners != 200:
             print('Failed to get racecard data.')
@@ -397,7 +400,7 @@ def scrape_racecards(
         resp_accordion = None
         if fetch_stats:
             url_accordion = f'{url_base}/racecards/data/accordion/{race_id}'
-            status_accordion, resp_accordion = get_request(url_accordion)
+            status_accordion, resp_accordion = client.get(url_accordion)
 
         try:
             doc = html.fromstring(resp_racecard.content)
@@ -529,12 +532,14 @@ def main() -> None:
         print(f'Invalid region: {args.region}')
         sys.exit(1)
 
-    race_urls = get_race_urls(dates, region)
+    client = NetworkClient()
+
+    race_urls = get_race_urls(client, dates, region)
 
     config = load_field_config()
 
     for date in race_urls:
-        racecards = scrape_racecards(race_urls, date, config)
+        racecards = scrape_racecards(race_urls, date, config, client)
 
         with open(f'../racecards/{date}.json', 'w', encoding='utf-8') as f:
             _ = f.write(dumps(racecards).decode('utf-8'))

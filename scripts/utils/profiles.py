@@ -4,14 +4,14 @@ from typing import Any, NoReturn
 from orjson import loads
 from lxml import html
 
-from utils.network import get_request, Persistent406Error
+from utils.network import NetworkClient
 
 
-def get_profiles(urls: list[str]) -> dict[str, dict[str, Any]]:
+def get_profiles(client: NetworkClient, urls: list[str]) -> dict[str, dict[str, Any]]:
     profiles: dict[str, dict[str, Any]] = {}
 
     for url in urls:
-        profile = _extract_profile_from_url(url)
+        profile = _extract_profile_from_url(client, url)
         split = url.split('/')
 
         profile['profile']['profile'] = f'{split[5]}/{split[6]}'
@@ -22,11 +22,8 @@ def get_profiles(urls: list[str]) -> dict[str, dict[str, Any]]:
     return profiles
 
 
-def _extract_profile_from_url(url: str) -> dict[str, Any] | NoReturn:
-    try:
-        status, response = get_request(url)
-    except Persistent406Error as err:
-        _exit_with_error(f'Failed to get profiles.\n{err}')
+def _extract_profile_from_url(client: NetworkClient, url: str) -> dict[str, Any] | NoReturn:
+    status, response = client.get(url)
 
     if status != 200:
         _exit_with_error(f'Failed to get profiles.\nStatus: {status}, URL: {url}')
