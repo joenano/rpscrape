@@ -6,6 +6,7 @@ import os
 import re
 import sys
 
+from dotenv import load_dotenv
 from collections import defaultdict
 from lxml import etree, html
 from pathlib import Path
@@ -16,7 +17,6 @@ import tomli
 
 from utils.cleaning import clean_string
 from utils.course import valid_meeting
-from utils.header import RandomHeader
 from utils.going import get_surface
 from utils.lxml_funcs import find
 from utils.network import NetworkClient
@@ -26,7 +26,7 @@ from utils.stats import Stats
 
 from models.racecard import Racecard, Runner
 
-random_header = RandomHeader()
+_ = load_dotenv()
 
 MAX_DAYS = 2
 
@@ -532,7 +532,11 @@ def main() -> None:
         print(f'Invalid region: {args.region}')
         sys.exit(1)
 
-    client = NetworkClient()
+    email = os.getenv('EMAIL')
+    auth_state = os.getenv('AUTH_STATE')
+    access_token = os.getenv('ACCESS_TOKEN')
+
+    client = NetworkClient(email=email, auth_state=auth_state, access_token=access_token)
 
     race_urls = get_race_urls(client, dates, region)
 
