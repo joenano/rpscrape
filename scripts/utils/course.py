@@ -1,12 +1,13 @@
-from collections.abc import Generator
+from collections.abc import Iterator
 from orjson import loads
 
 
-def courses(code: str = 'all') -> Generator[tuple[str, str]]:
-    courses = loads(open('../courses/_courses', 'r').read())
+_courses = loads(open('../courses/_courses', 'r').read())
 
-    for id, course in courses[code].items():
-        yield id, course
+
+def courses(code: str = 'all') -> Iterator[tuple[str, str]]:
+    for course_id, course in _courses[code].items():
+        yield course_id, course
 
 
 def course_name(code: str) -> str:
@@ -20,9 +21,10 @@ def course_name(code: str) -> str:
 
 
 def course_search(term: str):
-    for course in courses():
-        if term.lower() in course[1].lower():
-            print_course(course[0], course[1])
+    term = term.lower()
+    for course_id, course_name in _courses['all'].items():
+        if term in course_name.lower():
+            print_course(course_id, course_name)
 
 
 def print_course(code: str, course: str):
@@ -30,12 +32,12 @@ def print_course(code: str, course: str):
 
 
 def print_courses(code: str = 'all'):
-    for course in courses(code):
-        print_course(course[0], course[1])
+    for course_id, course_name in _courses[code].items():
+        print_course(course_id, course_name)
 
 
 def valid_course(code: str) -> bool:
-    return code in {course[0] for course in courses()}
+    return any(code in region for region in _courses.values())
 
 
 def valid_meeting(course: str):

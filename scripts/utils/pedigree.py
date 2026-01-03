@@ -3,7 +3,7 @@ from re import search
 from collections.abc import Callable
 from lxml.html import HtmlElement
 
-from utils.cleaning import normalize_name
+from utils.cleaning import clean_string
 
 
 class Pedigree:
@@ -20,7 +20,7 @@ class Pedigree:
 
     def get_dam(self, info_dam: HtmlElement) -> str:
         text: str = info_dam.text or ''
-        dam: str = normalize_name(text.strip().strip('()'))
+        dam: str = clean_string(text.strip().strip('()'))
 
         span: HtmlElement | None = info_dam.find('span')
         dam_nat: str | None = span.text if span is not None else None
@@ -31,7 +31,7 @@ class Pedigree:
     def get_damsire(self, info_damsire: HtmlElement) -> str:
         text: str = info_damsire.text or ''
         text = text.strip().strip('()')
-        damsire: str = normalize_name(text)
+        damsire: str = clean_string(text)
 
         if damsire == 'Damsire Unregistered':
             return ''
@@ -48,7 +48,7 @@ class Pedigree:
         else:
             region_sire = 'GB'
 
-        sire = normalize_name(sire.split('(')[0])
+        sire = clean_string(sire.split('(')[0])
 
         return f'{sire} ({region_sire})'
 

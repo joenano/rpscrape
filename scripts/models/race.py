@@ -13,8 +13,8 @@ class RaceInfo:
     off: str = ''
     race_name: str = ''
 
-    r_type: str = ''
-    r_class: str = ''
+    race_type: str = ''
+    race_class: str = ''
     pattern: str = ''
 
     age_band: str = ''

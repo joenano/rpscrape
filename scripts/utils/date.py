@@ -15,6 +15,10 @@ def convert_date(date_str: str) -> str:
     return '-'.join(parts[:3])
 
 
+def format_date(d: date) -> str:
+    return d.strftime('%Y_%m_%d')
+
+
 def get_dates(date_str: str) -> list[date]:
     def parse(s: str) -> date:
         year, month, day = map(int, s.split('/'))
@@ -29,13 +33,13 @@ def get_dates(date_str: str) -> list[date]:
     return [parse(date_str)]
 
 
-def parse_years(years: str) -> list[str] | None:
+def parse_years(years: str) -> list[str]:
     if '-' in years:
         try:
             start, end = map(int, years.split('-', 1))
             return [str(x) for x in range(start, end + 1)]
         except ValueError:
-            return None
+            return []
 
     return [years]
 

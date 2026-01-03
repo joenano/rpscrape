@@ -43,16 +43,16 @@ def clean_race(race_name: str) -> str:
     return clean_string(name)
 
 
-def normalize_name(name: str, title_case: bool = True) -> str:
-    if not name:
-        return ''
-    name = name.split('(')[0].strip()
-    name = sub(r'\s+(i|ii)$', '', name, flags=IGNORECASE)
-    name = name.replace('.', ' ').replace("'", '')
-    name = sub(r'\s+', ' ', name)
-    if title_case:
-        name = name.lower().title()
-    return name
+# def normalise_name(name: str, title_case: bool = True) -> str:
+#     if not name:
+#         return ''
+#     name = name.split('(')[0].strip()
+#     name = sub(r'\s+(i|ii)$', '', name, flags=IGNORECASE)
+#     name = name.replace('.', ' ').replace("'", '')
+#     name = sub(r'\s+', ' ', name)
+#     if title_case:
+#         name = name.lower().title()
+#     return name
 
 
 def strip_row(row: list[str]) -> list[str]:

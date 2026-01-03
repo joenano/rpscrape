@@ -5,28 +5,28 @@ import datetime
 import os
 import re
 import sys
-
-from collections import defaultdict
-from lxml import etree, html
-from pathlib import Path
-from tqdm import tqdm
-from typing import Any
-from orjson import dumps
 import tomli
 
-from utils.cleaning import normalize_name
+from collections import defaultdict
+from dotenv import load_dotenv
+from lxml import etree, html
+from pathlib import Path
+from orjson import dumps
+from tqdm import tqdm
+from typing import Any
+
+from utils.cleaning import clean_string
 from utils.course import valid_meeting
-from utils.header import RandomHeader
 from utils.going import get_surface
 from utils.lxml_funcs import find
-from utils.network import get_request
+from utils.network import NetworkClient
 from utils.profiles import get_profiles
 from utils.region import get_region, valid_region
 from utils.stats import Stats
 
 from models.racecard import Racecard, Runner
 
-random_header = RandomHeader()
+_ = load_dotenv()
 
 MAX_DAYS = 2
 
@@ -78,12 +78,14 @@ def validate_days_range(value: str) -> int:
         raise argparse.ArgumentTypeError(f"Invalid value: '{value}'. Expected an integer.")
 
 
-def get_race_urls(dates: list[str], region: str | None = None) -> dict[str, list[tuple[str, str]]]:
+def get_race_urls(
+    client: NetworkClient, dates: list[str], region: str | None = None
+) -> dict[str, list[tuple[str, str]]]:
     race_urls: defaultdict[str, list[tuple[str, str]]] = defaultdict(list)
 
     for date in dates:
         url = f'https://www.racingpost.com/racecards/{date}'
-        status, response = get_request(url)
+        status, response = client.get(url)
 
         # If we get a 302 for tomorrow's date, try using "tomorrow" as fallback
         if status == 302:
@@ -194,7 +196,7 @@ def parse_runners(
 
         # Core identification fields
         if should_include_group('core'):
-            runner.name = normalize_name(runner_json['horseName'])
+            runner.name = clean_string(runner_json['horseName'])
             runner.horse_id = runner_json['horseUid']
             runner.number = runner_json['startNumber']
             runner.draw = runner_json['draw'] if runner_json['draw'] else None
@@ -225,14 +227,14 @@ def parse_runners(
 
         # Jockey fields
         if should_include_group('jockey'):
-            runner.jockey = normalize_name(runner_json['jockeyName'])
+            runner.jockey = clean_string(runner_json['jockeyName'])
             runner.jockey_id = runner_json['jockeyUid']
             runner.jockey_allowance = runner_json['weightAllowanceLbs']
             runner.claim = runner_json['weightAllowanceLbs']
 
         # Trainer fields
         if should_include_group('trainer'):
-            runner.trainer = normalize_name(runner_json['trainerStylename'])
+            runner.trainer = clean_string(runner_json['trainerStylename'])
             runner.trainer_id = runner_json['trainerId']
             runner.trainer_rtf = runner_json['trainerRtf']
             if profile:
@@ -253,21 +255,21 @@ def parse_runners(
 
         # Breeding
         if should_include_group('breeding'):
-            runner.sire = normalize_name(runner_json['sireName'])
+            runner.sire = clean_string(runner_json['sireName'])
             runner.sire_id = runner_json['sireId']
             runner.sire_region = runner_json['sireCountry']
-            runner.dam = normalize_name(runner_json['damName'])
+            runner.dam = clean_string(runner_json['damName'])
             runner.dam_id = runner_json['damId']
             runner.dam_region = runner_json['damCountry']
-            runner.damsire = normalize_name(runner_json['damsireName'])
+            runner.damsire = clean_string(runner_json['damsireName'])
             runner.damsire_id = runner_json['damsireId']
             runner.damsire_region = runner_json['damsireCountry']
-            runner.breeder = normalize_name(runner_json['breederName'])
+            runner.breeder = clean_string(runner_json['breederName'])
             runner.breeder_id = runner_json['breederUid']
 
         # Ownership
         if should_include_group('ownership'):
-            runner.owner = normalize_name(runner_json['ownerName'])
+            runner.owner = clean_string(runner_json['ownerName'])
             runner.owner_id = runner_json['ownerUid']
 
         # Comments
@@ -315,7 +317,7 @@ def parse_runners(
             if profile.get('previousTrainers'):
                 runner.prev_trainers = [
                     {
-                        'trainer': normalize_name(trainer['trainerStyleName']),
+                        'trainer': clean_string(trainer['trainerStyleName']),
                         'trainer_id': trainer['trainerUid'],
                         'change_date': trainer['trainerChangeDate'].split('T')[0],
                     }
@@ -324,7 +326,7 @@ def parse_runners(
             if profile.get('previousOwners'):
                 runner.prev_owners = [
                     {
-                        'owner': normalize_name(owner['ownerStyleName']),
+                        'owner': clean_string(owner['ownerStyleName']),
                         'owner_id': owner['ownerUid'],
                         'change_date': owner['ownerChangeDate'].split('T')[0],
                     }
@@ -344,7 +346,7 @@ def parse_runners(
                 runner.quotes = [
                     {
                         'date': q['raceDate'].split('T')[0],
-                        'horse': normalize_name(q['horseStyleName']),
+                        'horse': clean_string(q['horseStyleName']),
                         'horse_id': q['horseUid'],
                         'race': q['raceTitle'],
                         'race_id': q['raceId'],
@@ -359,7 +361,7 @@ def parse_runners(
             if profile.get('stable_quotes'):
                 runner.stable_tour = [
                     {
-                        'horse': normalize_name(q['horseName']),
+                        'horse': clean_string(q['horseName']),
                         'horse_id': q['horseUid'],
                         'quote': q['notes'],
                     }
@@ -373,6 +375,7 @@ def scrape_racecards(
     race_urls: dict[str, list[tuple[str, str]]],
     date: str,
     config: dict[str, Any],
+    client: NetworkClient,
 ) -> Racecards:
     races: Racecards = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 
@@ -390,8 +393,8 @@ def scrape_racecards(
         url_racecard = f'{url_base}{href}'
         url_runners = f'{url_base}/profile/horse/data/cardrunners/{race_id}.json'
 
-        status_racecard, resp_racecard = get_request(url_racecard)
-        status_runners, resp_runners = get_request(url_runners)
+        status_racecard, resp_racecard = client.get(url_racecard)
+        status_runners, resp_runners = client.get(url_runners)
 
         if status_racecard != 200 or status_runners != 200:
             print('Failed to get racecard data.')
@@ -399,12 +402,11 @@ def scrape_racecards(
             print(f'status: {status_runners} url: {url_runners}')
             continue
 
-        # Optional stats request
         status_accordion = None
         resp_accordion = None
         if fetch_stats:
             url_accordion = f'{url_base}/racecards/data/accordion/{race_id}'
-            status_accordion, resp_accordion = get_request(url_accordion)
+            status_accordion, resp_accordion = client.get(url_accordion)
 
         try:
             doc = html.fromstring(resp_racecard.content)
@@ -536,12 +538,18 @@ def main() -> None:
         print(f'Invalid region: {args.region}')
         sys.exit(1)
 
-    race_urls = get_race_urls(dates, region)
+    email = os.getenv('EMAIL')
+    auth_state = os.getenv('AUTH_STATE')
+    access_token = os.getenv('ACCESS_TOKEN')
+
+    client = NetworkClient(email=email, auth_state=auth_state, access_token=access_token)
+
+    race_urls = get_race_urls(client, dates, region)
 
     config = load_field_config()
 
     for date in race_urls:
-        racecards = scrape_racecards(race_urls, date, config)
+        racecards = scrape_racecards(race_urls, date, config, client)
 
         with open(f'../racecards/{date}.json', 'w', encoding='utf-8') as f:
             _ = f.write(dumps(racecards).decode('utf-8'))
