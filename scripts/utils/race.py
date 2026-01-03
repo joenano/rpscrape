@@ -8,7 +8,6 @@ from re import search, sub
 
 from models.betfair import BSPMap
 from models.race import RaceInfo, RunnerInfo
-from utils.header import RandomHeader
 from utils.pedigree import Pedigree
 
 from utils.cleaning import clean_race, clean_string, strip_row
@@ -19,7 +18,6 @@ from utils.lxml_funcs import find
 from utils.network import NetworkClient
 from utils.region import get_region
 
-rh = RandomHeader()
 
 regex_class = r'(\(|\s)(C|c)lass (\d|[A-Ha-h])(\)|\s)'
 regex_group = r'(\(|\s)((G|g)rade|(G|g)roup) (\d|[A-Ca-c]|I*)(\)|\s)'

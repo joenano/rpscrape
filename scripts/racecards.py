@@ -5,15 +5,15 @@ import datetime
 import os
 import re
 import sys
+import tomli
 
-from dotenv import load_dotenv
 from collections import defaultdict
+from dotenv import load_dotenv
 from lxml import etree, html
 from pathlib import Path
+from orjson import dumps
 from tqdm import tqdm
 from typing import Any
-from orjson import dumps
-import tomli
 
 from utils.cleaning import clean_string
 from utils.course import valid_meeting
@@ -395,7 +395,6 @@ def scrape_racecards(
             print(f'status: {status_runners} url: {url_runners}')
             continue
 
-        # Optional stats request
         status_accordion = None
         resp_accordion = None
         if fetch_stats:

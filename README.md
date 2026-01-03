@@ -13,7 +13,7 @@ The aim of this tool is to provide a way of gathering large amounts of historica
 - [Settings](#settings)
 - [Authentication](#authentication)
 
-## Requirements
+### Requirements
 
 You must have Python 3.13 or greater, and GIT installed. You can download the latest Python release [here](https://www.python.org/downloads/). You can download GIT [here](https://git-scm.com/downloads).
 
@@ -32,13 +32,14 @@ The above Python modules are required, they can be installed using PIP(_included
 pip3 install tomli orjson jarowinkler aiohttp curl_cffi tqdm python-dotenv lxml
 ```
 
-## Install
+### Install
 
 ```
 git clone https://github.com/joenano/rpscrape.git
 ```
 
 #### Command-Line Options
+
 ```
 -d, --date	Single date or date range YYYY/MM/DD-YYYY/MM/DD.
 -y, --year	Year or year range (YYYY or YYYY-YYYY).
@@ -53,13 +54,14 @@ git clone https://github.com/joenano/rpscrape.git
 ```
 
 ##### Notes
+
 --date and --year are mutually exclusive.
 
 You cannot specify both --region and --course at the same time.
 
 When scraping jumps data, the year refers to the season start. For example, the 2019 Cheltenham Festival is in the 2018-2019 season: use 2018.
 
-#### Examples
+### Examples
 
 All races on a specific date:
 
@@ -72,7 +74,6 @@ Only races from Great Britain:
 ```
 ./rpscrape.py -d 2020/10/01 -r gb
 ```
-
 
 Date range:
 
@@ -97,8 +98,9 @@ Jump races at Ascot (1999–2018):
 Scrape using a file with dates:
 
 ```
-./rpscrape.py --date-file dates.txt -r gb
+./rpscrape.py --date-file dates.txt
 ```
+
 one date per line, format: YYYY/MM/DD.
 
 ```
@@ -106,7 +108,6 @@ one date per line, format: YYYY/MM/DD.
 2020/11/02
 2020/12/03
 ```
-
 
 ##### Searching
 
@@ -121,7 +122,6 @@ Search regions:
 ```
 ./rpscrape.py --regions gb
 ```
-
 
 List all courses:
 
@@ -144,7 +144,6 @@ List courses in a region:
 ##### Settings
 
 The [user_settings.toml](https://github.com/joenano/rpscrape/blob/master/user_settings.toml) file contains the data fields that can be scraped. You can turn fields on and off by setting them true or false. The order of fields in that file will be maintained in the output csv. The [default_settings.toml](https://github.com/joenano/rpscrape/blob/master/default_settings.toml) file should not be edited, its there as a backup and to introduce any new fields without changing user settings.
-
 
 ## Scrape Racecards
 
@@ -192,8 +191,8 @@ The settings file lets you control:
 - **Data Collection**: Whether to fetch stats and profiles
 - **Field Groups**: Which groups of runner fields to include (core, basic_info, performance, jockey, trainer, etc.)
 
-
 #### Authentication
+
 Credentials are stored in a .env file in the root directory. Make sure .env is added to .gitignore.
 
 ```
@@ -210,3 +209,4 @@ There will be multiple keys beginning with `CognitoIdentityServiceProvider`, you
 
 ![alt text](https://i.postimg.cc/FK41xJ3W/20260103-113009.png)
 ![alt text](https://i.postimg.cc/nLJM1QBg/20260103-113046.png)
+
