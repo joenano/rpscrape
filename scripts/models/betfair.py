@@ -4,6 +4,8 @@ from datetime import datetime
 from orjson import dumps
 from typing import Any
 
+from utils.cleaning import clean_string
+
 type BSPMap = dict[tuple[str, str, str], list[BSP]]
 
 
@@ -29,6 +31,28 @@ class BSP:
 
     def to_json(self) -> str:
         return dumps(self.to_dict()).decode('utf-8')
+
+    @classmethod
+    def from_csv(cls, record: dict[str, str]) -> BSP | None:
+        try:
+            return cls(
+                date=record['date'],
+                region=record['region'],
+                off=record['off'],
+                horse=record['horse'],
+                bsp=record.get('bsp') or None,
+                wap=record.get('wap') or None,
+                morning_wap=record.get('morning_wap') or None,
+                pre_min=record.get('pre_min'),
+                pre_max=record.get('pre_max'),
+                ip_min=record.get('ip_min'),
+                ip_max=record.get('ip_max'),
+                morning_vol=record.get('morning_vol'),
+                pre_vol=record.get('pre_vol'),
+                ip_vol=record.get('ip_vol'),
+            )
+        except KeyError:
+            return None
 
     @classmethod
     def from_record(cls, record: dict[str, str], region: str) -> BSP | None:
@@ -64,7 +88,7 @@ class BSP:
 
 def clean_name(name: str, region: str) -> str:
     cleaned = name.split('(')[0].lower()
-    cleaned = cleaned.rstrip(' ii').rstrip(' i').replace("'", '')
+    cleaned = clean_string(cleaned)
 
     if region == 'AUS':
         dot_pos = cleaned.find('.')

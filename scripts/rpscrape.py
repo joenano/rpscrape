@@ -1,28 +1,36 @@
 #!/usr/bin/env python3
 
 import gzip
+import os
 import sys
 
 from collections.abc import Callable
-from pathlib import Path
-from typing import TextIO
+from datetime import date
+from dotenv import load_dotenv
 from lxml import html
 from orjson import loads
-from datetime import date
+from pathlib import Path
+from typing import TextIO, TYPE_CHECKING
 
-from utils.betfair import Betfair
 from utils.argparser import ArgParser
-from utils.completer import Completer
-from utils.header import RandomHeader
+from utils.betfair import Betfair
+from utils.date import format_date
 from utils.network import NetworkClient
-from utils.race import Race, VoidRaceError
+from utils.paths import Paths, build_paths
 from utils.settings import Settings
 from utils.update import Update
 
-from utils.course import course_name, courses
+_ = load_dotenv()
 
 settings = Settings()
-random_header = RandomHeader()
+
+if TYPE_CHECKING:
+    from utils.betfair import Betfair
+
+RACE_TYPES: dict[str, set[str]] = {
+    'flat': {'Flat'},
+    'jumps': {'Chase', 'Hurdle', 'NH Flat'},
+}
 
 
 def check_for_update() -> bool:
@@ -81,101 +89,131 @@ def get_race_urls(
     return sorted(urls, key=sort_key)
 
 
-def get_race_urls_date(dates: list[date], region: str, client: NetworkClient) -> list[str]:
-    url_base = 'https://www.racingpost.com'
-
+def get_race_urls_date(
+    dates: list[date], tracks: list[tuple[str, str]], client: NetworkClient
+) -> list[str]:
     urls: set[str] = set()
-    course_ids: set[str] = {course[0] for course in courses(region)}
+    course_ids: set[str] = {t[0] for t in tracks}
 
     for race_date in dates:
-        url = f'{url_base}/results/{race_date}'
+        url = f'https://www.racingpost.com/results/{race_date}'
 
-        status, response = client.get(url)
-
-        if status != 200:
-            print(f'Failed to get race urls.\nStatus: {status}, URL: {url}')
-            sys.exit(1)
-
+        _, response = client.get(url)
         doc = html.fromstring(response.content)
 
         races = doc.xpath('//a[@data-test-selector="link-listCourseNameLink"]')
         for race in races:
             course_id = race.attrib['href'].split('/')[2]
             if course_id in course_ids:
-                urls.add(f'{url_base}{race.attrib["href"]}')
+                urls.add(f'https://www.racingpost.com{race.attrib["href"]}')
 
     return sorted(urls, key=sort_key)
 
 
+def load_or_save_urls(path: Path, builder: Callable[[], list[str]]) -> list[str]:
+    if path.exists():
+        return [line.strip() for line in path.read_text().splitlines() if line.strip()]
+
+    urls = builder()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    _ = path.write_text('\n'.join(urls))
+
+    return urls
+
+
+def prepare_betfair(
+    race_urls: list[str],
+    paths: Paths,
+) -> 'Betfair | None':
+    if not settings.toml or not settings.toml.get('betfair_data', False):
+        return None
+
+    from utils.betfair import Betfair
+
+    print('Getting Betfair data...')
+
+    if paths.betfair.exists():
+        print('Using cached Betfair data')
+        return Betfair.from_csv(paths.betfair)
+
+    betfair = Betfair(race_urls)
+
+    with open(str(paths.betfair), 'w') as f:
+        fields = settings.toml.get('fields', {}).get('betfair', {})
+        header = ','.join(['date', 'region', 'off', 'horse'] + list(fields.keys()))
+        _ = f.write(header + '\n')
+
+        for row in betfair.rows:
+            values = ['' if v is None else str(v) for v in row.to_dict().values()]
+            _ = f.write(','.join(values) + '\n')
+
+    return betfair
+
+
 def scrape_races(
     race_urls: list[str],
-    folder_name: str,
-    file_name: str,
-    file_extension: str,
+    paths: Paths,
     code: str,
     client: NetworkClient,
-    file_writer: Callable[[str], TextIO],
+    file_writer: Callable[[str, bool], TextIO],
 ):
-    out_dir = Path('../data') / folder_name / code
-    out_dir.mkdir(parents=True, exist_ok=True)
+    from utils.race import Race, VoidRaceError
 
-    file_path = out_dir / f'{file_name}.{file_extension}'
+    betfair = prepare_betfair(
+        race_urls=race_urls,
+        paths=paths,
+    )
 
-    betfair: Betfair | None = None
+    last_url = paths.progress.read_text().strip() if paths.progress.exists() else None
 
-    if settings.toml and settings.toml.get('betfair_data', False):
-        print('Getting Betfair data...')
-        betfair = Betfair(race_urls)
+    if last_url:
+        try:
+            race_urls = race_urls[race_urls.index(last_url) + 1 :]
+            print(f'Resuming after {last_url}')
+        except ValueError:
+            pass
+    else:
+        print('Scraping races')
 
-        betfair_dir = Path('../data/betfair') / folder_name / code
-        betfair_dir.mkdir(parents=True, exist_ok=True)
+    append = last_url is not None and paths.output.exists()
 
-        with file_writer(str(betfair_dir / f'{file_name}.csv')) as f:
-            betfair_fields = settings.toml.get('fields', {}).get('betfair', {})
-
-            header = ','.join(['date', 'region', 'off', 'horse'] + list(betfair_fields.keys()))
-            _ = f.write(header + '\n')
-
-            for row in betfair.rows:
-                values = ['' if v is None else str(v) for v in row.to_dict().values()]
-                _ = f.write(','.join(values) + '\n')
-
-    print('Scraping races...')
-
-    with file_writer(str(file_path)) as f:
-        _ = f.write(settings.csv_header + '\n')
+    with file_writer(str(paths.output), append=append) as f:
+        if not append:
+            _ = f.write(settings.csv_header + '\n')
 
         for url in race_urls:
             _, response = client.get(url)
-
             doc = html.fromstring(response.content)
 
             try:
-                if betfair:
-                    race = Race(url, doc, code, settings.fields, betfair.data)
-                else:
-                    race = Race(url, doc, code, settings.fields)
+                race = (
+                    Race(client, url, doc, code, settings.fields, betfair.data)
+                    if betfair
+                    else Race(client, url, doc, code, settings.fields)
+                )
             except VoidRaceError:
                 continue
 
-            if code == 'flat' and race.race_info.r_type != 'Flat':
-                continue
-            if code == 'jumps' and race.race_info.r_type not in {'Chase', 'Hurdle', 'NH Flat'}:
+            allowed = RACE_TYPES.get(code)
+            if allowed is not None and race.race_info.race_type not in allowed:
                 continue
 
             for row in race.csv_data:
                 _ = f.write(row + '\n')
 
-    rel_path = file_path.relative_to('../')
-    print(f'Finished scraping.\nData path: rpscrape/{rel_path}')
+            _ = paths.progress.write_text(url)
+
+    print('Finished scraping.')
+    print(f'OUTPUT_CSV={paths.output.resolve()}')
 
 
-def writer_csv(file_path: str) -> TextIO:
-    return open(file_path, 'w', encoding='utf-8')
+def writer_csv(file_path: str, append: bool = False) -> TextIO:
+    return open(file_path, 'a' if append else 'w', encoding='utf-8')
 
 
-def writer_gzip(file_path: str) -> TextIO:
-    return gzip.open(file_path, 'wt', encoding='utf-8')
+def writer_gzip(file_path: str, append: bool = False) -> TextIO:
+    mode = 'at' if append else 'wt'
+    return gzip.open(file_path, mode, encoding='utf-8')
 
 
 def main():
@@ -185,57 +223,60 @@ def main():
     if settings.toml['auto_update']:
         _ = check_for_update()
 
-    file_extension = 'csv'
-    file_writer = writer_csv
-
-    if settings.toml.get('gzip_output', False):
-        file_extension = 'csv.gz'
-        file_writer = writer_gzip
+    gzip_output = settings.toml.get('gzip_output', False)
+    file_writer = writer_gzip if gzip_output else writer_csv
 
     parser = ArgParser()
 
-    client = NetworkClient()
+    if len(sys.argv) <= 1:
+        parser.parser.print_help()
+        sys.exit(2)
 
-    if len(sys.argv) > 1:
-        args = parser.parse_args(sys.argv[1:])
+    args = parser.parse(sys.argv[1:])
 
-        if args.date and args.region:
-            folder_name = f'dates/{args.region}'
-            file_name = args.date.replace('/', '_')
-            race_urls = get_race_urls_date(parser.dates, args.region, client)
+    email = os.getenv('EMAIL')
+    auth_state = os.getenv('AUTH_STATE')
+    access_token = os.getenv('ACCESS_TOKEN')
+
+    client = NetworkClient(email=email, auth_state=auth_state, access_token=access_token)
+
+    if args.dates != []:
+        folder_name = f'dates/{args.region}'
+
+        if len(args.dates) == 1:
+            file_name = format_date(args.dates[0])
         else:
-            folder_name = args.region or course_name(args.course)
-            file_name = args.year
-            race_urls = get_race_urls(parser.tracks, parser.years, args.type, client)
+            file_name = f'{format_date(args.dates[0])}_{format_date(args.dates[-1])}'
 
-        scrape_races(race_urls, folder_name, file_name, file_extension, args.type, client, file_writer)
+        paths = build_paths(
+            folder_name=folder_name,
+            file_name=file_name,
+            code=args.type,
+            gzip_output=gzip_output,
+        )
+
+        race_urls = load_or_save_urls(
+            paths.urls,
+            lambda: get_race_urls_date(args.dates, args.tracks, client),
+        )
+
     else:
-        if sys.platform == 'linux':
-            import readline
+        folder_name = args.region
+        file_name = args.years[0] if len(args.years) == 1 else f'{args.years[0]}-{args.years[-1]}'
 
-            completions = Completer()
-            readline.set_completer(completions.complete)
-            readline.parse_and_bind('tab: complete')
+        paths = build_paths(
+            folder_name=folder_name,
+            file_name=file_name,
+            code=args.type,
+            gzip_output=gzip_output,
+        )
 
-        while True:
-            args = input('[rpscrape]> ').lower().strip()
-            args = parser.parse_args_interactive([arg.strip() for arg in args.split()])
+        race_urls = load_or_save_urls(
+            paths.urls,
+            lambda: get_race_urls(args.tracks, args.years, args.type, client),
+        )
 
-            if args:
-                if 'dates' in args:
-                    race_urls = get_race_urls_date(args['dates'], args['region'], client)
-                else:
-                    race_urls = get_race_urls(args['tracks'], args['years'], args['type'], client)
-
-                scrape_races(
-                    race_urls,
-                    args['folder_name'],
-                    args['file_name'],
-                    file_extension,
-                    args['type'],
-                    client,
-                    file_writer,
-                )
+    scrape_races(race_urls, paths, args.type, client, file_writer)
 
 
 if __name__ == '__main__':

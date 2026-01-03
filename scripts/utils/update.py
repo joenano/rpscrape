@@ -1,27 +1,35 @@
 import subprocess
 
 from pathlib import Path
+from curl_cffi.requests import get
 
 
 class Update:
     def __init__(self):
         self.root_dir: Path = Path.cwd().parent
+        self.api_url: str = 'https://api.github.com/repos/joenano/rpscrape/commits/master'
 
-    def available(self):
-        if 'local out of date' in self.get_status().lower():
-            return True
-        return False
+    def local_hash(self) -> str:
+        return subprocess.check_output(
+            ('git', 'rev-parse', 'HEAD'), cwd=self.root_dir, text=True
+        ).strip()
 
-    def get_status(self):
-        command = ['git', 'remote', 'show', 'origin']
-        status = subprocess.check_output(command, cwd=self.root_dir)
-        return status.decode('utf-8')
+    def remote_hash(self) -> str:
+        resp = get(self.api_url, headers={'User-Agent': 'update-check'}, timeout=2)
+        resp.raise_for_status()
+        data = resp.json()
+        return data['sha']
 
-    def pull_latest(self):
-        for command in ['git', 'fetch'], ['git', 'reset', '--hard', 'HEAD']:
-            res = subprocess.run(command, cwd=self.root_dir, stdout=subprocess.DEVNULL)
-            if res.returncode != 0:
-                return False
+    def available(self) -> bool:
+        return self.local_hash() != self.remote_hash()
 
-        res = subprocess.run(['git', 'merge', 'origin/master'], cwd=self.root_dir, capture_output=True)
-        return 'up-to-date' in res.stdout.decode('utf-8')
+    def pull_latest(self) -> bool:
+        return (
+            subprocess.run(
+                ('git', 'pull', '--ff-only', 'origin', 'master'),
+                cwd=self.root_dir,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            ).returncode
+            == 0
+        )

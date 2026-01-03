@@ -4,29 +4,32 @@ Horse racing data has been hoarded by a few companies, enabling them to effectiv
 
 The aim of this tool is to provide a way of gathering large amounts of historical data at no cost.
 
-#### Example data (Ascot 2018)
-
-![data](https://i.postimg.cc/7LncCDMG/data1.png)
-
 #### Table of Contents
 
 - [Requirements](#requirements)
 - [Install](#install)
-- [Usage](#usage)
-- [Scrape by date](#scrape-by-date)
-- [Command Line Arguments](#command-line-arguments)
+- [Examples](#examples)
 - [Scrape Racecards](#scrape-racecards)
 - [Settings](#settings)
-- [Options](#options)
+- [Authentication](#authentication)
 
 ## Requirements
 
 You must have Python 3.13 or greater, and GIT installed. You can download the latest Python release [here](https://www.python.org/downloads/). You can download GIT [here](https://git-scm.com/downloads).
 
-In addition, the [Requests](http://docs.python-requests.org/en/master/), [tomli](https://pypi.org/project/tomli/), [orjson](https://pypi.org/project/orjson/1.3.0/), [jarowinkler](https://pypi.org/project/jarowinkler/), [AIOHTTP](https://docs.aiohttp.org/en/stable/), [curl_cffi](https://pypi.org/project/curl-cffi/), [TQDM](https://pypi.org/project/tqdm/) and [LXML](https://lxml.de/) python modules are needed, they can be installed using PIP(_included with Python_) with the following command.
+- [tomli](https://pypi.org/project/tomli/)
+- [orjson](https://pypi.org/project/orjson/1.3.0/)
+- [jarowinkler](https://pypi.org/project/jarowinkler/)
+- [AIOHTTP](https://docs.aiohttp.org/en/stable/)
+- [curl_cffi](https://pypi.org/project/curl-cffi/)
+- [TQDM](https://pypi.org/project/tqdm/)
+- [python-dotenv](https://pypi.org/project/python-dotenv/)
+- [LXML](https://lxml.de/)
+
+The above Python modules are required, they can be installed using PIP(_included with Python_):
 
 ```
-pip3 install requests tomli orjson jarowinkler aiohttp lxml curl_cffi
+pip3 install tomli orjson jarowinkler aiohttp curl_cffi tqdm python-dotenv lxml
 ```
 
 ## Install
@@ -35,153 +38,113 @@ pip3 install requests tomli orjson jarowinkler aiohttp lxml curl_cffi
 git clone https://github.com/joenano/rpscrape.git
 ```
 
-## Usage
-
-Run the program from the scripts folder:
-
+#### Command-Line Options
 ```
-cd rpscrape/scripts
-python3 rpscrape.py
-```
+-d, --date	Single date or date range YYYY/MM/DD-YYYY/MM/DD.
+-y, --year	Year or year range (YYYY or YYYY-YYYY).
+-r, --region	Region code (e.g., gb, ire).
+-c, --course	Numeric course code.
+-t, --type	Race type: flat or jumps.
 
-To scrape you must provide 3 options in the following format:
+--date-file	File containing dates (one per line, YYYY/MM/DD).
 
-```
-[rpscrape]> [region|course] [year|range] [code]
-```
-
-The first option can be either a region or a specific course.
-
-Each region has a 2 or 3 letter code like "ire" for Ireland or "gb" for Great Britain. You can list region codes with the regions command:
-
-```
-[rpscrape]> regions
-     CODE: mal | Malaysia
-     CODE: mac | Macau
-     CODE: gue | Guernsey
-     CODE: ity | Italy
-     CODE: swi | Switzerland
-     CODE: tur | Turkey
+--regions	List or search regions.
+--courses	List/search courses or list courses in a region.
 ```
 
-The other possibility for the first option is that of a specific course. Course codes are numeric and up to 4 digits long. You can list course codes with the courses command:
+##### Notes
+--date and --year are mutually exclusive.
 
-```
-[rpscrape]> courses
-     CODE: 32   | Aintree
-     CODE: 2    | Ascot
-     CODE: 3    | Ayr
-     CODE: 4    | Bangor
-     CODE: 5    | Bath
-     CODE: 6    | Beverley
-```
+You cannot specify both --region and --course at the same time.
 
-Add a search term to search for a specific region or course:
+When scraping jumps data, the year refers to the season start. For example, the 2019 Cheltenham Festival is in the 2018-2019 season: use 2018.
 
-```
-[rpscrape]> regions france
-    CODE: fr  | France
-```
+#### Examples
 
-```
-[rpscrape]> courses york
-    CODE: 107  | York
-    CODE: 1347 | York Aus
-```
-
-Add a region code to list the courses from that region:
-
-```
-[rpscrape]> courses ire
-    CODE: 175  | Ballinrobe
-    CODE: 176  | Bellewstown
-    CODE: 177  | Clonmel
-    CODE: 596  | Cork
-    CODE: 178  | Curragh
-    CODE: 180  | Down Royal
-```
-
-The second option can be a year e.g "1999", or a range of years e.g "2005-2015".
-
-The final option is the racing code and can either be "flat" or "jumps".
-
-### Examples
-
-The following example shows a request for flat races from Ireland in 2017.
-
-```
-[rpscrape]> ire 2017 flat
-```
-
-The next example shows a request for the last 2 years flat form in Great Britain.
-
-```
-[rpscrape]> gb 2017-2018 flat
-```
-
-The next example shows a request for the last 20 years jump form at Ascot(code: 2).
-
-```
-[rpscrape]> 2 1999-2018 jumps
-```
-
-Note: When scraping jumps data the year you enter is when the season started, i.e to get 2019 Cheltenham Festival data, you would use the year 2018.
-
-```
-[rpscrape]> 11 2018 jumps
-```
-
-In the above example, Cheltenham races from the season 2018-2019 are scraped, the 2018 Greatwood and the 2019 festival will be included but not the 2018 festival.
-
-## Scrape by date
-
-To scrape by date or date range, use the -d flag followed by the date/date range and the region. Scraping individual courses in this manner is not included:
-
-```
-[rpscrape]> -d [date|range] [region]
-```
-
-The date format is YYYY/MM/DD, to specify a range of dates, separate them with a dash '-', start date followed by end date.
-
-### Examples
-
-```
-[rpscrape]> -d 2019/12/18 gb
-```
-
-```
-[rpscrape]> -d 2019/12/15-2019/12/18 ire
-```
-
-## Command Line Arguments
-
-Its now possible to run from the command line with a few flags.
-
-### Examples
-
-To scrape by date, use the -d flag for dates and -r flag for optional region, if no region code is provided, all races from the given dates will be scraped by default.
-
-All races will be scraped on date.
+All races on a specific date:
 
 ```
 ./rpscrape.py -d 2020/10/01
 ```
 
-Only races from GB will be scraped.
+Only races from Great Britain:
 
 ```
 ./rpscrape.py -d 2020/10/01 -r gb
 ```
 
-To scrape a particular course or region, use the -c or -r flags with the course or region code. Use the -y flag for the year and -t flag for the type of racing, flat or jumps.
+
+Date range:
 
 ```
-./rpscrape.py -c 2 -y 2015-2020 -t jumps
+./rpscrape.py -d 2019/12/15-2019/12/18
 ```
+
+Flat races in Ireland (2019):
 
 ```
 ./rpscrape.py -r ire -y 2019 -t flat
 ```
+
+Jump races at Ascot (1999–2018):
+
+```
+./rpscrape.py -c 2 -y 1999-2018 -t jumps
+```
+
+##### Date File Mode
+
+Scrape using a file with dates:
+
+```
+./rpscrape.py --date-file dates.txt -r gb
+```
+one date per line, format: YYYY/MM/DD.
+
+```
+2020/10/01
+2020/11/02
+2020/12/03
+```
+
+
+##### Searching
+
+List all regions:
+
+```
+./rpscrape.py --regions
+```
+
+Search regions:
+
+```
+./rpscrape.py --regions gb
+```
+
+
+List all courses:
+
+```
+./rpscrape.py --courses
+```
+
+Search courses:
+
+```
+./rpscrape.py --courses Ascot
+```
+
+List courses in a region:
+
+```
+./rpscrape.py --courses gb
+```
+
+##### Settings
+
+The [user_settings.toml](https://github.com/joenano/rpscrape/blob/master/user_settings.toml) file contains the data fields that can be scraped. You can turn fields on and off by setting them true or false. The order of fields in that file will be maintained in the output csv. The [default_settings.toml](https://github.com/joenano/rpscrape/blob/master/default_settings.toml) file should not be edited, its there as a backup and to introduce any new fields without changing user settings.
+
 
 ## Scrape Racecards
 
@@ -189,7 +152,7 @@ You can scrape racecards using racecards.py which saves a file containing a json
 
 There are only three parameter options, --day N, --days N where N is a number 1-2, and --region N where N is a region (gb, ire, etc).
 
-### Examples
+##### Examples
 
 Scrape today's racecards.
 
@@ -215,7 +178,7 @@ Scrape today's and tomorrow's racecards by region.
 ./racecards.py --days 2 --region gb
 ```
 
-### Racecard Settings
+##### Settings
 
 You can customize which data is included in racecards using the settings file. The scraper uses `settings/user_racecard_settings.toml` if it exists, otherwise falls back to `settings/default_racecard_settings.toml`.
 
@@ -229,34 +192,21 @@ The settings file lets you control:
 - **Data Collection**: Whether to fetch stats and profiles
 - **Field Groups**: Which groups of runner fields to include (core, basic_info, performance, jockey, trainer, etc.)
 
-You can see the structure of the json and some of the race information below.
 
-![json1](https://i.postimg.cc/Y2ZNmLh5/json.png)
-
-![json2](https://i.postimg.cc/c1thTGtt/json.png)
-
-### Settings
-
-The [user_settings.toml](https://github.com/joenano/rpscrape/blob/master/user_settings.toml) file contains the data fields that can be scraped. You can turn fields on and off by setting them true or false. The order of fields in that file will be maintained in the output csv. The [default_settings.toml](https://github.com/joenano/rpscrape/blob/master/default_settings.toml) file should not be edited, its there as a backup and to introduce any new fields without changing user settings.
-
-![settings](https://i.postimg.cc/sDhG3SQT/settings.png)
-
-### Options
+#### Authentication
+Credentials are stored in a .env file in the root directory. Make sure .env is added to .gitignore.
 
 ```
-regions             List all available region codes
-regions [search]    Search for specific region code
-
-courses             List all courses
-courses [search]    Search for specific course
-courses [region]    List courses in region - e.g courses ire
-
--d, date            Scrape race by date - e.g -d 2019/12/17 gb
-
-help                Show help
-options             Show options
-cls, clear          Clear screen
-q, quit, exit       Quit
+EMAIL=your@email.com
+AUTH_STATE=your_auth_state
+ACCESS_TOKEN=your_access_token
 ```
 
-Tab complete for option keywords is available on Linux.
+To find your tokens, login to the site and open the cookies section in the storage tab of your browser's developer tools.
+
+You need the values for auth_state and cognito access token (not to be confused with the AccessToken cookie).
+
+There will be multiple keys beginning with `CognitoIdentityServiceProvider`, you want the value for the one that ends with `.accessToken`. It should be directly under email if keys are sorted by name.
+
+![alt text](https://i.postimg.cc/FK41xJ3W/20260103-113009.png)
+![alt text](https://i.postimg.cc/nLJM1QBg/20260103-113046.png)
