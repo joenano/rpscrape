@@ -17,19 +17,19 @@ The aim of this tool is to provide a way of gathering large amounts of historica
 
 You must have Python 3.13 or greater, and GIT installed. You can download the latest Python release [here](https://www.python.org/downloads/). You can download GIT [here](https://git-scm.com/downloads).
 
-- [tomli](https://pypi.org/project/tomli/)
-- [orjson](https://pypi.org/project/orjson/1.3.0/)
-- [jarowinkler](https://pypi.org/project/jarowinkler/)
 - [AIOHTTP](https://docs.aiohttp.org/en/stable/)
 - [curl_cffi](https://pypi.org/project/curl-cffi/)
-- [TQDM](https://pypi.org/project/tqdm/)
-- [python-dotenv](https://pypi.org/project/python-dotenv/)
+- [jarowinkler](https://pypi.org/project/jarowinkler/)
 - [LXML](https://lxml.de/)
+- [orjson](https://pypi.org/project/orjson/1.3.0/)
+- [python-dotenv](https://pypi.org/project/python-dotenv/)
+- [tomli](https://pypi.org/project/tomli/)
+- [TQDM](https://pypi.org/project/tqdm/)
 
 The above Python modules are required, they can be installed using PIP(_included with Python_):
 
 ```
-pip3 install tomli orjson jarowinkler aiohttp curl_cffi tqdm python-dotenv lxml
+pip3 install aiohttp curl_cffi jarowinkler lxml orjson python-dotenv tomli tqdm
 ```
 
 ### Install
@@ -209,4 +209,3 @@ There will be multiple keys beginning with `CognitoIdentityServiceProvider`, you
 
 ![alt text](https://i.postimg.cc/FK41xJ3W/20260103-113009.png)
 ![alt text](https://i.postimg.cc/nLJM1QBg/20260103-113046.png)
-

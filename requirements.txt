@@ -3,6 +3,6 @@ curl_cffi>=0.13
 jarowinkler>=2.0.1
 lxml>=4.7
 orjson>=3.6
-requests>=2.26
+python-dotenv>=1.2
 tomli>=2.0
 tqdm>=4.67
