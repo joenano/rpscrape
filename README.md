@@ -17,7 +17,6 @@ The aim of this tool is to provide a way of gathering large amounts of historica
 
 You must have Python 3.13 or greater, and GIT installed. You can download the latest Python release [here](https://www.python.org/downloads/). You can download GIT [here](https://git-scm.com/downloads).
 
-- [AIOHTTP](https://docs.aiohttp.org/en/stable/)
 - [curl_cffi](https://pypi.org/project/curl-cffi/)
 - [jarowinkler](https://pypi.org/project/jarowinkler/)
 - [LXML](https://lxml.de/)
@@ -29,7 +28,7 @@ You must have Python 3.13 or greater, and GIT installed. You can download the la
 The above Python modules are required, they can be installed using PIP(_included with Python_):
 
 ```
-pip3 install aiohttp curl_cffi jarowinkler lxml orjson python-dotenv tomli tqdm
+pip3 install curl_cffi jarowinkler lxml orjson python-dotenv tomli tqdm
 ```
 
 ### Install
