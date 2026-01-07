@@ -3,8 +3,22 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
+class RequestKey:
+    scope_kind: str
+    scope_value: str
+    race_type: str
+    filename: str
+
+    def data_dir(self) -> Path:
+        return Path(
+            self.scope_kind,
+            self.scope_value,
+            self.race_type,
+        )
+
+
+@dataclass(frozen=True)
 class Paths:
-    data_root: Path
     output: Path
     progress: Path
     urls: Path
@@ -12,33 +26,26 @@ class Paths:
 
 
 def build_paths(
-    folder_name: str,
-    file_name: str,
-    code: str | None,
+    request: RequestKey,
     gzip_output: bool = False,
 ) -> Paths:
     project_root = Path('..')
     data_root = project_root / 'data'
+    cache_root = project_root / '.cache'
 
-    if code is None:
-        output_dir = data_root / folder_name
-    else:
-        output_dir = data_root / folder_name / code
+    ext = '.csv.gz' if gzip_output else '.csv'
 
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output = data_root / request.data_dir() / f'{request.filename}{ext}'
+    output.parent.mkdir(parents=True, exist_ok=True)
 
-    extension = '.csv.gz' if gzip_output else '.csv'
-    output = output_dir / f'{file_name}{extension}'
     progress = output.with_suffix(output.suffix + '.progress')
 
-    urls = data_root / 'urls' / f'{file_name}.csv'
+    urls = cache_root / 'urls' / request.data_dir() / f'{request.filename}.csv'
     urls.parent.mkdir(parents=True, exist_ok=True)
 
-    betfair = data_root / 'betfair' / f'{file_name}.csv'
-    betfair.parent.mkdir(parents=True, exist_ok=True)
+    betfair = cache_root / 'betfair' / request.data_dir() / f'{request.filename}.csv'
 
     return Paths(
-        data_root=data_root,
         output=output,
         progress=progress,
         urls=urls,

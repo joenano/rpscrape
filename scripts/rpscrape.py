@@ -14,7 +14,6 @@ from typing import TextIO, TYPE_CHECKING
 
 from utils.argparser import ArgParser
 from utils.betfair import Betfair
-from utils.date import format_date
 from utils.network import NetworkClient
 from utils.paths import Paths, build_paths
 from utils.settings import Settings
@@ -48,16 +47,15 @@ def check_for_update() -> bool:
     return success
 
 
-def sort_key(url: str) -> tuple[str, str, int]:
+def sort_key(url: str) -> tuple[str, str]:
     parts = url.split('/')
     race_course = parts[5]
     race_date = parts[6]
-    race_id = int(parts[7])
-    return race_date, race_course, race_id
+    return race_date, race_course
 
 
 def get_race_urls(
-    tracks: list[tuple[str, str]], years: list[str], code: str, client: NetworkClient
+    years: list[str], tracks: list[tuple[str, str]], race_type: str, client: NetworkClient
 ) -> list[str]:
     url_course_base = 'https://www.racingpost.com:443/profile/course/filter/results'
     url_result_base = 'https://www.racingpost.com/results'
@@ -66,7 +64,7 @@ def get_race_urls(
 
     for course_id, course in tracks:
         for year in years:
-            race_list_url = f'{url_course_base}/{course_id}/{year}/{code}/all-races'
+            race_list_url = f'{url_course_base}/{course_id}/{year}/{race_type}/all-races'
 
             status, response = client.get(race_list_url)
 
@@ -115,7 +113,6 @@ def load_or_save_urls(path: Path, builder: Callable[[], list[str]]) -> list[str]
         return [line.strip() for line in path.read_text().splitlines() if line.strip()]
 
     urls = builder()
-    path.parent.mkdir(parents=True, exist_ok=True)
     _ = path.write_text('\n'.join(urls))
 
     return urls
@@ -127,6 +124,8 @@ def prepare_betfair(
 ) -> 'Betfair | None':
     if not settings.toml or not settings.toml.get('betfair_data', False):
         return None
+
+    paths.betfair.parent.mkdir(parents=True, exist_ok=True)
 
     from utils.betfair import Betfair
 
@@ -153,7 +152,7 @@ def prepare_betfair(
 def scrape_races(
     race_urls: list[str],
     paths: Paths,
-    code: str,
+    race_type: str,
     client: NetworkClient,
     file_writer: Callable[[str, bool], TextIO],
 ):
@@ -187,14 +186,14 @@ def scrape_races(
 
             try:
                 race = (
-                    Race(client, url, doc, code, settings.fields, betfair.data)
+                    Race(client, url, doc, race_type, settings.fields, betfair.data)
                     if betfair
-                    else Race(client, url, doc, code, settings.fields)
+                    else Race(client, url, doc, race_type, settings.fields)
                 )
             except VoidRaceError:
                 continue
 
-            allowed = RACE_TYPES.get(code)
+            allowed = RACE_TYPES.get(race_type)
             if allowed is not None and race.race_info.race_type not in allowed:
                 continue
 
@@ -233,50 +232,27 @@ def main():
         sys.exit(2)
 
     args = parser.parse(sys.argv[1:])
+    paths = build_paths(args.request, gzip_output)
 
-    email = os.getenv('EMAIL')
-    auth_state = os.getenv('AUTH_STATE')
-    access_token = os.getenv('ACCESS_TOKEN')
-
-    client = NetworkClient(email=email, auth_state=auth_state, access_token=access_token)
+    client = NetworkClient(
+        email=os.getenv('EMAIL'),
+        auth_state=os.getenv('AUTH_STATE'),
+        access_token=os.getenv('ACCESS_TOKEN'),
+    )
 
     if args.dates != []:
-        folder_name = f'dates/{args.region}'
-
-        if len(args.dates) == 1:
-            file_name = format_date(args.dates[0])
-        else:
-            file_name = f'{format_date(args.dates[0])}_{format_date(args.dates[-1])}'
-
-        paths = build_paths(
-            folder_name=folder_name,
-            file_name=file_name,
-            code=args.type,
-            gzip_output=gzip_output,
-        )
-
         race_urls = load_or_save_urls(
             paths.urls,
             lambda: get_race_urls_date(args.dates, args.tracks, client),
         )
 
     else:
-        folder_name = args.region
-        file_name = args.years[0] if len(args.years) == 1 else f'{args.years[0]}-{args.years[-1]}'
-
-        paths = build_paths(
-            folder_name=folder_name,
-            file_name=file_name,
-            code=args.type,
-            gzip_output=gzip_output,
-        )
-
         race_urls = load_or_save_urls(
             paths.urls,
-            lambda: get_race_urls(args.tracks, args.years, args.type, client),
+            lambda: get_race_urls(args.years, args.tracks, args.race_type, client),
         )
 
-    scrape_races(race_urls, paths, args.type, client, file_writer)
+    scrape_races(race_urls, paths, args.race_type, client, file_writer)
 
 
 if __name__ == '__main__':

@@ -15,7 +15,7 @@ class Update:
         ).strip()
 
     def remote_hash(self) -> str:
-        resp = get(self.api_url, headers={'User-Agent': 'update-check'}, timeout=2)
+        resp = get(self.api_url, headers={'User-Agent': 'update-check'})
         resp.raise_for_status()
         data = resp.json()
         return data['sha']

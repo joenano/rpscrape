@@ -2,11 +2,8 @@ from argparse import ArgumentParser
 from datetime import date
 from typing import NamedTuple
 
-from utils.region import (
-    print_regions,
-    valid_region,
-    region_search,
-)
+from utils.paths import RequestKey
+
 from utils.course import (
     course_name,
     course_search,
@@ -16,10 +13,24 @@ from utils.course import (
 )
 from utils.date import (
     check_date,
+    format_date,
     get_dates,
     parse_years,
     valid_years,
 )
+from utils.region import (
+    print_regions,
+    valid_region,
+    region_search,
+)
+
+
+class ParsedRequest(NamedTuple):
+    request: RequestKey
+    dates: list[date]
+    years: list[str]
+    tracks: list[tuple[str, str]]
+    race_type: str
 
 
 class ParsedArgs(NamedTuple):
@@ -27,7 +38,7 @@ class ParsedArgs(NamedTuple):
     tracks: list[tuple[str, str]]
     years: list[str]
     region: str
-    type: str
+    race_type: str
 
 
 class ArgParser:
@@ -82,15 +93,12 @@ class ArgParser:
             help='List courses, search courses, or list courses in region',
         )
 
-    def parse(self, argv: list[str]) -> ParsedArgs:
+    def parse(self, argv: list[str]) -> ParsedRequest:
         args = self.parser.parse_args(argv)
 
         # ---------- informational commands ----------
         if args.regions is not None:
-            if args.regions == '':
-                print_regions()
-            else:
-                region_search(args.regions)
+            print_regions() if args.regions == '' else region_search(args.regions)
             raise SystemExit(0)
 
         if args.courses is not None:
@@ -102,13 +110,36 @@ class ArgParser:
                 course_search(args.courses)
             raise SystemExit(0)
 
-        # ---------- validation ----------
+        # ---------- mutual exclusion ----------
         if args.region and args.course:
             self.parser.error('Choose either --region or --course, not both')
 
+        # ---------- scope ----------
+        if args.course:
+            if not valid_course(args.course):
+                self.parser.error('Invalid course code')
+
+            name = course_name(args.course)
+            if not name:
+                self.parser.error('Unknown course')
+
+            scope_kind = 'course'
+            scope_value = args.course
+            tracks = [(args.course, name)]
+        else:
+            region = args.region or 'all'
+            if args.region and not valid_region(args.region):
+                self.parser.error('Invalid region code')
+
+            scope_kind = 'region'
+            scope_value = region
+            tracks = list(courses(region))
+
+        # ---------- race type ----------
+        race_type = args.type or 'all'
+
         dates: list[date] = []
         years: list[str] = []
-        tracks: list[tuple[str, str]] = []
 
         # ---------- date-file mode ----------
         if args.date_file:
@@ -127,22 +158,8 @@ class ArgParser:
                     self.parser.error(f'Invalid date in file: {d}')
                 dates.extend(get_dates(d))
 
-            region = args.region or 'all'
-            if args.region and not valid_region(args.region):
-                self.parser.error('Invalid region code')
-
-            tracks = list(courses(region))
-
-            return ParsedArgs(
-                dates=dates,
-                tracks=tracks,
-                years=[],
-                region=region,
-                type=args.type,
-            )
-
         # ---------- date mode ----------
-        if args.date:
+        elif args.date:
             if args.year:
                 self.parser.error('--date and --year are incompatible')
 
@@ -151,55 +168,40 @@ class ArgParser:
 
             dates = get_dates(args.date)
 
-            region = args.region or 'all'
-            if args.region and not valid_region(args.region):
-                self.parser.error('Invalid region code')
-
-            tracks = list(courses(region))
-
-            return ParsedArgs(
-                dates=dates,
-                tracks=tracks,
-                years=[],
-                region=region,
-                type=args.type,
-            )
-
         # ---------- year mode ----------
-        if not args.year:
-            self.parser.error('Either --date, --date-file, or --year is required')
-
-        years = parse_years(args.year)
-        if not years or not valid_years(years):
-            self.parser.error('Invalid year or year range')
-
-        # ---------- region ----------
-        if args.region:
-            if not valid_region(args.region):
-                self.parser.error('Invalid region code')
-
-            tracks = list(courses(args.region))
-            region = args.region
-
-        # ---------- course ----------
-        elif args.course:
-            if not valid_course(args.course):
-                self.parser.error('Invalid course code')
-
-            name = course_name(args.course)
-            if not name:
-                self.parser.error('Unknown course')
-
-            tracks = [(args.course, name)]
-            region = 'course'
-
         else:
-            self.parser.error('Either --region or --course is required')
+            if not args.year:
+                self.parser.error('Either --date, --date-file, or --year is required')
 
-        return ParsedArgs(
-            dates=[],
-            tracks=tracks,
+            years = parse_years(args.year)
+            if not years or not valid_years(years):
+                self.parser.error('Invalid year or year range')
+
+        # ---------- enforce race type for year scraping ----------
+        if years and not args.type:
+            self.parser.error('--type is required when scraping by year')
+
+        # ---------- filename identity ----------
+        if dates:
+            start = format_date(dates[0])
+            end = format_date(dates[-1])
+        else:
+            start = f'{years[0]}'
+            end = f'{years[-1]}'
+
+        filename = start if start == end else f'{start}_{end}'
+
+        request = RequestKey(
+            scope_kind=scope_kind,
+            scope_value=scope_value,
+            race_type=race_type,
+            filename=filename,
+        )
+
+        return ParsedRequest(
+            request=request,
+            dates=dates,
             years=years,
-            region=region,
-            type=args.type,
+            tracks=tracks,
+            race_type=race_type,
         )
