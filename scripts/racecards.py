@@ -38,6 +38,7 @@ RACE_TYPE = {
     'H': 'Hurdle',
     'B': 'NH Flat',
     'W': 'NH Flat',
+    'U': 'Unknown',
 }
 
 type Racecards = defaultdict[str, defaultdict[str, defaultdict[str, dict[str, Any]]]]
