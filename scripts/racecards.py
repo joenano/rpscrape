@@ -34,6 +34,7 @@ RACE_TYPE = {
     'F': 'Flat',
     'X': 'Flat',
     'C': 'Chase',
+    'U': 'Chase',
     'H': 'Hurdle',
     'B': 'NH Flat',
     'W': 'NH Flat',
