@@ -618,6 +618,7 @@ def distance_to_decimal(dist: str):
         .replace('¼', '.25')
         .replace('½', '.5')
         .replace('¾', '.75')
+        .replace('lgnk', '0.4')
         .replace('snk', '0.2')
         .replace('nk', '0.3')
         .replace('sht-hd', '0.1')
