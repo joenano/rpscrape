@@ -2,6 +2,7 @@
 
 import gzip
 import os
+import shutil
 import sys
 
 from collections.abc import Callable
@@ -43,7 +44,16 @@ def check_for_update() -> bool:
         return False
 
     success = update.pull_latest()
-    print('Updated successfully.' if success else 'Failed to update.')
+
+    if success:
+        cache_root = Path(__file__).resolve().parents[1] / '.cache'
+
+        if cache_root.exists():
+            shutil.rmtree(cache_root)
+        print('Updated successfully.')
+    else:
+        print('Failed to update.')
+
     return success
 
 

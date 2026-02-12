@@ -9,12 +9,11 @@ class RequestKey:
     race_type: str
     filename: str
 
-    def data_dir(self) -> Path:
-        return Path(
-            self.scope_kind,
-            self.scope_value,
-            self.race_type,
-        )
+    def scoped_dir(self) -> Path:
+        return Path(self.scope_kind, self.scope_value)
+
+    def typed_dir(self) -> Path:
+        return Path(self.scope_kind, self.scope_value, self.race_type)
 
 
 @dataclass(frozen=True)
@@ -29,23 +28,27 @@ def build_paths(
     request: RequestKey,
     gzip_output: bool = False,
 ) -> Paths:
-    project_root = Path('..')
+    project_root = Path(__file__).resolve().parents[2]
+
     data_root = project_root / 'data'
     cache_root = project_root / '.cache'
 
     ext = '.csv.gz' if gzip_output else '.csv'
 
-    output = data_root / request.data_dir() / f'{request.filename}{ext}'
-    output.parent.mkdir(parents=True, exist_ok=True)
+    # Output (race_type dependent)
+    output = data_root / request.typed_dir() / f'{request.filename}{ext}'
 
-    progress = cache_root / 'progress' / request.data_dir() / f'{request.filename}.progress'
-    progress.parent.mkdir(parents=True, exist_ok=True)
+    # Progress (independent of race_type)
+    progress = cache_root / 'progress' / request.scoped_dir() / f'{request.filename}.progress'
 
-    urls = cache_root / 'urls' / request.data_dir() / f'{request.filename}.csv'
-    urls.parent.mkdir(parents=True, exist_ok=True)
+    # URLs (independent)
+    urls = cache_root / 'urls' / request.scoped_dir() / f'{request.filename}.csv'
 
-    betfair = cache_root / 'betfair' / request.data_dir() / f'{request.filename}.csv'
-    betfair.parent.mkdir(parents=True, exist_ok=True)
+    # Betfair (independent)
+    betfair = cache_root / 'betfair' / request.scoped_dir() / f'{request.filename}.csv'
+
+    for path in (output, progress, urls, betfair):
+        path.parent.mkdir(parents=True, exist_ok=True)
 
     return Paths(
         output=output,
