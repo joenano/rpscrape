@@ -430,13 +430,13 @@ class Race:
 
     def get_race_type(self) -> str:
         race = (self.race_info.race_name or '').lower()
-        dist_m = int(self.race_info.dist_m or 0)
+        dist_f = float(self.race_info.dist_f)
 
         fences = find(self.doc, 'span', 'rp-raceTimeCourseName_hurdles')
         fences = (fences or '').lower()
 
         # ---- 1. Physical constraint ----
-        if dist_m < 2400:
+        if dist_f < 12:
             return 'Flat'
 
         # ---- 2. Obstacle signal from DOM (strongest evidence) ----
@@ -480,7 +480,7 @@ class Race:
         ):
             return 'NH Flat'
 
-        # ---- 5. Default for >=2400m with no obstacle signal ----
+        # ---- 5. Default for >=12f with no obstacle signal ----
         return 'Flat'
 
     def get_sexs(self, info: list[HtmlElement]) -> list[str]:
