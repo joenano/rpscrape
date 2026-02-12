@@ -31,6 +31,7 @@ class ParsedRequest(NamedTuple):
     years: list[str]
     tracks: list[tuple[str, str]]
     race_type: str
+    clean: bool
 
 
 class ParsedArgs(NamedTuple):
@@ -75,6 +76,11 @@ class ArgParser:
             '--date-file',
             metavar='PATH',
             help='File containing dates, one per line (YYYY/MM/DD)',
+        )
+        _ = self.parser.add_argument(
+            '--clean',
+            action='store_true',
+            help='Fully reset this request (clear cache and output) before running',
         )
 
         # search / listing helpers
@@ -204,4 +210,5 @@ class ArgParser:
             years=years,
             tracks=tracks,
             race_type=race_type,
+            clean=args.clean,
         )

@@ -38,12 +38,14 @@ def build_paths(
     output = data_root / request.data_dir() / f'{request.filename}{ext}'
     output.parent.mkdir(parents=True, exist_ok=True)
 
-    progress = output.with_suffix(output.suffix + '.progress')
+    progress = cache_root / 'progress' / request.data_dir() / f'{request.filename}.progress'
+    progress.parent.mkdir(parents=True, exist_ok=True)
 
     urls = cache_root / 'urls' / request.data_dir() / f'{request.filename}.csv'
     urls.parent.mkdir(parents=True, exist_ok=True)
 
     betfair = cache_root / 'betfair' / request.data_dir() / f'{request.filename}.csv'
+    betfair.parent.mkdir(parents=True, exist_ok=True)
 
     return Paths(
         output=output,

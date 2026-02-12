@@ -47,6 +47,17 @@ def check_for_update() -> bool:
     return success
 
 
+def clear_request(paths: Paths) -> None:
+    for p in (
+        paths.urls,
+        paths.betfair,
+        paths.progress,
+        paths.output,
+    ):
+        if p.exists():
+            p.unlink()
+
+
 def sort_key(url: str) -> tuple[str, str]:
     parts = url.split('/')
     race_course = parts[5]
@@ -108,11 +119,15 @@ def get_race_urls_date(
     return sorted(urls, key=sort_key)
 
 
-def load_or_save_urls(path: Path, builder: Callable[[], list[str]]) -> list[str]:
+def load_or_save_urls(
+    path: Path,
+    builder: Callable[[], list[str]],
+) -> list[str]:
     if path.exists():
         return [line.strip() for line in path.read_text().splitlines() if line.strip()]
 
     urls = builder()
+    path.parent.mkdir(parents=True, exist_ok=True)
     _ = path.write_text('\n'.join(urls))
 
     return urls
@@ -233,6 +248,9 @@ def main():
 
     args = parser.parse(sys.argv[1:])
     paths = build_paths(args.request, gzip_output)
+
+    if args.clean:
+        clear_request(paths)
 
     client = NetworkClient(
         email=os.getenv('EMAIL'),

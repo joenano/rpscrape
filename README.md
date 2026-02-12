@@ -40,16 +40,18 @@ git clone https://github.com/joenano/rpscrape.git
 #### Command-Line Options
 
 ```
--d, --date	Single date or date range YYYY/MM/DD-YYYY/MM/DD.
--y, --year	Year or year range (YYYY or YYYY-YYYY).
--r, --region	Region code (e.g., gb, ire).
--c, --course	Numeric course code.
--t, --type	Race type: flat or jumps.
+-d, --date      Single date or date range YYYY/MM/DD-YYYY/MM/DD.
+-y, --year      Year or year range (YYYY or YYYY-YYYY).
+-r, --region    Region code (e.g., gb, ire).
+-c, --course    Numeric course code.
+-t, --type      Race type: flat or jumps.
 
---date-file	File containing dates (one per line, YYYY/MM/DD).
+--date-file     File containing dates (one per line, YYYY/MM/DD).
 
---regions	List or search regions.
---courses	List/search courses or list courses in a region.
+--clean         Clear cache and data before running request.
+
+--regions       List or search regions.
+--courses       List/search courses or list courses in a region.
 ```
 
 ##### Notes
