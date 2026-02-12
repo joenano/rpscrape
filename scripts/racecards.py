@@ -532,11 +532,11 @@ def main() -> None:
         print(f'Invalid region: {args.region}')
         sys.exit(1)
 
-    email = os.getenv('EMAIL')
-    auth_state = os.getenv('AUTH_STATE')
-    access_token = os.getenv('ACCESS_TOKEN')
-
-    client = NetworkClient(email=email, auth_state=auth_state, access_token=access_token)
+    client = NetworkClient(
+        email=os.getenv('EMAIL'),
+        auth_state=os.getenv('AUTH_STATE'),
+        access_token=os.getenv('ACCESS_TOKEN'),
+    )
 
     race_urls = get_race_urls(client, dates, region)
 

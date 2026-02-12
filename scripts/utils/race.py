@@ -430,7 +430,7 @@ class Race:
 
     def get_race_type(self) -> str:
         race = (self.race_info.race_name or '').lower()
-        dist_f = float(self.race_info.dist_f)
+        dist_f = float(self.race_info.dist_f.strip('f'))
 
         fences = find(self.doc, 'span', 'rp-raceTimeCourseName_hurdles')
         fences = (fences or '').lower()
