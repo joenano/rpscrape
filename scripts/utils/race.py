@@ -33,7 +33,6 @@ class Race:
         client: NetworkClient,
         url: str,
         document: HtmlElement,
-        race_type: str,
         fields: list[str],
         bsp_map: BSPMap | None = None,
     ):
@@ -96,7 +95,7 @@ class Race:
             self.race_info.dist_m,
         ) = self.get_race_distances()
 
-        self.race_info.race_type = self.get_race_type(race_type)
+        self.race_info.race_type = self.get_race_type()
         self.race_info.ran = self.get_num_runners()
 
         pedigree_info = self.doc.xpath("//tr[@data-test-selector='block-pedigreeInfoFullResults']/td")
@@ -429,48 +428,60 @@ class Race:
 
         return ''
 
-    def get_race_type(self, code: str) -> str:
-        race_type = ''
-        race = self.race_info.race_name.lower()
+    def get_race_type(self) -> str:
+        race = (self.race_info.race_name or '').lower()
+        dist_m = int(self.race_info.dist_m or 0)
 
-        if code == 'flat' and 'national hunt flat' not in race:
-            race_type = 'Flat'
-        else:
-            fences = find(self.doc, 'span', 'rp-raceTimeCourseName_hurdles')
+        fences = find(self.doc, 'span', 'rp-raceTimeCourseName_hurdles')
+        fences = (fences or '').lower()
 
-            if 'hurdle' in fences.lower():
-                race_type = 'Hurdle'
-            elif 'fence' in fences.lower():
-                race_type = 'Chase'
+        # ---- 1. Physical constraint ----
+        if dist_m < 2400:
+            return 'Flat'
 
-        if race_type == '':
-            if int(self.race_info.dist_m) >= 2400:
-                if any(x in race for x in {'national hunt flat', 'nh flat race', 'mares flat race'}):
-                    race_type = 'NH Flat'
-                if any(
-                    x in race
-                    for x in {'inh bumper', ' sales bumper', 'kepak flat race', 'i.n.h. flat race'}
-                ):
-                    race_type = 'NH Flat'
-                if any(x in race for x in {' hurdle', '(hurdle)'}):
-                    race_type = 'Hurdle'
-                if any(
-                    x in race
-                    for x in {
-                        ' chase',
-                        '(chase)',
-                        'steeplechase',
-                        'steeple-chase',
-                        'steeplchase',
-                        'steepl-chase',
-                    }
-                ):
-                    race_type = 'Chase'
+        # ---- 2. Obstacle signal from DOM (strongest evidence) ----
+        if 'hurdle' in fences:
+            return 'Hurdle'
 
-        if race_type == '':
-            race_type = 'Flat'
+        if 'fence' in fences:
+            return 'Chase'
 
-        return race_type
+        # ---- 3. Obstacle signal from race name ----
+        if any(term in race for term in {' hurdle', '(hurdle)'}):
+            return 'Hurdle'
+
+        if any(
+            term in race
+            for term in {
+                ' chase',
+                '(chase)',
+                'steeplechase',
+                'steeple-chase',
+                'steeplchase',
+                'steepl-chase',
+            }
+        ):
+            return 'Chase'
+
+        # ---- 4. NH Flat ----
+        if any(
+            term in race
+            for term in {
+                'national hunt flat',
+                'nh flat race',
+                'mares flat race',
+                'inh bumper',
+                'sales bumper',
+                'kepak flat race',
+                'i.n.h. flat race',
+                'bumper',
+                'nhf',
+            }
+        ):
+            return 'NH Flat'
+
+        # ---- 5. Default for >=2400m with no obstacle signal ----
+        return 'Flat'
 
     def get_sexs(self, info: list[HtmlElement]) -> list[str]:
         sexs: list[str] = []

@@ -201,9 +201,9 @@ def scrape_races(
 
             try:
                 race = (
-                    Race(client, url, doc, race_type, settings.fields, betfair.data)
+                    Race(client, url, doc, settings.fields, betfair.data)
                     if betfair
-                    else Race(client, url, doc, race_type, settings.fields)
+                    else Race(client, url, doc, settings.fields)
                 )
             except VoidRaceError:
                 continue
