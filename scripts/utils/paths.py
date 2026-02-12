@@ -35,17 +35,10 @@ def build_paths(
 
     ext = '.csv.gz' if gzip_output else '.csv'
 
-    # Output (race_type dependent)
     output = data_root / request.typed_dir() / f'{request.filename}{ext}'
-
-    # Progress (independent of race_type)
-    progress = cache_root / 'progress' / request.scoped_dir() / f'{request.filename}.progress'
-
-    # URLs (independent)
+    progress = cache_root / 'progress' / request.typed_dir() / f'{request.filename}.progress'
     urls = cache_root / 'urls' / request.scoped_dir() / f'{request.filename}.csv'
-
-    # Betfair (independent)
-    betfair = cache_root / 'betfair' / request.scoped_dir() / f'{request.filename}.csv'
+    betfair = cache_root / 'betfair' / f'{request.filename}.csv'
 
     for path in (output, progress, urls, betfair):
         path.parent.mkdir(parents=True, exist_ok=True)

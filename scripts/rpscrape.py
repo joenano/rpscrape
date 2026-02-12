@@ -150,19 +150,17 @@ def prepare_betfair(
     if not settings.toml or not settings.toml.get('betfair_data', False):
         return None
 
-    paths.betfair.parent.mkdir(parents=True, exist_ok=True)
-
     from utils.betfair import Betfair
-
-    print('Getting Betfair data...')
 
     if paths.betfair.exists():
         print('Using cached Betfair data')
         return Betfair.from_csv(paths.betfair)
 
+    print('Fetching Betfair data...')
+
     betfair = Betfair(race_urls)
 
-    with open(str(paths.betfair), 'w') as f:
+    with open(paths.betfair, 'w') as f:
         fields = settings.toml.get('fields', {}).get('betfair', {})
         header = ','.join(['date', 'region', 'off', 'horse'] + list(fields.keys()))
         _ = f.write(header + '\n')
