@@ -9,6 +9,10 @@ fetch_stats = false
 # Required for: profile, sex, trainer_14_days, trainer_location, prev_trainers, prev_owners, medical, quotes, stable_tour
 fetch_profiles = false
 
+# Maximum number of days to scrape
+# any more than 2 and data is not always reliable
+max_days = 2
+
 [field_groups]
 # Core identification fields: name, horse_id, number, draw
 core = true

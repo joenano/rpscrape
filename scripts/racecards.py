@@ -2,7 +2,6 @@
 
 import argparse
 import datetime
-from functools import partial
 import os
 import re
 import sys
@@ -10,6 +9,7 @@ import tomli
 
 from collections import defaultdict
 from dotenv import load_dotenv
+from functools import partial
 from lxml import etree, html
 from pathlib import Path
 from orjson import dumps
