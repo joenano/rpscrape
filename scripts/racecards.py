@@ -24,7 +24,6 @@ from utils.network import NetworkClient
 from utils.profiles import get_profiles
 from utils.region import get_region, valid_region
 from utils.stats import Stats
-
 from models.racecard import Racecard, Runner
 
 _ = load_dotenv()
@@ -426,7 +425,7 @@ def scrape_racecards(
         if fetch_profiles:
             profile_hrefs = doc.xpath("//a[@data-test-selector='RC-cardPage-runnerName']/@href")
             profile_urls = [url_base + a.split('#')[0] + '/form' for a in profile_hrefs]
-            profiles = get_profiles(profile_urls)
+            profiles = get_profiles(client, profile_urls)
 
         race: Racecard = Racecard()
 
