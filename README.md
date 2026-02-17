@@ -214,7 +214,7 @@ There will be multiple keys beginning with `CognitoIdentityServiceProvider`, you
 
 ## 🫙 Tip Jar
 
-This project has been maintained for years at no cost, and will continue to be, but if you found it valuable and would like to tip me, you can donate using any of the following cryptocurrencies.
+This project has been maintained for years at no cost, and will continue to be, but if you found it valuable and would like to tip me, you can send to any of the following addresses.
 
 ---
 
