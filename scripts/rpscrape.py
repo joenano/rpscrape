@@ -262,7 +262,6 @@ def main():
 
     client = NetworkClient(
         email=os.getenv('EMAIL'),
-        auth_state=os.getenv('AUTH_STATE'),
         access_token=os.getenv('ACCESS_TOKEN'),
     )
 

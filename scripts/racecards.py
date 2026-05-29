@@ -3,41 +3,27 @@
 import argparse
 import datetime
 import os
-import re
 import sys
 import tomli
 
 from collections import defaultdict
 from dotenv import load_dotenv
 from functools import partial
-from lxml import etree, html
+from lxml import html
 from pathlib import Path
-from orjson import dumps
+from orjson import dumps, loads
 from tqdm import tqdm
 from typing import Any
 
 from utils.cleaning import clean_string
-from utils.course import valid_meeting
-from utils.going import get_surface
-from utils.lxml_funcs import find
 from utils.network import NetworkClient
 from utils.profiles import get_profiles
-from utils.region import get_region, valid_region
+from utils.region import valid_region
 from utils.stats import Stats
 from models.racecard import Racecard, Runner
 
 _ = load_dotenv()
 
-
-RACE_TYPE = {
-    'F': 'Flat',
-    'X': 'Flat',
-    'C': 'Chase',
-    'U': 'Chase',
-    'H': 'Hurdle',
-    'B': 'NH Flat',
-    'W': 'NH Flat',
-}
 
 type Racecards = defaultdict[str, defaultdict[str, defaultdict[str, dict[str, Any]]]]
 
@@ -75,79 +61,27 @@ def validate_days_range(value: str, max_days: int) -> int:
         raise argparse.ArgumentTypeError(f"Invalid value: '{value}'. Expected an integer.")
 
 
-def get_race_urls(
+def get_meetings(
     client: NetworkClient, dates: list[str], region: str | None = None
-) -> dict[str, list[tuple[str, str]]]:
-    race_urls: defaultdict[str, list[tuple[str, str]]] = defaultdict(list)
+) -> dict[str, list[dict[str, Any]]]:
+    meetings: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
+
+    url = 'https://www.racingpost.com/api/racing/meetings/?date='
 
     for date in dates:
-        url = f'https://www.racingpost.com/racecards/{date}'
-        status, response = client.get(url)
+        status, response = client.get(url + date)
 
-        if status != 200 or not response.content:
+        if status != 200:
             print(f'Failed to get racecards for {date} (status: {status})')
             continue
 
-        doc = html.fromstring(response.content)
+        for meeting in response.json()['meetings']:
+            if region and meeting['venueCountryCode'].lower() != region.lower():
+                continue
 
-        for meeting in doc.xpath('//section[@data-accordion-row]'):
-            course = meeting.xpath(".//span[contains(@class, 'RC-accordion__courseName')]")[0]
-            if valid_meeting(course.text_content().strip().lower()):
-                for race in meeting.xpath(".//a[@class='RC-meetingItem__link js-navigate-url']"):
-                    race_id = race.attrib['data-race-id']
-                    href = race.attrib['href']
+            meetings[date].append(meeting)
 
-                    if region:
-                        course_id = href.split('/')[2]
-                        if get_region(course_id) != region.upper():
-                            continue
-
-                    race_urls[date].append((race_id, href))
-
-    return dict(race_urls)
-
-
-def get_pattern(race_name: str):
-    regex_group = r'(\(|\s)((G|g)rade|(G|g)roup) (\d|[A-Ca-c]|I*)(\)|\s)'
-    match = re.search(regex_group, race_name)
-
-    if match:
-        pattern = f'{match.groups()[1]} {match.groups()[4]}'.title()
-        return pattern.title()
-
-    if any(x in race_name.lower() for x in {'listed race', '(listed'}):
-        return 'Listed'
-
-    return ''
-
-
-def parse_age_and_rating(doc: html.HtmlElement) -> tuple[str | None, str | None]:
-    raw = find(doc, 'span', 'RC-header__rpAges')
-    parts = raw.strip('()').split()
-    age = parts[0] if len(parts) > 0 else None
-    rating = parts[1] if len(parts) > 1 else None
-    return age, rating
-
-
-def parse_field_size(doc: html.HtmlElement) -> int | None:
-    raw = find(doc, 'div', 'RC-headerBox__runners').lower()
-    if 'runners:' in raw:
-        segment = raw.split('runners:', 1)[1]
-        return int(segment.split('(')[0].strip())
-    return None
-
-
-def parse_going(doc: html.HtmlElement) -> str:
-    raw = find(doc, 'div', 'RC-headerBox__going').lower()
-    going = raw.split('going:', 1)[1].strip().title() if 'going:' in raw else ''
-    return going
-
-
-def parse_prize(doc: html.HtmlElement) -> str | None:
-    raw = find(doc, 'div', 'RC-headerBox__winner').lower()
-    if 'winner:' in raw:
-        return raw.split('winner:', 1)[1].strip()
-    return None
+    return dict(meetings)
 
 
 def parse_runners(
@@ -362,118 +296,130 @@ def parse_runners(
 
 
 def scrape_racecards(
-    race_urls: dict[str, list[tuple[str, str]]],
+    meetings: list[dict[str, Any]],
     date: str,
     config: dict[str, Any],
     client: NetworkClient,
 ) -> Racecards:
-    races: Racecards = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
+    racecards: Racecards = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 
-    data_opts = config.get('data_collection', {})
-    fetch_profiles = data_opts.get('fetch_profiles', False)
-    fetch_stats = data_opts.get('fetch_stats', False)
+    data_opts: dict[str, Any] = config.get('data_collection', {})
+    fetch_profiles: bool = data_opts.get('fetch_profiles', False)
+    fetch_stats: bool = data_opts.get('fetch_stats', False)
 
-    for race_id, href in tqdm(
-        race_urls[date],
+    for meeting in tqdm(
+        meetings,
         desc=date,
         bar_format='{desc}: {percentage:3.0f}% |{bar:49}| {n}/{total} ETA {remaining}',
         ncols=91,
     ):
-        url_base = 'https://www.racingpost.com'
-        url_racecard = f'{url_base}{href}'
-        url_runners = f'{url_base}/profile/horse/data/cardrunners/{race_id}.json'
+        course_id = meeting['venueUid']
+        course_key = meeting['courseKey']
 
-        status_racecard, resp_racecard = client.get(url_racecard)
-        status_runners, resp_runners = client.get(url_runners)
+        for race in meeting['races']:
+            race_id = race['raceId']
 
-        if status_racecard != 200 or status_runners != 200:
-            print('Failed to get racecard data.')
-            print(f'status: {status_racecard} url: {url_racecard}')
-            print(f'status: {status_runners} url: {url_runners}')
-            continue
+            url_base = 'https://www.racingpost.com'
+            url_racecard = f'{url_base}/racecards/{course_id}/{course_key}/{date}/{race_id}/'
+            url_runners = f'{url_base}/profile/horse/data/cardrunners/{race_id}.json'
 
-        status_accordion = None
-        resp_accordion = None
-        if fetch_stats:
-            url_accordion = f'{url_base}/racecards/data/accordion/{race_id}'
-            status_accordion, resp_accordion = client.get(url_accordion)
+            status_racecard, resp_racecard = client.get(url_racecard)
+            status_runners, resp_runners = client.get(url_runners)
 
-        try:
-            doc = html.fromstring(resp_racecard.content)
-        except etree.ParserError:
-            print('Failed to parse HTML for racecard.')
-            print(f'url: {url_racecard}')
-            continue
+            if status_racecard != 200 or status_runners != 200:
+                print('Failed to get racecard data.')
+                print(f'status: {status_racecard} url: {url_racecard}')
+                print(f'status: {status_runners} url: {url_runners}')
+                continue
 
-        doc_accordion = None
-        if fetch_stats and status_accordion == 200 and resp_accordion is not None:
             try:
-                doc_accordion = html.fromstring(resp_accordion.content)
-            except etree.ParserError:
-                doc_accordion = None
+                runners_map = resp_runners.json()['runners']
+                runners_json = list(runners_map.values())
+            except (KeyError, IndexError, ValueError):
+                print('Failed to parse JSON for runners.')
+                print(f'url: {url_runners}')
+                continue
 
-        try:
-            runners_map = resp_runners.json()['runners']
-            runners = list(runners_map.values())
-            race_meta = runners[0]
-        except (KeyError, IndexError, ValueError):
-            print('Failed to parse JSON for runners.')
-            print(f'url: {url_runners}')
-            continue
+            doc = html.fromstring(resp_racecard.content)
+            json_string = doc.get_element_by_id('__NEXT_DATA__').text_content()
 
-        profiles: dict[str, dict[str, Any]] = {}
-        if fetch_profiles:
-            profile_hrefs = doc.xpath("//a[@data-test-selector='RC-cardPage-runnerName']/@href")
-            profile_urls = [url_base + a.split('#')[0] + '/form' for a in profile_hrefs]
-            profiles = get_profiles(client, profile_urls)
+            try:
+                data = loads(json_string)['props']['pageProps']['initialState']
+                meeting_meta = data['meetings']['byDate'][date]['races']['byRaceId'][race_id]
+                race_meta = data['racePage']['data']['race']
+                runners = data['racePage']['data']['runners']
+            except KeyError:
+                print('Failed to get racecard data.')
+                print(f'Invalid JSON at URL: {url_racecard}')
+                continue
 
-        race: Racecard = Racecard()
+            profiles: dict[str, dict[str, Any]] = {}
+            if fetch_profiles:
+                profile_hrefs = [r['horseUrl'] for r in runners]
+                profile_urls = [
+                    f'https://www.racingpost.com{a.split("#")[0]}/form' for a in profile_hrefs
+                ]
+                profiles = get_profiles(client, profile_urls)
 
-        race.href = url_racecard
-        race.race_id = int(race_id)
-        race.date = date
+            stats = None
+            if fetch_stats:
+                status, resp = client.get(
+                    f'https://www.racingpost.com/api/racing/free-stats-tab/?raceId={race_id}&date={date}'
+                )
+                if status == 200:
+                    stats = Stats(resp.json())
 
-        race.off_time = datetime.datetime.fromisoformat(race_meta['raceDatetime']).strftime('%H:%M')
+            racecard: Racecard = Racecard()
 
-        race.course_id = race_meta['courseUid']
-        race.course = find(doc, 'h1', 'RC-courseHeader__name')
-        race.course_detail = find(doc, 'span', 'RC-header__straightRoundJubilee').strip('()')
+            racecard.href = url_racecard
+            racecard.race_id = int(race_id)
+            racecard.date = date
 
-        if race.course == 'Belmont At The Big A':
-            race.course_id = 255
-            race.course = 'Aqueduct'
+            racecard.off_time = race_meta['startTime']
 
-        race.region = get_region(str(race.course_id))
-        race.race_name = find(doc, 'span', 'RC-header__raceInstanceTitle')
-        race.race_type = RACE_TYPE[race_meta['raceTypeCode']]
+            racecard.course_id = course_id
+            racecard.course = race_meta['courseStyleName']
 
-        race.distance_f = race_meta['distanceFurlongRounded']
-        race.distance_y = race_meta['distanceYard']
-        race.distance_round = find(doc, 'strong', 'RC-header__raceDistanceRound')
-        race.distance = find(doc, 'span', 'RC-header__raceDistance').strip('()')
-        race.distance = race.distance or race.distance_round
+            racecard.course_detail = race_meta['straightRoundJubileeCode']
+            racecard.course_info = data['racePage']['data']['courseInfo']
 
-        race.pattern = get_pattern(race.race_name.lower())
-        race.race_class = find(doc, 'span', 'RC-header__raceClass')
-        race.race_class = race.race_class.replace('Class', '').strip('()').strip()
-        race.race_class = int(race.race_class) if race.race_class.isdigit() else None
-        race.race_class = 1 if not race.race_class and race.pattern else race.race_class
+            if racecard.course == 'Belmont At The Big A':
+                racecard.course_id = 255
+                racecard.course = 'Aqueduct'
 
-        race.age_band, race.rating_band = parse_age_and_rating(doc)
-        race.prize = parse_prize(doc)
-        race.field_size = parse_field_size(doc)
+            racecard.region = meeting['venueCountryCode']
+            racecard.race_name = race['raceTitle']
+            racecard.race_type = race['raceType']
 
-        race.handicap = race.rating_band is not None or 'handicap' in race.race_name.lower()
-        race.going = parse_going(doc)
-        race.surface = get_surface(race.going)
+            racecard.distance_f = race_meta['distanceFurlongs']
+            racecard.distance_y = race_meta['distanceYards']
+            racecard.distance = meeting_meta['displayDistance']
 
-        stats = Stats(doc_accordion) if doc_accordion is not None else None
+            racecard.pattern = race_meta['raceGroupDesc']
+            racecard.race_class = race['raceClass']
+            racecard.age_band = race['ageRestriction']
+            racecard.rating_band = race['ratingBand']
 
-        race.runners = parse_runners(stats, runners, profiles, config)
+            racecard.prizes = [{str(x['position_no']): x['prize_sterling']} for x in race_meta['prizes']]
+            racecard.prize = race_meta['totalPrizeMoney']['total_prize_sterling']
+            racecard.prize_winner = race_meta['formattedTotalPrizeMoney']
 
-        races[race.region][race.course][race.off_time] = race.to_dict()
+            racecard.field_size = race['numberOfRunners']
 
-    return races
+            racecard.handicap = race['isHandicap']
+            racecard.going = race['going']
+            racecard.surface = race['surfaceType']
+            racecard.category = race['category']
+
+            racecard.runners = parse_runners(stats, runners_json, profiles, config)
+
+            assert racecard.region is not None
+            assert racecard.course is not None
+            assert racecard.off_time is not None
+
+            racecards[racecard.region][racecard.course][racecard.off_time] = racecard.to_dict()
+
+    return racecards
 
 
 def main() -> None:
@@ -536,14 +482,13 @@ def main() -> None:
 
     client = NetworkClient(
         email=os.getenv('EMAIL'),
-        auth_state=os.getenv('AUTH_STATE'),
         access_token=os.getenv('ACCESS_TOKEN'),
     )
 
-    race_urls = get_race_urls(client, dates, region)
+    meetings = get_meetings(client, dates, region)
 
-    for date in race_urls:
-        racecards = scrape_racecards(race_urls, date, config, client)
+    for date in meetings:
+        racecards = scrape_racecards(meetings[date], date, config, client)
 
         with open(f'../racecards/{date}.json', 'w', encoding='utf-8') as f:
             _ = f.write(dumps(racecards).decode('utf-8'))

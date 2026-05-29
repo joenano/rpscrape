@@ -1,10 +1,5 @@
-import sys
-
-from dataclasses import asdict, dataclass
-from lxml.html import HtmlElement
+from dataclasses import dataclass, asdict
 from typing import Any
-
-from utils.lxml_funcs import find
 
 
 @dataclass
@@ -35,104 +30,70 @@ class HorseStats:
         return asdict(self)
 
 
-TRAINER_ROW = 'RC-trainerName__row'
-JOCKEY_ROW = 'RC-jockeyName__row'
-HORSE_ROW = 'RC-horseName__row'
+def _split_wins_runs(wins_runs: str | None) -> tuple[str, str]:
+    """Split a 'wins-runs' string into (wins, runs). Returns ('0', '0') on None/missing."""
+    if wins_runs:
+        wins, runs = wins_runs.split('-', 1)
+        return wins.strip(), runs.strip()
+    return '0', '0'
 
 
-def get_table_rows(doc: HtmlElement) -> dict[str, list[HtmlElement]]:
-    table_rows: dict[str, list[HtmlElement]] = {}
-
-    tables = doc.xpath("//tbody[@class='RC-stats__tableBody']")
-
-    for table in tables:
-        rows = table.xpath('.//tr')
-
-        if not rows:
-            continue
-
-        first_cell = rows[0].find('td')
-        if first_cell is None:
-            continue
-
-        row_type = first_cell.attrib.get('data-test-selector', '')
-
-        if row_type == HORSE_ROW:
-            table_rows[HORSE_ROW] = rows
-        elif row_type == JOCKEY_ROW:
-            table_rows[JOCKEY_ROW] = rows
-        elif row_type == TRAINER_ROW:
-            table_rows[TRAINER_ROW] = rows
-
-    return table_rows
+def _parse_segment(segment: dict | None) -> dict[str, Any]:
+    """Parse a stats segment (last14Days, overall, twoYo, etc.) into a flat dict."""
+    if not segment:
+        return {'wins': '0', 'runs': '0', 'strike_rate': None, 'profit': None}
+    wins, runs = _split_wins_runs(segment.get('winsRuns'))
+    return {
+        'wins': wins,
+        'runs': runs,
+        'strike_rate': segment.get('strikeRate'),
+        'profit': segment.get('profit'),
+    }
 
 
 class Stats:
-    def __init__(self, doc: HtmlElement):
+    def __init__(self, data: dict):
         self.horses: dict[str, HorseStats] = {}
         self.jockeys: dict[str, dict[str, Any]] = {}
         self.trainers: dict[str, dict[str, Any]] = {}
 
-        rows = get_table_rows(doc)
+        stats = data.get('stats', {})
+        self._parse_horses(stats.get('horses', []))
+        self._parse_jockeys_trainers(stats.get('jockeys', []), self.jockeys)
+        self._parse_jockeys_trainers(stats.get('trainers', []), self.trainers)
 
-        self._get_horse_stats(rows[HORSE_ROW])
-        self._get_jockey_trainer_stats(rows[JOCKEY_ROW], self.jockeys)
-        self._get_jockey_trainer_stats(rows[TRAINER_ROW], self.trainers)
-
-    def _get_horse_stats(self, rows: list[HtmlElement]) -> None:
-        for row in rows:
-            a = row.find('.//a')
-            href = a.attrib.get('href') if a is not None else None
-            horse_id = href.split('/')[3] if href is not None else None
-
-            if horse_id is None:
-                continue
-
-            going_wins_runs = find(row, 'td', 'RC-goingWinsRuns__row')
-            going_wins, going_runs = [x.strip() for x in going_wins_runs.split('-')]
-
-            distance_wins_runs = find(row, 'td', 'RC-distanceWinsRuns__row')
-            distance_wins, distance_runs = [x.strip() for x in distance_wins_runs.split('-')]
-
-            course_wins_runs = find(row, 'td', 'RC-courseWinsRuns__row')
-            course_wins, course_runs = [x.strip() for x in course_wins_runs.split('-')]
+    def _parse_horses(self, horses: list[dict]) -> None:
+        for horse in horses:
+            horse_id = str(horse['id'])
+            g_wins, g_runs = _split_wins_runs((horse.get('going') or {}).get('winsRuns'))
+            d_wins, d_runs = _split_wins_runs((horse.get('distance') or {}).get('winsRuns'))
+            c_wins, c_runs = _split_wins_runs((horse.get('course') or {}).get('winsRuns'))
 
             self.horses[horse_id] = HorseStats(
-                course=CourseStats(runs=course_runs, wins=course_wins),
-                distance=DistanceStats(runs=distance_runs, wins=distance_wins),
-                going=GoingStats(runs=going_runs, wins=going_wins),
+                going=GoingStats(wins=g_wins, runs=g_runs),
+                distance=DistanceStats(wins=d_wins, runs=d_runs),
+                course=CourseStats(wins=c_wins, runs=c_runs),
             )
 
-    def _get_jockey_trainer_stats(
-        self, rows: list[HtmlElement], target: dict[str, dict[str, str]]
-    ) -> None:
-        for row in rows:
-            a = row.find('.//a')
-            href = a.attrib.get('href') if a is not None else None
-            jockey_trainer_id = href.split('/')[3] if href is not None else None
+    def _parse_jockeys_trainers(self, entries: list[dict], target: dict[str, dict[str, Any]]) -> None:
+        for entry in entries:
+            entity_id = str(entry['id'])
+            last14 = _parse_segment(entry.get('last14Days'))
+            overall = _parse_segment(entry.get('overall'))
 
-            if jockey_trainer_id is None:
-                continue
-
-            wins_runs = find(row, 'td', 'RC-lastWinsRuns__row')
-            wins_runs_ovr = find(row, 'td', 'RC-overallWinsRuns__row')
-
-            wins, runs = [x.strip() for x in wins_runs.split('-')]
-            wins_ovr, runs_ovr = [x.strip() for x in wins_runs_ovr.split('-')]
-
-            wins_pct = find(row, 'td', 'RC-lastPercent__row')
-            wins_pct_ovr = find(row, 'td', 'RC-overallPercent__row')
-
-            profit = find(row, 'td', 'RC-lastProfit__row')
-            profit_ovr = find(row, 'td', 'RC-overallProfit__row')
-
-            target[jockey_trainer_id] = {
-                'last_14_runs': runs,
-                'last_14_wins': wins,
-                'last_14_wins_pct': wins_pct,
-                'last_14_profit': profit,
-                'ovr_runs': runs_ovr,
-                'ovr_wins': wins_ovr,
-                'ovr_wins_pct': wins_pct_ovr,
-                'ovr_profit': profit_ovr,
+            target[entity_id] = {
+                'last_14_runs': last14['runs'],
+                'last_14_wins': last14['wins'],
+                'last_14_wins_pct': last14['strike_rate'],
+                'last_14_profit': last14['profit'],
+                'ovr_runs': overall['runs'],
+                'ovr_wins': overall['wins'],
+                'ovr_wins_pct': overall['strike_rate'],
+                'ovr_profit': overall['profit'],
+                'two_yo': _parse_segment(entry.get('twoYo')),
+                'three_yo': _parse_segment(entry.get('threeYo')),
+                'four_yo_plus': _parse_segment(entry.get('fourYoPlus')),
+                'hurdle': _parse_segment(entry.get('hurdle')),
+                'chase': _parse_segment(entry.get('chase')),
+                'nhf': _parse_segment(entry.get('nhf')),
             }

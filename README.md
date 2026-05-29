@@ -199,17 +199,15 @@ Credentials are stored in a .env file in the root directory. Make sure .env is a
 
 ```
 EMAIL=your@email.com
-AUTH_STATE=your_auth_state
 ACCESS_TOKEN=your_access_token
 ```
 
 To find your tokens, login to the site and open the cookies section in the storage tab of your browser's developer tools.
 
-You need the values for auth_state and cognito access token (not to be confused with the AccessToken cookie).
+You need the value for cognito access token (not to be confused with the AccessToken cookie).
 
 There will be multiple keys beginning with `CognitoIdentityServiceProvider`, you want the value for the one that ends with `.accessToken`. It should be directly under email if keys are sorted by name.
 
-![alt text](https://i.postimg.cc/FK41xJ3W/20260103-113009.png)
 ![alt text](https://i.postimg.cc/nLJM1QBg/20260103-113046.png)
 
 ## Tip Jar

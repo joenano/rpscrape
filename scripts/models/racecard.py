@@ -69,11 +69,11 @@ class Racecard:
     course: str | None = None
     course_id: int | None = None
     course_detail: str | None = None
+    course_info: str | None = None
     date: str | None = None
     distance: str | None = None
     distance_f: float | None = None
     distance_y: int | None = None
-    distance_round: str | None = None
     field_size: int | None = None
     going: str | None = None
     handicap: bool = False
@@ -81,6 +81,8 @@ class Racecard:
     off_time: str | None = None
     pattern: str | None = None
     prize: str | None = None
+    prizes: list[dict[str, Any]] | None = None
+    prize_winner: str | None = None
     race_class: str | int | None = None
     race_id: int | None = None
     race_name: str | None = None
@@ -89,6 +91,7 @@ class Racecard:
     region: str | None = None
     runners: list[Runner] = field(default_factory=list)
     surface: str | None = None
+    category: list[str] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

@@ -20,16 +20,13 @@ BROWSERS: Sequence[BrowserTypeLiteral] = (
 COGNITO_POOL = '3fii107m4bmtggnm21pud2es21'
 
 
-def construct_cookies(
-    email: str | None, auth_state: str | None, access_token: str | None
-) -> dict[str, str]:
-    if email is None or auth_state is None or access_token is None:
+def construct_cookies(email: str | None, access_token: str | None) -> dict[str, str]:
+    if email is None or access_token is None:
         return {}
 
     key = f'CognitoIdentityServiceProvider.{COGNITO_POOL}.{quote(email, safe="")}.accessToken'
 
     return {
-        'auth_state': auth_state,
         key: access_token,
     }
 
@@ -39,14 +36,15 @@ class NetworkClient:
         self,
         *,
         email: str | None = None,
-        auth_state: str | None = None,
         access_token: str | None = None,
         timeout: int = 14,
     ) -> None:
-        cookies = construct_cookies(email, auth_state, access_token)
+        cookies = construct_cookies(email, access_token)
 
         self.session: Session = Session(impersonate=choice(BROWSERS), cookies=cookies)
         self.timeout: int = timeout
+
+        _ = self.session.get('https://www.racingpost.com/api/auth/set-cookies')
 
     def get(
         self,
