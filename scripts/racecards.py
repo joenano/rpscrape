@@ -388,6 +388,7 @@ def scrape_racecards(
                 racecard.course = 'Aqueduct'
 
             racecard.region = meeting['venueCountryCode']
+
             racecard.race_name = race['raceTitle']
             racecard.race_type = race['raceType']
 
