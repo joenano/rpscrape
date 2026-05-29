@@ -65,9 +65,12 @@ When scraping jumps data, the year refers to the season start. For example, the 
 
 ### Examples
 
+##### All scripts should be run from the scripts directory.
+
 All races on a specific date:
 
 ```
+cd scripts
 ./rpscrape.py -d 2020/10/01
 ```
 
